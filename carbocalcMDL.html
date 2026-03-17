@@ -1120,25 +1120,12 @@ function removeCustomFood(i){
 // ─── BARCODE SCANNER ─────────────────────────────────────────────────────────
 let scannerStream=null;
 let scannerTimer=null;
-let zxing=null;
-
-async function loadZXing(){
-  if(zxing)return zxing;
-  return new Promise((resolve,reject)=>{
-    const s=document.createElement('script');
-    s.src='https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
-    s.onload=()=>{resolve(window.ZXing);};
-    s.onerror=()=>reject(new Error('ZXing load failed'));
-    document.head.appendChild(s);
-  });
-}
 
 async function startScanner(){
   state.scannerActive=true;
   state.scannerResult=null;
   state.scannerStatus="Avvio fotocamera…";
   render();
-  // start video after DOM update
   setTimeout(async()=>{
     try{
       const video=document.getElementById('scanner-video');
@@ -1150,55 +1137,63 @@ async function startScanner(){
       await video.play();
       state.scannerStatus="Inquadra il barcode del prodotto…";
       render();
-      // Load ZXing and start scan loop
-      try{
-        zxing=await loadZXing();
-        startScanLoop();
-      }catch(e){
-        state.scannerStatus="Errore caricamento scanner. Riprova.";
+      // Usa BarcodeDetector nativo (iOS 17+, Chrome) oppure fallback foto
+      if('BarcodeDetector' in window){
+        startNativeScanner();
+      } else {
+        // Fallback: scatta foto e analizza
+        state.scannerStatus="Tocca il pulsante per scansionare il barcode";
         render();
+        startCanvasFallback();
       }
     }catch(err){
       state.scannerStatus="Fotocamera non disponibile o permesso negato.";
       render();
     }
-  },120);
+  },150);
 }
 
-function startScanLoop(){
+function startNativeScanner(){
+  const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','qr_code']});
   if(scannerTimer)clearInterval(scannerTimer);
-  scannerTimer=setInterval(()=>{
+  scannerTimer=setInterval(async()=>{
     const video=document.getElementById('scanner-video');
-    const canvas=document.getElementById('scanner-canvas');
-    if(!video||!canvas||video.readyState<2)return;
+    if(!video||video.readyState<2||video.paused)return;
+    try{
+      const barcodes=await detector.detect(video);
+      if(barcodes&&barcodes.length>0){
+        clearInterval(scannerTimer);scannerTimer=null;
+        lookupBarcode(barcodes[0].rawValue);
+      }
+    }catch(e){}
+  },400);
+}
+
+function startCanvasFallback(){
+  // Scansione continua via canvas ogni 600ms
+  const canvas=document.getElementById('scanner-canvas');
+  if(scannerTimer)clearInterval(scannerTimer);
+  scannerTimer=setInterval(async()=>{
+    const video=document.getElementById('scanner-video');
+    if(!video||video.readyState<2)return;
     canvas.width=video.videoWidth;
     canvas.height=video.videoHeight;
     const ctx=canvas.getContext('2d');
     ctx.drawImage(video,0,0);
-    try{
-      const hints=new Map();
-      const formats=[
-        ZXing.BarcodeFormat.EAN_13,
-        ZXing.BarcodeFormat.EAN_8,
-        ZXing.BarcodeFormat.UPC_A,
-        ZXing.BarcodeFormat.UPC_E,
-        ZXing.BarcodeFormat.CODE_128,
-        ZXing.BarcodeFormat.DATA_MATRIX
-      ];
-      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
-      const reader=new ZXing.MultiFormatReader();
-      reader.setHints(hints);
-      const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
-      const luminance=new ZXing.RGBLuminanceSource(imageData.data,canvas.width,canvas.height);
-      const binaryBitmap=new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
-      const result=reader.decode(binaryBitmap);
-      if(result&&result.getText()){
-        clearInterval(scannerTimer);
-        scannerTimer=null;
-        lookupBarcode(result.getText());
-      }
-    }catch(e){/* no barcode yet, keep scanning */}
-  },350);
+    // Prova BarcodeDetector sull'immagine statica
+    if('BarcodeDetector' in window){
+      try{
+        const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','qr_code']});
+        const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',0.9));
+        const img=await createImageBitmap(blob);
+        const barcodes=await detector.detect(img);
+        if(barcodes&&barcodes.length>0){
+          clearInterval(scannerTimer);scannerTimer=null;
+          lookupBarcode(barcodes[0].rawValue);
+        }
+      }catch(e){}
+    }
+  },600);
 }
 
 async function lookupBarcode(barcode){
@@ -1234,7 +1229,11 @@ function retryScanner(){
   state.scannerResult=null;
   state.scannerStatus="Inquadra il barcode del prodotto…";
   render();
-  startScanLoop();
+  if('BarcodeDetector' in window){
+    startNativeScanner();
+  } else {
+    startCanvasFallback();
+  }
 }
 
 function stopScanner(){
