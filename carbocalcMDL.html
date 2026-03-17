@@ -1162,9 +1162,11 @@ async function onBarcodePhoto(e){
     const img=new Image();
     await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=dataUrl;});
 
-    const canvas=document.createElement('canvas');
-    canvas.width=img.width;canvas.height=img.height;
-    canvas.getContext('2d').drawImage(img,0,0);
+    // Ridimensiona a max 1200px — foto iPhone 12MP sono troppo grandi per ZXing
+    const MAX=1200;
+    const scale=Math.min(1,MAX/Math.max(img.width,img.height));
+    const W=Math.round(img.width*scale);
+    const H=Math.round(img.height*scale);
 
     const ZX=window.ZXing||window.ZXingBrowser;
     const hints=new Map();
@@ -1176,18 +1178,41 @@ async function onBarcodePhoto(e){
       ZX.BarcodeFormat.CODE_128,
     ]);
     hints.set(ZX.DecodeHintType.TRY_HARDER,true);
-
     const reader=new ZX.MultiFormatReader();
     reader.setHints(hints);
-    const imageData=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height);
-    const lum=new ZX.RGBLuminanceSource(imageData.data,canvas.width,canvas.height);
-    const bmp=new ZX.BinaryBitmap(new ZX.HybridBinarizer(lum));
-    const result=reader.decode(bmp);
 
-    if(result&&result.getText()){
-      lookupBarcode(result.getText());
+    // Prova con immagine intera ridimensionata
+    const tryDecode=(w,h,sx,sy,sw,sh)=>{
+      const c=document.createElement('canvas');
+      c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,w,h);
+      const d=c.getContext('2d').getImageData(0,0,w,h);
+      const lum=new ZX.RGBLuminanceSource(d.data,w,h);
+      const bmp=new ZX.BinaryBitmap(new ZX.HybridBinarizer(lum));
+      return reader.decode(bmp);
+    };
+
+    let found=null;
+    const attempts=[
+      // Tutta la foto ridimensionata
+      ()=>tryDecode(W,H,0,0,img.width,img.height),
+      // Metà inferiore (barcode spesso in basso sulla confezione)
+      ()=>tryDecode(W,Math.round(H/2),0,Math.round(img.height/2),img.width,Math.round(img.height/2)),
+      // Metà superiore
+      ()=>tryDecode(W,Math.round(H/2),0,0,img.width,Math.round(img.height/2)),
+      // Striscia centrale orizzontale
+      ()=>tryDecode(W,Math.round(H*0.4),0,Math.round(img.height*0.3),img.width,Math.round(img.height*0.4)),
+    ];
+
+    for(const attempt of attempts){
+      try{const r=attempt();if(r&&r.getText()){found=r.getText();break;}}
+      catch(ex){/* continua */}
+    }
+
+    if(found){
+      lookupBarcode(found);
     } else {
-      state.scannerStatus="Barcode non letto. Riprova più vicino e con buona luce.";
+      state.scannerStatus="Barcode non letto. Riprova: avvicina a 15-20cm, centra il barcode e tieni fermo.";
       render();
     }
   }catch(err){
