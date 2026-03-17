@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="CarbOCalc"/>
+<meta name="theme-color" content="#0F6E56"/>
+<title>CarbOCalc — Omnipod 5</title>
+<style>
+:root{
+  --green:#1D9E75;--green-dark:#0F6E56;--green-light:#E1F5EE;--green-mid:#9FE1CB;
+  --blue:#185FA5;--blue-light:#E6F1FB;
+  --bg:#F5F5F5;--card:#fff;--text:#1a1a1a;--sub:#6b6b6b;--border:#e0e0e0;
+  --red:#E24B4A;--amber:#BA7517;--amber-light:#FAEEDA;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#111;--card:#1e1e1e;--text:#f0f0f0;--sub:#999;--border:#333;
+    --green-light:#0a3326;--blue-light:#0a1f38;--amber-light:#2a1f07}
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;overflow:hidden}
+#root{display:flex;flex-direction:column;height:100%;max-width:430px;margin:0 auto;background:var(--bg)}
+
+/* TOPBAR */
+.topbar{background:var(--card);border-bottom:0.5px solid var(--border);
+  padding:calc(var(--safe-top) + 12px) 16px 12px;flex-shrink:0;z-index:20}
+.topbar-brand{display:flex;align-items:center;gap:7px;margin-bottom:12px}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.brand-name{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--sub)}
+.brand-badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:10px;
+  background:var(--green-light);color:var(--green-dark);font-weight:600;letter-spacing:.04em}
+.search-row{display:flex;gap:8px}
+.search-input{flex:1;padding:12px 14px;font-size:16px;border:0.5px solid var(--border);
+  border-radius:14px;background:var(--bg);color:var(--text);outline:none;
+  -webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
+.search-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.12)}
+.search-btn{padding:12px 18px;border-radius:14px;border:none;
+  background:var(--green);color:#fff;font-size:15px;font-weight:600;
+  cursor:pointer;min-width:84px;display:flex;align-items:center;justify-content:center;gap:6px}
+.search-btn:active{opacity:.8;transform:scale(.97)}
+.search-btn:disabled{background:var(--green-mid);cursor:default}
+.source-tabs{display:flex;gap:6px;margin-top:10px}
+.stab{flex:1;padding:7px;border-radius:10px;border:0.5px solid var(--border);
+  background:var(--bg);font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;text-align:center}
+.stab.active{background:var(--green-light);border-color:var(--green);color:var(--green-dark)}
+
+/* BOTTOM NAV */
+.bottomnav{display:flex;background:var(--card);border-top:0.5px solid var(--border);
+  padding-bottom:var(--safe-bot);flex-shrink:0;z-index:20}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:10px 4px 8px;gap:4px;cursor:pointer;border:none;background:transparent;
+  color:var(--sub);font-size:10px;font-weight:600;letter-spacing:.04em;transition:color .12s}
+.bnav-btn.active{color:var(--green)}
+.bnav-icon{width:24px;height:24px;position:relative}
+.bnav-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;
+  border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;padding:0 3px}
+
+/* SCROLL AREA */
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* FOOD CARDS */
+.section-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--sub);
+  padding:14px 16px 6px;text-transform:uppercase}
+.food-card{background:var(--card);margin:0 16px 8px;border-radius:14px;
+  border:0.5px solid var(--border);padding:13px 14px;cursor:pointer;
+  transition:border-color .1s,transform .1s}
+.food-card:active{transform:scale(.98);background:var(--bg)}
+.food-card.selected{border:2px solid var(--green);background:var(--green-light)}
+.food-card.selected .fc-name{color:var(--green-dark)}
+.fc-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px;line-height:1.3}
+.fc-badges{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.badge{font-size:11px;font-weight:600;padding:2px 7px;border-radius:7px}
+.b-cho{background:var(--green-light);color:var(--green-dark)}
+.b-sug{background:var(--blue-light);color:var(--blue)}
+.b-fib{background:#f0f0f0;color:#555}
+.b-src-crea{background:var(--green-light);color:var(--green-dark);margin-left:auto}
+.b-src-usda{background:var(--amber-light);color:var(--amber);margin-left:auto}
+.b-src-custom{background:#FBEAF0;color:#993556;margin-left:auto}
+@media(prefers-color-scheme:dark){.b-fib{background:#2a2a2a;color:#aaa}}
+
+/* RESULT PANEL */
+.result-panel{background:var(--card);border-top:0.5px solid var(--border);
+  padding:14px 16px;flex-shrink:0;z-index:10}
+.sel-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.sel-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.3;flex:1}
+.quick-row{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px}
+.quick-row::-webkit-scrollbar{display:none}
+.qbtn{padding:8px 13px;border-radius:10px;border:0.5px solid var(--border);
+  background:var(--bg);color:var(--text);font-size:13px;font-weight:600;
+  cursor:pointer;white-space:nowrap;flex-shrink:0}
+.qbtn:active{transform:scale(.95)}
+.qbtn.active{background:var(--green);border-color:var(--green);color:#fff}
+.gram-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.gram-lbl{font-size:13px;color:var(--sub);width:38px;flex-shrink:0}
+.gram-slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;
+  background:var(--border);outline:none}
+.gram-slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;
+  border-radius:50%;background:var(--green);cursor:pointer;
+  border:3px solid var(--card);box-shadow:0 0 0 1.5px var(--green)}
+.gram-num{width:62px;padding:8px 4px;font-size:18px;font-weight:700;text-align:center;
+  border:0.5px solid var(--border);border-radius:10px;background:var(--bg);
+  color:var(--text);font-variant-numeric:tabular-nums;outline:none;-webkit-appearance:none}
+.gram-g{font-size:14px;color:var(--sub)}
+.metrics-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.met-box{background:var(--bg);border-radius:11px;padding:10px 10px 9px}
+.met-box.big{background:var(--green-light)}
+.met-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--sub);
+  text-transform:uppercase;margin-bottom:3px}
+.met-lbl.green{color:var(--green-dark)}
+.met-val{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text);line-height:1}
+.met-val.green{color:var(--green)}
+.met-val.blue{color:var(--blue)}
+.met-unit{font-size:12px;font-weight:400;margin-left:1px;color:var(--sub)}
+.met-sub{font-size:10px;color:var(--green);margin-top:2px}
+.panel-btns{display:flex;gap:8px;align-items:stretch}
+.btn-copy{padding:11px 14px;border-radius:13px;border:0.5px solid var(--border);
+  background:var(--bg);color:var(--sub);font-size:13px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
+.btn-copy:active{opacity:.8;transform:scale(.97)}
+.btn-copy.done{background:var(--green-light);border-color:var(--green);color:var(--green-dark)}
+.btn-add{flex:1;padding:14px;border-radius:13px;border:none;
+  background:var(--green-dark);color:#fff;font-size:15px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-add:active{opacity:.85;transform:scale(.98)}
+.btn-fav{padding:11px 13px;border-radius:13px;border:0.5px solid var(--border);
+  background:var(--bg);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.btn-fav:active{transform:scale(.95)}
+
+/* MEAL SCREEN */
+.meal-total-card{margin:16px;background:var(--green-dark);border-radius:18px;padding:20px}
+.mt-lbl{font-size:12px;font-weight:700;letter-spacing:.07em;color:rgba(255,255,255,.7);margin-bottom:6px}
+.mt-val{font-size:56px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+.mt-unit{font-size:20px;font-weight:400;color:rgba(255,255,255,.8)}
+.mt-sub{font-size:12px;color:rgba(255,255,255,.65);margin-top:5px}
+.mt-actions{display:flex;gap:8px;margin-top:14px}
+.mt-btn{flex:1;padding:10px;border-radius:10px;border:none;
+  background:rgba(255,255,255,.18);color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.mt-btn:active{background:rgba(255,255,255,.28)}
+.mt-btn.danger{background:rgba(255,80,80,.25)}
+.meal-item{background:var(--card);margin:0 16px 8px;border-radius:14px;
+  border:0.5px solid var(--border);padding:13px 14px;
+  display:flex;align-items:center;gap:12px}
+.mi-name{flex:1;font-size:14px;font-weight:600;color:var(--text)}
+.mi-grams{font-size:12px;color:var(--sub);margin-top:2px}
+.mi-cho{font-size:20px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mi-del{width:32px;height:32px;border-radius:50%;border:none;background:var(--bg);
+  color:var(--sub);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mi-del:active{background:var(--border)}
+.empty-meal{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:60px 30px;gap:14px;text-align:center}
+.empty-icon{font-size:44px}
+.empty-title{font-size:17px;font-weight:700;color:var(--text)}
+.empty-sub{font-size:14px;color:var(--sub);line-height:1.6}
+
+/* FAV SCREEN */
+.fav-item{background:var(--card);margin:0 16px 8px;border-radius:14px;
+  border:0.5px solid var(--border);padding:13px 14px;
+  display:flex;align-items:center;gap:10px;cursor:pointer}
+.fav-item:active{transform:scale(.98)}
+.fi-info{flex:1}
+.fi-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.fi-meta{font-size:12px;color:var(--sub)}
+.fi-star{font-size:20px;cursor:pointer;padding:6px}
+
+/* SPINNER */
+.spinner{display:inline-block;width:16px;height:16px;
+  border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
+  border-radius:50%;animation:spin .65s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* EMPTY STATE */
+.empty-state{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;flex:1;padding:50px 24px;gap:14px;text-align:center}
+
+/* MISC */
+.no-results{text-align:center;padding:40px 24px;font-size:14px;color:var(--sub);line-height:1.7}
+.warn-pill{margin:0 16px 4px;background:var(--amber-light);border-radius:10px;
+  padding:8px 12px;font-size:11px;color:var(--amber);line-height:1.5}
+.toast{position:fixed;bottom:calc(80px + var(--safe-bot));left:50%;transform:translateX(-50%);
+  background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:24px;
+  font-size:14px;font-weight:600;z-index:100;white-space:nowrap;
+  animation:fadeup .3s ease,fadedown .3s ease 1.7s forwards}
+@keyframes fadeup{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes fadedown{from{opacity:1}to{opacity:0}}
+
+.add-form{background:var(--card);margin:0 16px 12px;border-radius:14px;border:0.5px solid var(--border);padding:16px}
+.add-form-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px}
+.form-row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-end}
+.form-field{display:flex;flex-direction:column;gap:5px;flex:1}
+.form-lbl{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--sub);text-transform:uppercase}
+.form-input{padding:10px 12px;font-size:15px;border:0.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none;width:100%}
+.form-input:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(29,158,117,.12)}
+.form-num{padding:10px 8px;font-size:15px;border:0.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);outline:none;text-align:center;width:100%;-webkit-appearance:none}
+.form-num:focus{border-color:var(--green)}
+.btn-save{width:100%;padding:13px;border-radius:12px;border:none;background:var(--green-dark);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
+.btn-save:active{opacity:.85;transform:scale(.98)}
+.form-error{font-size:12px;color:var(--red);margin-top:-4px;margin-bottom:6px}
+.custom-item{background:var(--card);margin:0 16px 8px;border-radius:14px;border:0.5px solid var(--border);padding:13px 14px;display:flex;align-items:center;gap:10px}
+.ci-info{flex:1}
+.ci-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
+.ci-meta{font-size:12px;color:var(--sub)}
+.ci-del{width:34px;height:34px;border-radius:50%;border:none;background:var(--bg);color:var(--sub);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ci-del:active{background:var(--border)}
+
+.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--safe-bot) + 90px)}
+.confirm-box{background:var(--card);border-radius:16px;padding:20px;width:calc(100% - 32px);max-width:400px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18)}
+.confirm-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px}
+.confirm-sub{font-size:13px;color:var(--sub);margin-bottom:18px;line-height:1.5}
+.confirm-btns{display:flex;gap:10px}
+.confirm-btn-cancel{flex:1;padding:13px;border-radius:12px;border:0.5px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;font-weight:600;cursor:pointer}
+.confirm-btn-ok{flex:1;padding:13px;border-radius:12px;border:none;background:var(--red);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.confirm-btn-ok:active{opacity:.85}
+.confirm-btn-cancel:active{background:var(--border)}
+
+.scan-btn{padding:12px 13px;border-radius:14px;border:0.5px solid var(--border);
+  background:var(--bg);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.scan-btn:active{background:var(--border);transform:scale(.96)}
+.scanner-overlay{position:fixed;inset:0;background:#000;z-index:300;display:flex;flex-direction:column}
+.scanner-topbar{padding:calc(var(--safe-top) + 14px) 16px 14px;display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.7)}
+.scanner-close{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.scanner-title{font-size:15px;font-weight:700;color:#fff}
+.scanner-sub{font-size:12px;color:rgba(255,255,255,.65);margin-top:2px}
+.scanner-viewport{flex:1;position:relative;overflow:hidden}
+.scanner-viewport video{width:100%;height:100%;object-fit:cover}
+.scanner-frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scanner-box{width:240px;height:160px;border-radius:12px;position:relative}
+.scanner-box::before,.scanner-box::after{content:"";position:absolute;width:36px;height:36px;border-color:#fff;border-style:solid}
+.scanner-box::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:8px 0 0 0}
+.scanner-box::after{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 8px 0}
+.scanner-corner-tr{position:absolute;top:0;right:0;width:36px;height:36px;border-top:3px solid #fff;border-right:3px solid #fff;border-radius:0 8px 0 0}
+.scanner-corner-bl{position:absolute;bottom:0;left:0;width:36px;height:36px;border-bottom:3px solid #fff;border-left:3px solid #fff;border-radius:0 0 0 8px}
+.scanner-line{position:absolute;left:8px;right:8px;height:2px;background:rgba(29,158,117,.9);border-radius:1px;animation:scanline 2s ease-in-out infinite}
+@keyframes scanline{0%{top:16px;opacity:1}50%{top:calc(100% - 16px);opacity:1}100%{top:16px;opacity:1}}
+.scanner-status{position:absolute;bottom:0;left:0;right:0;padding:16px;background:rgba(0,0,0,.6);text-align:center;font-size:13px;color:rgba(255,255,255,.85);min-height:52px;display:flex;align-items:center;justify-content:center}
+.scanner-result{position:absolute;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:24px}
+.scanner-result-box{background:var(--card);border-radius:18px;padding:20px;width:100%;max-width:340px;text-align:center}
+.sr-icon{font-size:36px;margin-bottom:10px}
+.sr-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.3}
+.sr-meta{font-size:13px;color:var(--sub);margin-bottom:14px}
+.sr-values{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
+.sr-val-box{background:var(--bg);border-radius:10px;padding:10px 6px}
+.sr-val-lbl{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--sub);text-transform:uppercase;margin-bottom:3px}
+.sr-val-num{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.sr-val-num.green{color:var(--green)}
+.sr-val-num.blue{color:var(--blue)}
+.sr-val-unit{font-size:11px;color:var(--sub)}
+.sr-btns{display:flex;gap:8px}
+.sr-btn-ok{flex:1;padding:13px;border-radius:12px;border:none;background:var(--green-dark);color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+.sr-btn-cancel{padding:13px 14px;border-radius:12px;border:0.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+// ─── CREA DATABASE eTCA 2019 ──────────────────────────────────────────────────
+const CREA=[
+  // CEREALI E DERIVATI
+  {n:"Pane bianco",c:"Cereali",cho:56.8,sug:1.5,fib:3.2},
+  {n:"Pane integrale",c:"Cereali",cho:48.5,sug:2.1,fib:6.5},
+  {n:"Pane di segale",c:"Cereali",cho:49.1,sug:1.8,fib:5.8},
+  {n:"Pane tipo rosetta / ciabatta",c:"Cereali",cho:57.5,sug:1.8,fib:3.0},
+  {n:"Pane al malto",c:"Cereali",cho:53.8,sug:4.2,fib:3.5},
+  {n:"Pane senza glutine",c:"Cereali",cho:55.0,sug:3.0,fib:2.5},
+  {n:"Grissini",c:"Cereali",cho:71.3,sug:3.5,fib:3.2},
+  {n:"Crackers",c:"Cereali",cho:67.5,sug:3.2,fib:2.8},
+  {n:"Crackers integrali",c:"Cereali",cho:62.0,sug:3.0,fib:6.5},
+  {n:"Fette biscottate",c:"Cereali",cho:76.2,sug:6.0,fib:3.6},
+  {n:"Fette biscottate integrali",c:"Cereali",cho:68.0,sug:5.0,fib:7.2},
+  {n:"Pasta secca (cruda)",c:"Cereali",cho:74.1,sug:2.0,fib:2.7},
+  {n:"Pasta integrale (cruda)",c:"Cereali",cho:69.5,sug:2.2,fib:8.9},
+  {n:"Pasta cotta",c:"Cereali",cho:26.0,sug:0.5,fib:1.0},
+  {n:"Pasta integrale (cotta)",c:"Cereali",cho:23.5,sug:0.5,fib:3.8},
+  {n:"Spaghetti (cotti)",c:"Cereali",cho:27.2,sug:0.6,fib:1.2},
+  {n:"Pennette / rigatoni (cotti)",c:"Cereali",cho:26.5,sug:0.5,fib:1.1},
+  {n:"Lasagne (pasta cruda)",c:"Cereali",cho:74.0,sug:2.0,fib:2.7},
+  {n:"Tagliatelle (crude)",c:"Cereali",cho:68.3,sug:3.2,fib:2.5},
+  {n:"Tagliatelle (cotte)",c:"Cereali",cho:24.5,sug:1.2,fib:1.0},
+  {n:"Gnocchi di patate",c:"Cereali",cho:23.5,sug:0.6,fib:1.8},
+  {n:"Tortellini (crudi)",c:"Cereali",cho:36.8,sug:2.0,fib:2.0},
+  {n:"Tortellini (cotti)",c:"Cereali",cho:20.0,sug:1.0,fib:1.0},
+  {n:"Riso bianco (crudo)",c:"Cereali",cho:80.4,sug:0.1,fib:0.2},
+  {n:"Riso bianco (cotto)",c:"Cereali",cho:29.0,sug:0.0,fib:0.1},
+  {n:"Riso integrale (crudo)",c:"Cereali",cho:77.4,sug:0.7,fib:3.5},
+  {n:"Riso integrale (cotto)",c:"Cereali",cho:25.5,sug:0.3,fib:1.8},
+  {n:"Risotto (cotto, base)",c:"Cereali",cho:25.0,sug:0.5,fib:0.5},
+  {n:"Farro (crudo)",c:"Cereali",cho:68.2,sug:0.7,fib:8.4},
+  {n:"Farro (cotto)",c:"Cereali",cho:28.0,sug:0.3,fib:3.5},
+  {n:"Orzo perlato (crudo)",c:"Cereali",cho:74.9,sug:0.9,fib:6.5},
+  {n:"Orzo perlato (cotto)",c:"Cereali",cho:22.4,sug:0.3,fib:2.0},
+  {n:"Polenta (cotta)",c:"Cereali",cho:17.0,sug:0.3,fib:1.0},
+  {n:"Polenta istantanea (cotta)",c:"Cereali",cho:16.0,sug:0.2,fib:0.8},
+  {n:"Farina 00",c:"Cereali",cho:80.9,sug:1.3,fib:2.2},
+  {n:"Farina integrale",c:"Cereali",cho:68.7,sug:1.5,fib:9.6},
+  {n:"Farina di mais (fioretto)",c:"Cereali",cho:78.5,sug:0.4,fib:4.4},
+  {n:"Piadina romagnola",c:"Cereali",cho:49.5,sug:2.0,fib:2.3},
+  {n:"Pizza margherita",c:"Cereali",cho:30.0,sug:3.0,fib:2.0},
+  {n:"Pizza bianca",c:"Cereali",cho:55.0,sug:1.5,fib:2.5},
+  {n:"Focaccia",c:"Cereali",cho:48.0,sug:1.8,fib:2.2},
+  {n:"Semola di grano duro",c:"Cereali",cho:77.0,sug:1.5,fib:3.6},
+  {n:"Cous cous (cotto)",c:"Cereali",cho:23.2,sug:0.1,fib:1.4},
+  {n:"Fiocchi d'avena",c:"Cereali",cho:66.3,sug:1.0,fib:9.0},
+  {n:"Corn flakes",c:"Cereali",cho:83.6,sug:8.0,fib:3.0},
+  {n:"Muesli",c:"Cereali",cho:65.5,sug:28.0,fib:8.0},
+  // FRUTTA FRESCA
+  {n:"Mela",c:"Frutta",cho:13.8,sug:11.8,fib:2.3},
+  {n:"Pera",c:"Frutta",cho:11.8,sug:9.9,fib:3.1},
+  {n:"Banana",c:"Frutta",cho:23.5,sug:16.0,fib:2.6},
+  {n:"Arancia",c:"Frutta",cho:9.0,sug:8.6,fib:1.6},
+  {n:"Mandarino",c:"Frutta",cho:10.5,sug:9.8,fib:1.8},
+  {n:"Clementine",c:"Frutta",cho:11.0,sug:10.3,fib:1.7},
+  {n:"Uva bianca",c:"Frutta",cho:15.6,sug:15.6,fib:1.5},
+  {n:"Uva nera",c:"Frutta",cho:14.9,sug:14.9,fib:1.4},
+  {n:"Fragole",c:"Frutta",cho:7.1,sug:6.2,fib:1.6},
+  {n:"Ciliegie",c:"Frutta",cho:14.9,sug:13.5,fib:1.3},
+  {n:"Pesca",c:"Frutta",cho:8.1,sug:7.5,fib:1.5},
+  {n:"Nettarina / pesca noce",c:"Frutta",cho:9.0,sug:8.5,fib:1.5},
+  {n:"Albicocca",c:"Frutta",cho:6.8,sug:6.0,fib:1.5},
+  {n:"Ananas",c:"Frutta",cho:10.5,sug:9.6,fib:1.2},
+  {n:"Anguria / cocomero",c:"Frutta",cho:7.4,sug:7.2,fib:0.2},
+  {n:"Melone",c:"Frutta",cho:7.4,sug:7.1,fib:0.7},
+  {n:"Kiwi",c:"Frutta",cho:12.0,sug:10.5,fib:2.2},
+  {n:"Fico",c:"Frutta",cho:12.9,sug:12.4,fib:2.0},
+  {n:"Susina / prugna",c:"Frutta",cho:10.5,sug:9.9,fib:1.5},
+  {n:"Mango",c:"Frutta",cho:15.0,sug:13.6,fib:1.6},
+  {n:"Avocado",c:"Frutta",cho:1.8,sug:0.7,fib:6.4},
+  {n:"Limone (succo)",c:"Frutta",cho:6.5,sug:2.5,fib:0.3},
+  {n:"Pompelmo",c:"Frutta",cho:6.2,sug:5.9,fib:1.1},
+  {n:"Melagrana",c:"Frutta",cho:18.7,sug:13.7,fib:4.0},
+  {n:"Castagne",c:"Frutta",cho:36.7,sug:8.0,fib:8.3},
+  {n:"Datteri",c:"Frutta",cho:74.4,sug:66.5,fib:8.0},
+  {n:"Mirtilli",c:"Frutta",cho:9.0,sug:7.7,fib:2.4},
+  {n:"Lamponi",c:"Frutta",cho:5.4,sug:4.4,fib:6.7},
+  {n:"Ribes",c:"Frutta",cho:8.1,sug:8.1,fib:3.5},
+  {n:"More",c:"Frutta",cho:5.1,sug:4.9,fib:5.3},
+  // VERDURA
+  {n:"Patata (bollita)",c:"Verdura",cho:17.3,sug:0.6,fib:1.8},
+  {n:"Patata (cruda)",c:"Verdura",cho:17.8,sug:0.7,fib:2.0},
+  {n:"Patata dolce",c:"Verdura",cho:20.5,sug:4.2,fib:3.0},
+  {n:"Carota",c:"Verdura",cho:9.3,sug:5.3,fib:3.1},
+  {n:"Pomodoro",c:"Verdura",cho:3.9,sug:3.5,fib:1.0},
+  {n:"Pomodori pelati (in scatola)",c:"Verdura",cho:3.5,sug:3.0,fib:1.1},
+  {n:"Cipolla",c:"Verdura",cho:7.3,sug:5.1,fib:1.3},
+  {n:"Cipolla rossa",c:"Verdura",cho:7.6,sug:5.5,fib:1.4},
+  {n:"Aglio",c:"Verdura",cho:29.0,sug:1.0,fib:4.1},
+  {n:"Zucchina",c:"Verdura",cho:3.4,sug:2.5,fib:1.1},
+  {n:"Melanzana",c:"Verdura",cho:3.1,sug:2.0,fib:2.6},
+  {n:"Peperone rosso",c:"Verdura",cho:6.4,sug:5.0,fib:2.1},
+  {n:"Peperone giallo",c:"Verdura",cho:6.3,sug:4.8,fib:2.0},
+  {n:"Peperone verde",c:"Verdura",cho:4.6,sug:3.5,fib:2.0},
+  {n:"Broccoli",c:"Verdura",cho:2.6,sug:1.7,fib:2.9},
+  {n:"Cavolfiore",c:"Verdura",cho:3.6,sug:2.5,fib:2.4},
+  {n:"Cavolo cappuccio",c:"Verdura",cho:6.2,sug:3.2,fib:3.8},
+  {n:"Cavolo nero",c:"Verdura",cho:8.7,sug:2.0,fib:3.1},
+  {n:"Spinaci (freschi)",c:"Verdura",cho:2.7,sug:0.5,fib:2.8},
+  {n:"Spinaci (surgelati)",c:"Verdura",cho:2.3,sug:0.4,fib:2.5},
+  {n:"Lattuga",c:"Verdura",cho:1.7,sug:1.5,fib:1.4},
+  {n:"Rucola",c:"Verdura",cho:3.7,sug:2.0,fib:1.6},
+  {n:"Cetriolo",c:"Verdura",cho:2.5,sug:1.7,fib:0.7},
+  {n:"Funghi champignon",c:"Verdura",cho:3.9,sug:2.0,fib:1.0},
+  {n:"Funghi porcini (freschi)",c:"Verdura",cho:5.5,sug:1.5,fib:2.5},
+  {n:"Piselli (freschi)",c:"Verdura",cho:14.5,sug:6.0,fib:5.1},
+  {n:"Piselli (surgelati)",c:"Verdura",cho:13.8,sug:5.5,fib:5.0},
+  {n:"Mais (in chicchi)",c:"Verdura",cho:18.6,sug:3.2,fib:2.7},
+  {n:"Barbabietola rossa",c:"Verdura",cho:9.9,sug:9.5,fib:2.8},
+  {n:"Finocchio",c:"Verdura",cho:5.1,sug:3.3,fib:2.2},
+  {n:"Sedano",c:"Verdura",cho:3.7,sug:1.8,fib:1.8},
+  {n:"Carciofo",c:"Verdura",cho:11.0,sug:0.6,fib:5.5},
+  {n:"Asparagi",c:"Verdura",cho:3.7,sug:1.2,fib:2.1},
+  {n:"Porro",c:"Verdura",cho:7.0,sug:3.5,fib:2.5},
+  {n:"Indivia / radicchio",c:"Verdura",cho:3.4,sug:0.1,fib:3.1},
+  {n:"Bietola",c:"Verdura",cho:3.5,sug:1.1,fib:2.0},
+  {n:"Zucca gialla",c:"Verdura",cho:5.3,sug:2.9,fib:1.5},
+  {n:"Rapa",c:"Verdura",cho:5.0,sug:3.8,fib:1.8},
+  // LEGUMI
+  {n:"Fagioli borlotti (secchi)",c:"Legumi",cho:47.6,sug:2.0,fib:17.3},
+  {n:"Fagioli borlotti (cotti)",c:"Legumi",cho:19.0,sug:0.8,fib:5.5},
+  {n:"Fagioli cannellini (secchi)",c:"Legumi",cho:47.0,sug:2.0,fib:15.7},
+  {n:"Fagioli cannellini (cotti)",c:"Legumi",cho:18.0,sug:0.8,fib:5.5},
+  {n:"Fagioli neri (secchi)",c:"Legumi",cho:47.0,sug:1.5,fib:15.2},
+  {n:"Ceci (secchi)",c:"Legumi",cho:54.3,sug:5.0,fib:14.3},
+  {n:"Ceci (cotti)",c:"Legumi",cho:21.3,sug:0.4,fib:6.5},
+  {n:"Lenticchie (secche)",c:"Legumi",cho:53.7,sug:2.5,fib:11.7},
+  {n:"Lenticchie (cotte)",c:"Legumi",cho:20.1,sug:1.8,fib:3.7},
+  {n:"Fave (secche)",c:"Legumi",cho:51.7,sug:3.5,fib:12.0},
+  {n:"Fave (cotte)",c:"Legumi",cho:15.5,sug:1.5,fib:4.2},
+  {n:"Soia (secca)",c:"Legumi",cho:30.2,sug:7.3,fib:9.3},
+  {n:"Edamame",c:"Legumi",cho:9.9,sug:2.2,fib:5.2},
+  // LATTICINI E UOVA
+  {n:"Latte intero",c:"Latticini",cho:5.0,sug:5.0,fib:0},
+  {n:"Latte parzialmente scremato",c:"Latticini",cho:5.0,sug:5.0,fib:0},
+  {n:"Latte scremato",c:"Latticini",cho:5.3,sug:5.3,fib:0},
+  {n:"Yogurt intero naturale",c:"Latticini",cho:4.9,sug:4.9,fib:0},
+  {n:"Yogurt greco naturale",c:"Latticini",cho:4.0,sug:4.0,fib:0},
+  {n:"Yogurt magro",c:"Latticini",cho:5.3,sug:5.3,fib:0},
+  {n:"Yogurt alla frutta",c:"Latticini",cho:15.0,sug:14.5,fib:0.2},
+  {n:"Ricotta di mucca",c:"Latticini",cho:3.5,sug:3.5,fib:0},
+  {n:"Mozzarella",c:"Latticini",cho:0.7,sug:0.7,fib:0},
+  {n:"Parmigiano reggiano",c:"Latticini",cho:0.0,sug:0.0,fib:0},
+  {n:"Grana padano",c:"Latticini",cho:0.0,sug:0.0,fib:0},
+  {n:"Mascarpone",c:"Latticini",cho:4.2,sug:4.2,fib:0},
+  {n:"Panna da cucina",c:"Latticini",cho:3.7,sug:3.7,fib:0},
+  {n:"Uovo intero",c:"Latticini",cho:0.5,sug:0.5,fib:0},
+  // CARNI
+  {n:"Pollo (petto, cotto)",c:"Carni",cho:0.0,sug:0.0,fib:0},
+  {n:"Tacchino (petto, cotto)",c:"Carni",cho:0.0,sug:0.0,fib:0},
+  {n:"Manzo (bistecca, cotta)",c:"Carni",cho:0.0,sug:0.0,fib:0},
+  {n:"Maiale (braciola, cotta)",c:"Carni",cho:0.0,sug:0.0,fib:0},
+  {n:"Prosciutto cotto",c:"Carni",cho:0.7,sug:0.7,fib:0},
+  {n:"Prosciutto crudo",c:"Carni",cho:0.0,sug:0.0,fib:0},
+  {n:"Bresaola",c:"Carni",cho:0.0,sug:0.0,fib:0},
+  {n:"Mortadella",c:"Carni",cho:1.5,sug:0.5,fib:0},
+  {n:"Salsiccia (cotta)",c:"Carni",cho:1.5,sug:0.0,fib:0},
+  // PESCE
+  {n:"Tonno al naturale",c:"Pesce",cho:0.0,sug:0.0,fib:0},
+  {n:"Salmone (filetto, cotto)",c:"Pesce",cho:0.0,sug:0.0,fib:0},
+  {n:"Merluzzo (filetto, cotto)",c:"Pesce",cho:0.0,sug:0.0,fib:0},
+  {n:"Gamberetti (cotti)",c:"Pesce",cho:1.5,sug:0.0,fib:0},
+  // BEVANDE
+  {n:"Succo d'arancia (100%)",c:"Bevande",cho:10.3,sug:10.3,fib:0.1},
+  {n:"Succo di mela (100%)",c:"Bevande",cho:11.7,sug:11.7,fib:0.1},
+  {n:"Succo di pomodoro",c:"Bevande",cho:3.5,sug:3.5,fib:0.4},
+  {n:"Coca-Cola",c:"Bevande",cho:10.6,sug:10.6,fib:0},
+  {n:"Aranciata",c:"Bevande",cho:8.9,sug:8.9,fib:0},
+  {n:"Gassosa / bibite zuccherate",c:"Bevande",cho:10.0,sug:10.0,fib:0},
+  {n:"Birra (media gradazione)",c:"Bevande",cho:3.5,sug:0.1,fib:0},
+  {n:"Vino bianco secco",c:"Bevande",cho:1.4,sug:1.4,fib:0},
+  {n:"Vino rosso",c:"Bevande",cho:2.0,sug:2.0,fib:0},
+  {n:"Caffè espresso",c:"Bevande",cho:0.0,sug:0.0,fib:0},
+  {n:"Latte di soia",c:"Bevande",cho:2.5,sug:1.8,fib:0.3},
+  {n:"Latte di avena",c:"Bevande",cho:9.5,sug:3.8,fib:0.8},
+  {n:"Latte di riso",c:"Bevande",cho:12.5,sug:5.0,fib:0.3},
+  {n:"Latte di mandorla",c:"Bevande",cho:3.0,sug:2.0,fib:0.5},
+  // DOLCI E SNACK
+  {n:"Cioccolato fondente (>70%)",c:"Dolci",cho:45.9,sug:27.0,fib:11.9},
+  {n:"Cioccolato fondente",c:"Dolci",cho:52.4,sug:47.0,fib:6.0},
+  {n:"Cioccolato al latte",c:"Dolci",cho:58.5,sug:55.0,fib:3.4},
+  {n:"Cioccolato bianco",c:"Dolci",cho:59.0,sug:58.0,fib:0.0},
+  {n:"Miele",c:"Dolci",cho:80.3,sug:80.3,fib:0.2},
+  {n:"Zucchero bianco",c:"Dolci",cho:99.8,sug:99.8,fib:0},
+  {n:"Zucchero di canna",c:"Dolci",cho:95.0,sug:95.0,fib:0},
+  {n:"Marmellata (media)",c:"Dolci",cho:55.0,sug:52.0,fib:1.0},
+  {n:"Nutella",c:"Dolci",cho:56.3,sug:56.3,fib:3.4},
+  {n:"Gelato alla crema",c:"Dolci",cho:26.0,sug:22.0,fib:0.5},
+  {n:"Gelato alla frutta",c:"Dolci",cho:31.0,sug:28.0,fib:0.5},
+  {n:"Tiramisù",c:"Dolci",cho:24.0,sug:20.0,fib:0.3},
+  {n:"Crostata / torta",c:"Dolci",cho:55.0,sug:28.0,fib:1.5},
+  {n:"Panna cotta",c:"Dolci",cho:22.0,sug:20.5,fib:0},
+  {n:"Budino",c:"Dolci",cho:16.5,sug:14.0,fib:0},
+  {n:"Cornetto / brioche",c:"Dolci",cho:48.0,sug:18.0,fib:1.5},
+  {n:"Biscotti secchi",c:"Dolci",cho:75.8,sug:25.0,fib:2.0},
+  {n:"Biscotti frollini",c:"Dolci",cho:70.0,sug:28.0,fib:2.2},
+  {n:"Cantucci",c:"Dolci",cho:65.0,sug:32.0,fib:2.5},
+  {n:"Pandoro",c:"Dolci",cho:52.0,sug:25.0,fib:1.5},
+  {n:"Panettone",c:"Dolci",cho:51.0,sug:28.0,fib:1.2},
+  {n:"Colomba pasquale",c:"Dolci",cho:50.0,sug:26.0,fib:1.8},
+  {n:"Patatine fritte (confezionate)",c:"Snack",cho:51.7,sug:0.5,fib:4.4},
+  {n:"Popcorn (salati)",c:"Snack",cho:70.0,sug:0.8,fib:9.8},
+  {n:"Crackers al riso (gallette)",c:"Snack",cho:81.0,sug:0.5,fib:2.5},
+  // FRUTTA SECCA
+  {n:"Arachidi",c:"Frutta secca",cho:21.5,sug:4.2,fib:8.0},
+  {n:"Mandorle",c:"Frutta secca",cho:21.7,sug:4.9,fib:12.5},
+  {n:"Noci",c:"Frutta secca",cho:14.0,sug:2.6,fib:6.7},
+  {n:"Nocciole",c:"Frutta secca",cho:16.7,sug:4.3,fib:9.7},
+  {n:"Pistacchi",c:"Frutta secca",cho:27.5,sug:7.7,fib:10.6},
+  {n:"Pinoli",c:"Frutta secca",cho:13.1,sug:3.6,fib:3.7},
+  {n:"Anacardi",c:"Frutta secca",cho:32.7,sug:5.9,fib:3.3},
+  {n:"Semi di chia",c:"Frutta secca",cho:42.1,sug:0.0,fib:34.4},
+  {n:"Semi di lino",c:"Frutta secca",cho:28.9,sug:1.5,fib:27.3},
+  {n:"Semi di zucca",c:"Frutta secca",cho:15.3,sug:1.4,fib:6.5},
+  // CONDIMENTI
+  {n:"Olio di oliva",c:"Condimenti",cho:0.0,sug:0.0,fib:0},
+  {n:"Aceto balsamico",c:"Condimenti",cho:17.0,sug:14.9,fib:0},
+  {n:"Ketchup",c:"Condimenti",cho:25.0,sug:22.0,fib:0.5},
+  {n:"Maionese",c:"Condimenti",cho:3.5,sug:2.0,fib:0},
+];
+
+const QUICK=[30,50,80,100,125,150,200,250,300];
+
+function searchCREA(q){
+  const t=q.trim().toLowerCase();
+  if(!t)return[];
+  const words=t.split(/\s+/);
+  const matchFn=f=>{const name=f.n.toLowerCase();return words.every(w=>name.includes(w));};
+  const sort=(a,b)=>{
+    // Alimenti personalizzati prima
+    const aCustom=!!a.custom, bCustom=!!b.custom;
+    if(aCustom&&!bCustom)return-1;if(bCustom&&!aCustom)return 1;
+    const ai=a.n.toLowerCase().indexOf(t),bi=b.n.toLowerCase().indexOf(t);
+    if(ai===0&&bi!==0)return-1;if(bi===0&&ai!==0)return 1;
+    return a.n.localeCompare(b.n,"it");
+  };
+  const creaMapped=CREA.filter(matchFn);
+  const customMapped=state.custom
+    .filter(matchFn)
+    .map(f=>({...f,custom:true}));
+  return [...customMapped,...creaMapped].sort(sort);
+}
+
+function fmt(v,d=1){
+  if(v==null)return"—";
+  const n=parseFloat((v).toFixed(d));
+  return n%1===0?String(n):n.toFixed(d);
+}
+function calcFor(v100,g){
+  if(v100==null)return null;
+  return v100*g/100;
+}
+
+// ─── SVG ICONS ────────────────────────────────────────────────────────────────
+const icons={
+  search:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  fork:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
+  star:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  star_fill:`<svg width="24" height="24" viewBox="0 0 24 24" fill="#BA7517" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  edit:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  trash:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+  plus:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  copy:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+  camera:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+};
+
+// ─── APP STATE ────────────────────────────────────────────────────────────────
+let state={
+  tab:"cerca",
+  query:"",
+  creaResults:[],
+  usdaResults:[],
+  srcTab:"crea",
+  searching:false,
+  selected:null,
+  grams:100,
+  meal:[],    // [{name,cho,fib,sug,grams,src}]
+  favs:[],    // [{n,c,cho,sug,fib,src}]
+  custom:[],  // alimenti personali
+  addForm:{name:"",cho:"",sug:"",fib:"",error:""},
+  toast:null,
+  copied:false,
+  confirmClear:false,
+  scannerActive:false,
+  scannerStatus:"",
+};
+
+function loadFromStorage(){
+  try{
+    const m=localStorage.getItem("cc_meal");
+    const f=localStorage.getItem("cc_favs");
+    const c=localStorage.getItem("cc_custom");
+    if(m)state.meal=JSON.parse(m);
+    if(f)state.favs=JSON.parse(f);
+    if(c)state.custom=JSON.parse(c);
+  }catch(e){}
+}
+function saveToStorage(){
+  try{
+    localStorage.setItem("cc_meal",JSON.stringify(state.meal));
+    localStorage.setItem("cc_favs",JSON.stringify(state.favs));
+    localStorage.setItem("cc_custom",JSON.stringify(state.custom));
+  }catch(e){}
+}
+
+function showToast(msg){
+  state.toast=msg;
+  render();
+  setTimeout(()=>{state.toast=null;render();},2200);
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+const root=document.getElementById("root");
+function render(){
+  const s=state;
+  const mealCHO=s.meal.reduce((acc,i)=>acc+(i.netcho??i.cho),0);
+
+  let html=`<div class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-dot"></span>
+      <span class="brand-name">CARBOCALC — OMNIPOD 5</span>
+      <span class="brand-badge">CREA + USDA</span>
+    </div>`;
+
+  if(s.tab==="cerca"){
+    html+=`
+    <div class="search-row">
+      <input class="search-input" id="si" type="text" autocorrect="off" autocapitalize="off"
+        spellcheck="false" placeholder="Cerca alimento (pane, mela, pasta…)"
+        value="${escH(s.query)}" oninput="onQueryInput(event)" onkeydown="onQueryKey(event)"/>
+      <button class="search-btn" id="sbtn" onclick="doSearch()" ${s.searching||!s.query.trim()?'disabled':''}>
+        ${s.searching?'<span class="spinner"></span>':'Cerca'}
+      </button>
+      <button class="scan-btn" onclick="startScanner()" title="Scansiona barcode">${icons.camera}</button>
+    </div>`;
+    if(s.creaResults.length>0||s.usdaResults.length>0){
+      html+=`<div class="source-tabs">
+        <button class="stab${s.srcTab==="crea"?" active":""}" onclick="setSrcTab('crea')">
+          CREA Italia${s.creaResults.length>0?` (${s.creaResults.length})`:""}
+        </button>
+        <button class="stab${s.srcTab==="usda"?" active":""}" onclick="setSrcTab('usda')">
+          USDA${s.searching?" …":s.usdaResults.length>0?` (${s.usdaResults.length})`:""}
+        </button>
+      </div>`;
+    }
+  }
+
+  html+=`</div>`; // end topbar
+
+  // SCROLL AREA
+  html+=`<div class="scroll-area" id="sarea">`;
+
+  if(s.tab==="cerca"){
+    const foods=s.srcTab==="crea"?s.creaResults:s.usdaResults;
+    if(!s.query&&s.creaResults.length===0){
+      html+=`<div class="empty-state">
+        <div style="font-size:46px">🍽️</div>
+        <div class="empty-title">Cerca un alimento</div>
+        <div class="empty-sub">Scrivi il nome in italiano.<br>Database CREA (istantaneo) +<br>USDA internazionale come backup.</div>
+      </div>`;
+    } else if(foods.length===0&&!s.searching){
+      html+=`<div class="no-results">Nessun risultato.<br>Prova con un termine diverso<br>o usa la tab USDA.</div>`;
+    } else {
+      html+=`<div class="section-lbl">${s.srcTab==="crea"?"Fonte CREA — eTCA 2019 (Italia)":"Fonte USDA FoodData Central"} · per 100g</div>`;
+      foods.forEach((f,i)=>{
+        const sel=s.selected&&s.selected.name===f.n;
+        html+=`<div class="food-card${sel?" selected":""}" onclick="selectFood(${i})">
+          <div class="fc-name">${escH(f.n)}</div>
+          <div class="fc-badges">
+            <span class="badge b-cho">CHO ${fmt(f.cho)}g</span>
+            <span class="badge b-sug">Zucc ${fmt(f.sug)}g</span>
+            ${f.fib>0?`<span class="badge b-fib">Fibre ${fmt(f.fib)}g</span>`:""}
+            <span class="badge ${f.custom?'b-src-custom':s.srcTab==='crea'?'b-src-crea':'b-src-usda'}">${f.custom?'MIO':s.srcTab.toUpperCase()}</span>
+          </div>
+        </div>`;
+      });
+    }
+    html+=`<div style="height:${s.selected?260:40}px"></div>`;
+  }
+
+  if(s.tab==="pasto"){
+    const netTotal=s.meal.reduce((a,i)=>a+(i.netcho??i.cho),0);
+    html+=`<div class="meal-total-card">
+      <div class="mt-lbl">CARBOIDRATI PASTO IN CORSO</div>
+      <div class="mt-val">${fmt(netTotal,1)}<span class="mt-unit"> g CHO</span></div>
+      <div class="mt-sub">${s.meal.length} aliment${s.meal.length===1?"o":"i"} · Valore da inserire in Omnipod 5</div>
+      <div class="mt-actions">
+        <button class="mt-btn" onclick="copyMealCHO()">${s.copied?"✓ Copiato!":"Copia per Omnipod 5"}</button>
+        <button class="mt-btn danger" onclick="state.confirmClear=true;render()">Azzera pasto</button>
+      </div>
+    </div>`;
+    if(s.meal.length===0){
+      html+=`<div class="empty-meal">
+        <div class="empty-icon">🍽️</div>
+        <div class="empty-title">Pasto vuoto</div>
+        <div class="empty-sub">Aggiungi alimenti dalla<br>schermata "Cerca".</div>
+      </div>`;
+    } else {
+      html+=`<div class="section-lbl">Alimenti del pasto</div>`;
+      s.meal.forEach((item,i)=>{
+        const cho=item.netcho??item.cho;
+        html+=`<div class="meal-item">
+          <div style="flex:1">
+            <div class="mi-name">${escH(item.name)}</div>
+            <div class="mi-grams">${item.grams}g · CHO netti</div>
+          </div>
+          <div class="mi-cho">${fmt(cho,1)}g</div>
+          <button class="mi-del" onclick="removeMealItem(${i})">${icons.trash}</button>
+        </div>`;
+      });
+    }
+    html+=`<div style="height:20px"></div>`;
+  }
+
+  if(s.tab==="miei"){
+    html+=`<div class="add-form">
+      <div class="add-form-title">
+        <span style="font-size:20px">+</span> Aggiungi alimento
+      </div>
+      <div class="form-field" style="margin-bottom:10px">
+        <label class="form-lbl">Nome alimento</label>
+        <input class="form-input wide" type="text" placeholder="Es. Pasta di farro" autocorrect="off"
+          value="${escH(s.addForm.name)}" oninput="onFormInput('name',event)"/>
+      </div>
+      <div style="font-size:11px;color:var(--sub);margin-bottom:8px">Valori per 100g</div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-lbl">CHO totali</label>
+          <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
+            value="${s.addForm.cho}" oninput="onFormInput('cho',event)"/>
+          <div class="form-hint">g</div>
+        </div>
+        <div class="form-field">
+          <label class="form-lbl">di cui zuccheri</label>
+          <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
+            value="${s.addForm.sug}" oninput="onFormInput('sug',event)"/>
+          <div class="form-hint">g</div>
+        </div>
+        <div class="form-field">
+          <label class="form-lbl">fibre</label>
+          <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
+            value="${s.addForm.fib}" oninput="onFormInput('fib',event)"/>
+          <div class="form-hint">g</div>
+        </div>
+      </div>
+      ${s.addForm.error?`<div class="form-error">${s.addForm.error}</div>`:""}
+      <button class="btn-save" onclick="saveCustomFood()">Salva alimento</button>
+    </div>`;
+    if(s.custom.length>0){
+      html+=`<div class="section-lbl">I tuoi alimenti (${s.custom.length})</div>`;
+      s.custom.forEach((f,i)=>{
+        html+=`<div class="custom-item">
+          <div class="ci-info">
+            <div class="ci-name">${escH(f.n)}</div>
+            <div class="ci-meta">CHO ${fmt(f.cho)}g &nbsp;·&nbsp; Zucc ${fmt(f.sug)}g &nbsp;·&nbsp; Fibre ${fmt(f.fib)}g &nbsp;(per 100g)</div>
+          </div>
+          <button class="ci-del" onclick="removeCustomFood(${i})" title="Elimina">${icons.trash}</button>
+        </div>`;
+      });
+    } else {
+      html+=`<div class="no-results" style="padding-top:16px">Nessun alimento personale ancora.<br>Aggiungine uno con il modulo qui sopra.</div>`;
+    }
+    html+=`<div style="height:20px"></div>`;
+  }
+
+  if(s.tab==="preferiti"){
+    if(s.favs.length===0){
+      html+=`<div class="empty-meal">
+        <div class="empty-icon">⭐</div>
+        <div class="empty-title">Nessun preferito</div>
+        <div class="empty-sub">Salva i tuoi alimenti abituali<br>dalla schermata "Cerca"<br>toccando la ★ dorata.</div>
+      </div>`;
+    } else {
+      html+=`<div class="section-lbl">I tuoi preferiti — tocca per selezionare</div>`;
+      s.favs.forEach((f,i)=>{
+        html+=`<div class="fav-item" onclick="selectFav(${i})">
+          <div class="fi-info">
+            <div class="fi-name">${escH(f.n)}</div>
+            <div class="fi-meta">CHO ${fmt(f.cho)}g · Zucc ${fmt(f.sug)}g · Fibre ${fmt(f.fib)}g &nbsp;(per 100g)</div>
+          </div>
+          <div class="fi-star" onclick="removeFav(event,${i})">${icons.star_fill}</div>
+        </div>`;
+      });
+    }
+    html+=`<div style="height:20px"></div>`;
+  }
+
+  html+=`</div>`; // end scroll-area
+
+  // RESULT PANEL (cerca tab only, when food selected)
+  if(s.tab==="cerca"&&s.selected){
+    const f=s.selected;
+    const cho=calcFor(f.cho100,s.grams);
+    const sug=calcFor(f.sug100,s.grams);
+    const fib=calcFor(f.fib100,s.grams);
+    const net=cho!=null&&fib!=null?Math.max(0,cho-fib):cho;
+    const isFav=s.favs.some(fv=>fv.n===f.name);
+
+    html+=`<div class="result-panel">
+      <div class="sel-header">
+        <span class="badge ${f.src==='custom'?'b-src-custom':f.src==='barcode'?'b-src-usda':f.src==='crea'?'b-src-crea':'b-src-usda'}">${f.src==='custom'?'MIO':f.src==='barcode'?'BARCODE':f.src.toUpperCase()}</span>
+        <span class="sel-name">${escH(f.name)}</span>
+      </div>
+      <div class="quick-row">
+        ${QUICK.map(g=>`<button class="qbtn${s.grams===g?" active":""}" onclick="setGrams(${g})">${g}g</button>`).join("")}
+      </div>
+      <div class="gram-row">
+        <span class="gram-lbl">Grammi</span>
+        <input class="gram-slider" type="range" min="1" max="500" step="1"
+          value="${s.grams}" oninput="onSlider(event)"/>
+        <input class="gram-num" type="number" min="1" max="2000"
+          value="${s.grams}" oninput="onGramNum(event)"/>
+        <span class="gram-g">g</span>
+      </div>
+      <div class="metrics-row">
+        <div class="met-box big">
+          <div class="met-lbl green">CHO netti</div>
+          <div class="met-val green">${net!=null?fmt(net,1):"—"}<span class="met-unit" style="color:var(--green)">g</span></div>
+          ${fib!=null&&fib>0?`<div class="met-sub">−${fmt(fib,1)}g fibre</div>`:""}
+        </div>
+        <div class="met-box">
+          <div class="met-lbl">CHO tot</div>
+          <div class="met-val">${cho!=null?fmt(cho,1):"—"}<span class="met-unit">g</span></div>
+        </div>
+        <div class="met-box">
+          <div class="met-lbl">Zuccheri</div>
+          <div class="met-val blue">${sug!=null?fmt(sug,1):"—"}<span class="met-unit" style="color:var(--blue)">g</span></div>
+        </div>
+      </div>
+      <div class="panel-btns">
+        <button class="btn-add" onclick="addToMeal()">
+          ${icons.plus} Aggiungi al pasto
+        </button>
+        <button class="btn-copy${s.copied?" done":""}" onclick="copyCHO()" title="Copia CHO negli appunti">
+          ${icons.copy} ${s.copied?"Copiato!":"Copia CHO"}
+        </button>
+        <button class="btn-fav" onclick="toggleFav()" title="${isFav?"Rimuovi preferito":"Salva preferito"}">
+          ${isFav?icons.star_fill:icons.star}
+        </button>
+      </div>
+    </div>`;
+  }
+
+  // BOTTOM NAV
+  const mealCount=s.meal.length;
+  html+=`<div class="bottomnav">
+    <button class="bnav-btn${s.tab==="cerca"?" active":""}" onclick="setTab('cerca')">
+      <div class="bnav-icon">${icons.search}</div>
+      CERCA
+    </button>
+    <button class="bnav-btn${s.tab==="pasto"?" active":""}" onclick="setTab('pasto')">
+      <div class="bnav-icon">
+        ${icons.fork}
+        ${mealCount>0?`<span class="bnav-badge">${mealCount}</span>`:""}
+      </div>
+      PASTO
+    </button>
+    <button class="bnav-btn${s.tab==="preferiti"?" active":""}" onclick="setTab('preferiti')">
+      <div class="bnav-icon">${icons.star}</div>
+      PREFERITI
+    </button>
+    <button class="bnav-btn${s.tab==="miei"?" active":""}" onclick="setTab('miei')">
+      <div class="bnav-icon">${icons.edit}</div>
+      I MIEI
+    </button>
+  </div>`;
+
+  if(s.scannerActive){
+    const sr=s.scannerResult;
+    html+=`<div class="scanner-overlay">
+      <div class="scanner-topbar">
+        <button class="scanner-close" onclick="stopScanner()">✕</button>
+        <div>
+          <div class="scanner-title">Scansiona barcode</div>
+          <div class="scanner-sub">Inquadra il codice a barre del prodotto</div>
+        </div>
+      </div>
+      <div class="scanner-viewport">
+        <video id="scanner-video" autoplay playsinline muted></video>
+        <canvas id="scanner-canvas" style="display:none"></canvas>
+        ${!sr?`
+        <div class="scanner-frame">
+          <div class="scanner-box">
+            <div class="scanner-corner-tr"></div>
+            <div class="scanner-corner-bl"></div>
+            <div class="scanner-line"></div>
+          </div>
+        </div>
+        <div class="scanner-status">${s.scannerStatus||"Punta la fotocamera verso il barcode…"}</div>
+        `:`
+        <div class="scanner-result">
+          <div class="scanner-result-box">
+            ${sr.error?`
+              <div class="sr-icon">🔍</div>
+              <div class="sr-name">${escH(sr.error)}</div>
+              <div class="sr-meta">Prova a scansionare di nuovo o aggiungi manualmente</div>
+              <div class="sr-btns">
+                <button class="sr-btn-cancel" style="flex:1" onclick="retryScanner()">Riprova</button>
+                <button class="sr-btn-cancel" style="flex:1" onclick="stopScanner()">Chiudi</button>
+              </div>
+            `:`
+              <div class="sr-icon">✅</div>
+              <div class="sr-name">${escH(sr.name)}</div>
+              <div class="sr-meta">${escH(sr.brand||"")} · per 100g</div>
+              <div class="sr-values">
+                <div class="sr-val-box">
+                  <div class="sr-val-lbl">CHO netti</div>
+                  <div class="sr-val-num green">${fmt(sr.net??sr.cho,1)}</div>
+                  <div class="sr-val-unit">g</div>
+                </div>
+                <div class="sr-val-box">
+                  <div class="sr-val-lbl">CHO tot</div>
+                  <div class="sr-val-num">${fmt(sr.cho,1)}</div>
+                  <div class="sr-val-unit">g</div>
+                </div>
+                <div class="sr-val-box">
+                  <div class="sr-val-lbl">Zuccheri</div>
+                  <div class="sr-val-num blue">${fmt(sr.sug,1)}</div>
+                  <div class="sr-val-unit">g</div>
+                </div>
+              </div>
+              <div class="sr-btns">
+                <button class="sr-btn-cancel" onclick="retryScanner()">Riprova</button>
+                <button class="sr-btn-ok" onclick="useScanResult()">Usa questo alimento</button>
+              </div>
+            `}
+          </div>
+        </div>
+        `}
+      </div>
+    </div>`;
+  }
+
+  if(s.confirmClear){
+    html+=`<div class="confirm-overlay" onclick="state.confirmClear=false;render()">
+      <div class="confirm-box" onclick="event.stopPropagation()">
+        <div class="confirm-title">Azzera il pasto?</div>
+        <div class="confirm-sub">Tutti gli alimenti aggiunti<br>verranno rimossi.</div>
+        <div class="confirm-btns">
+          <button class="confirm-btn-cancel" onclick="state.confirmClear=false;render()">Annulla</button>
+          <button class="confirm-btn-ok" onclick="doClearMeal()">Azzera</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if(s.toast){
+    html+=`<div class="toast">${s.toast}</div>`;
+  }
+
+  root.innerHTML=html;
+  const si=document.getElementById("si");
+  if(si&&document.activeElement!==si){}
+}
+
+function escH(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+
+// ─── EVENT HANDLERS ──────────────────────────────────────────────────────────
+function setTab(t){state.tab=t;render();}
+function setSrcTab(t){
+  state.srcTab=t;
+  if(t==="usda"&&state.usdaResults.length===0&&!state.searching&&state.query)
+    fetchUSDA(state.query);
+  render();
+}
+
+function onQueryInput(e){
+  state.query=e.target.value;
+  if(!state.query.trim()){state.creaResults=[];state.usdaResults=[];state.selected=null;}
+  render();
+}
+function onQueryKey(e){if(e.key==="Enter")doSearch();}
+
+function doSearch(){
+  const q=state.query.trim();
+  if(!q)return;
+  const cr=searchCREA(q);
+  state.creaResults=cr;
+  state.usdaResults=[];
+  state.selected=null;
+  state.srcTab=cr.length>0?"crea":"usda";
+  if(cr.length===0)fetchUSDA(q);
+  render();
+}
+
+// Dizionario italiano→inglese per ricerca USDA
+// Usato al posto dell'API Claude — funziona offline e ovunque
+const ITA_ENG={
+  "pasta":"pasta","spaghetti":"spaghetti","penne":"penne pasta","rigatoni":"rigatoni",
+  "tagliatelle":"egg noodles","lasagne":"lasagna","gnocchi":"gnocchi",
+  "tortellini":"tortellini","riso":"rice","risotto":"risotto","farro":"spelt",
+  "orzo":"barley","polenta":"polenta","couscous":"couscous","cous cous":"couscous",
+  "pane":"bread","ciabatta":"ciabatta","focaccia":"focaccia","pizza":"pizza",
+  "grissini":"breadsticks","crackers":"crackers","mela":"apple","pera":"pear",
+  "banana":"banana","arancia":"orange","mandarino":"tangerine","limone":"lemon",
+  "pompelmo":"grapefruit","uva":"grapes","fragole":"strawberries","ciliegie":"cherries",
+  "pesca":"peach","albicocca":"apricot","ananas":"pineapple","anguria":"watermelon",
+  "cocomero":"watermelon","melone":"cantaloupe","kiwi":"kiwi","fico":"fig",
+  "susina":"plum","prugna":"plum","mango":"mango","avocado":"avocado",
+  "castagne":"chestnuts","datteri":"dates","mirtilli":"blueberries","lamponi":"raspberries",
+  "more":"blackberries","melagrana":"pomegranate","patata":"potato","carota":"carrot",
+  "pomodoro":"tomato","cipolla":"onion","aglio":"garlic","zucchina":"zucchini",
+  "zucchine":"zucchini","melanzana":"eggplant","peperone":"bell pepper",
+  "broccoli":"broccoli","cavolfiore":"cauliflower","cavolo":"cabbage",
+  "spinaci":"spinach","lattuga":"lettuce","rucola":"arugula","cetriolo":"cucumber",
+  "funghi":"mushrooms","piselli":"peas","mais":"corn","barbabietola":"beets",
+  "finocchio":"fennel","sedano":"celery","carciofo":"artichoke","asparagi":"asparagus",
+  "porro":"leek","zucca":"pumpkin","fagioli":"beans","ceci":"chickpeas",
+  "lenticchie":"lentils","fave":"fava beans","soia":"soybeans","edamame":"edamame",
+  "latte":"milk","yogurt":"yogurt","ricotta":"ricotta","mozzarella":"mozzarella",
+  "parmigiano":"parmesan","mascarpone":"mascarpone","panna":"cream","uovo":"egg",
+  "uova":"eggs","pollo":"chicken","tacchino":"turkey","manzo":"beef","maiale":"pork",
+  "agnello":"lamb","prosciutto":"ham","bresaola":"bresaola","mortadella":"mortadella",
+  "salsiccia":"sausage","tonno":"tuna","salmone":"salmon","merluzzo":"cod",
+  "gamberetti":"shrimp","succo":"juice","aranciata":"orange soda","birra":"beer",
+  "vino":"wine","caffe":"coffee","latte di soia":"soy milk","latte di avena":"oat milk",
+  "latte di riso":"rice milk","latte di mandorla":"almond milk",
+  "cioccolato":"chocolate","miele":"honey","zucchero":"sugar","marmellata":"jam",
+  "nutella":"hazelnut spread","gelato":"ice cream","tiramisù":"tiramisu",
+  "tiramisu":"tiramisu","biscotti":"cookies","cornetto":"croissant","brioche":"brioche",
+  "pandoro":"pandoro","panettone":"panettone","torta":"cake","crostata":"tart",
+  "panna cotta":"panna cotta","budino":"pudding","arachidi":"peanuts",
+  "mandorle":"almonds","noci":"walnuts","nocciole":"hazelnuts","pistacchi":"pistachios",
+  "anacardi":"cashews","semi di chia":"chia seeds","olio":"olive oil",
+  "aceto":"vinegar","ketchup":"ketchup","maionese":"mayonnaise",
+  "patatine":"potato chips","popcorn":"popcorn","farina":"flour",
+  "piadina":"flatbread","corn flakes":"corn flakes","muesli":"muesli",
+  "fiocchi d'avena":"oats","fette biscottate":"melba toast",
+};
+
+function translateToEng(q){
+  const t=q.trim().toLowerCase();
+  // Cerca corrispondenza esatta prima
+  if(ITA_ENG[t]) return ITA_ENG[t];
+  // Cerca corrispondenza parziale (prima parola chiave trovata)
+  for(const [ita,eng] of Object.entries(ITA_ENG)){
+    if(t.includes(ita)||ita.includes(t)) return eng;
+  }
+  // Nessuna traduzione: usa il termine italiano direttamente
+  // (USDA a volte riconosce termini italiani comuni)
+  return t;
+}
+
+async function fetchUSDA(q){
+  state.searching=true;render();
+  try{
+    const eng=translateToEng(q);
+    const u=await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(eng)}&api_key=DEMO_KEY&dataType=Foundation,SR%20Legacy&pageSize=10`);
+    const ud=await u.json();
+    state.usdaResults=(ud.foods||[]).map(f=>{
+      function nn(ids){for(const id of ids){const x=(f.foodNutrients||[]).find(n=>n.nutrientId===id||n.nutrientNumber===String(id));if(x&&x.value!=null)return parseFloat(x.value)||0;}return null;}
+      return{n:f.description,c:f.foodCategory||"",cho:nn([1005]),sug:nn([2000,269]),fib:nn([1079]),src:"usda"};
+    }).filter(f=>f.cho!=null);
+    if(state.usdaResults.length>0) state.srcTab="usda";
+  }catch(e){
+    state.usdaResults=[];
+  }
+  state.searching=false;render();
+}
+
+function selectFood(i){
+  const foods=state.srcTab==="crea"?state.creaResults:state.usdaResults;
+  const f=foods[i];
+  state.selected={name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c,src:state.srcTab};
+  state.grams=100;
+  render();
+  setTimeout(()=>document.getElementById("sarea")?.scrollTo({top:99999,behavior:"smooth"}),80);
+}
+
+function selectFav(i){
+  const f=state.favs[i];
+  const src=f.custom?"custom":(f.src||state.srcTab);
+  state.selected={name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c,src};
+  state.grams=100;state.tab="cerca";render();
+}
+
+function setGrams(g){state.grams=g;render();}
+function onSlider(e){state.grams=Number(e.target.value);render();}
+function onGramNum(e){const v=Math.max(1,Number(e.target.value)||1);state.grams=v;render();}
+
+function copyCHO(){
+  const f=state.selected;if(!f)return;
+  const cho=calcFor(f.cho100,state.grams);
+  const fib=calcFor(f.fib100,state.grams);
+  const net=cho!=null&&fib!=null?Math.max(0,cho-fib):cho;
+  const val=fmt(net??cho,1);
+  navigator.clipboard.writeText(val).then(()=>{
+    state.copied=true;render();
+    setTimeout(()=>{state.copied=false;render();},2500);
+  }).catch(()=>showToast("Copia manuale: "+val+" g"));
+}
+
+function copyMealCHO(){
+  const tot=state.meal.reduce((a,i)=>a+(i.netcho??i.cho),0);
+  const val=fmt(tot,1);
+  navigator.clipboard.writeText(val).then(()=>{
+    state.copied=true;render();setTimeout(()=>{state.copied=false;render();},2500);
+    showToast("✓ "+val+"g CHO copiati");
+  }).catch(()=>showToast("CHO pasto: "+val+"g"));
+}
+
+function addToMeal(){
+  const f=state.selected;if(!f)return;
+  const cho=calcFor(f.cho100,state.grams);
+  const fib=calcFor(f.fib100,state.grams);
+  const sug=calcFor(f.sug100,state.grams);
+  const net=cho!=null&&fib!=null?Math.max(0,cho-fib):cho;
+  state.meal.push({name:f.name,grams:state.grams,cho,sug,fib,netcho:net,src:f.src});
+  saveToStorage();
+  const nome=f.name;
+  state.query="";state.creaResults=[];state.usdaResults=[];
+  state.selected=null;state.grams=100;
+  showToast("✓ "+nome+" aggiunto al pasto");render();
+}
+
+function removeMealItem(i){state.meal.splice(i,1);saveToStorage();render();}
+function clearMeal(){state.confirmClear=true;render();}
+function doClearMeal(){state.meal=[];state.confirmClear=false;saveToStorage();showToast("Pasto azzerato");render();}
+
+function toggleFav(){
+  const f=state.selected;if(!f)return;
+  const idx=state.favs.findIndex(fv=>fv.n===f.name);
+  if(idx>=0){state.favs.splice(idx,1);showToast("Rimosso dai preferiti");}
+  else{state.favs.push({n:f.name,c:f.cat||"",cho:f.cho100,sug:f.sug100,fib:f.fib100,src:f.src});showToast("⭐ Salvato nei preferiti");}
+  saveToStorage();render();
+}
+
+function removeFav(e,i){e.stopPropagation();state.favs.splice(i,1);saveToStorage();render();}
+
+function onFormInput(field,e){state.addForm[field]=e.target.value;state.addForm.error="";render();}
+
+function saveCustomFood(){
+  const f=state.addForm;
+  const name=f.name.trim();
+  if(!name){state.addForm.error="Inserisci il nome dell'alimento.";render();return;}
+  const cho=parseFloat(f.cho);
+  if(isNaN(cho)||cho<0||cho>100){state.addForm.error="Carboidrati non validi (0–100g).";render();return;}
+  const sug=parseFloat(f.sug)||0;
+  const fib=parseFloat(f.fib)||0;
+  if(state.custom.some(c=>c.n.toLowerCase()===name.toLowerCase())){
+    state.addForm.error="Hai già un alimento con questo nome.";render();return;
+  }
+  state.custom.unshift({n:name,c:"Personale",cho,sug,fib});
+  saveToStorage();
+  state.addForm={name:"",cho:"",sug:"",fib:"",error:""};
+  showToast("✓ "+name+" aggiunto ai tuoi alimenti");
+  render();
+}
+
+function removeCustomFood(i){
+  const nome=state.custom[i].n;
+  state.custom.splice(i,1);
+  saveToStorage();
+  showToast(nome+" eliminato");
+  render();
+}
+
+// ─── BARCODE SCANNER ─────────────────────────────────────────────────────────
+let scannerStream=null;
+let scannerTimer=null;
+let zxing=null;
+
+async function loadZXing(){
+  if(zxing)return zxing;
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
+    s.onload=()=>{resolve(window.ZXing);};
+    s.onerror=()=>reject(new Error('ZXing load failed'));
+    document.head.appendChild(s);
+  });
+}
+
+async function startScanner(){
+  state.scannerActive=true;
+  state.scannerResult=null;
+  state.scannerStatus="Avvio fotocamera…";
+  render();
+  // start video after DOM update
+  setTimeout(async()=>{
+    try{
+      const video=document.getElementById('scanner-video');
+      if(!video)return;
+      scannerStream=await navigator.mediaDevices.getUserMedia({
+        video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}
+      });
+      video.srcObject=scannerStream;
+      await video.play();
+      state.scannerStatus="Inquadra il barcode del prodotto…";
+      render();
+      // Load ZXing and start scan loop
+      try{
+        zxing=await loadZXing();
+        startScanLoop();
+      }catch(e){
+        state.scannerStatus="Errore caricamento scanner. Riprova.";
+        render();
+      }
+    }catch(err){
+      state.scannerStatus="Fotocamera non disponibile o permesso negato.";
+      render();
+    }
+  },120);
+}
+
+function startScanLoop(){
+  if(scannerTimer)clearInterval(scannerTimer);
+  scannerTimer=setInterval(()=>{
+    const video=document.getElementById('scanner-video');
+    const canvas=document.getElementById('scanner-canvas');
+    if(!video||!canvas||video.readyState<2)return;
+    canvas.width=video.videoWidth;
+    canvas.height=video.videoHeight;
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(video,0,0);
+    try{
+      const hints=new Map();
+      const formats=[
+        ZXing.BarcodeFormat.EAN_13,
+        ZXing.BarcodeFormat.EAN_8,
+        ZXing.BarcodeFormat.UPC_A,
+        ZXing.BarcodeFormat.UPC_E,
+        ZXing.BarcodeFormat.CODE_128,
+        ZXing.BarcodeFormat.DATA_MATRIX
+      ];
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,formats);
+      const reader=new ZXing.MultiFormatReader();
+      reader.setHints(hints);
+      const imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const luminance=new ZXing.RGBLuminanceSource(imageData.data,canvas.width,canvas.height);
+      const binaryBitmap=new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
+      const result=reader.decode(binaryBitmap);
+      if(result&&result.getText()){
+        clearInterval(scannerTimer);
+        scannerTimer=null;
+        lookupBarcode(result.getText());
+      }
+    }catch(e){/* no barcode yet, keep scanning */}
+  },350);
+}
+
+async function lookupBarcode(barcode){
+  state.scannerStatus="Codice rilevato: "+barcode+"  —  Ricerca prodotto…";
+  render();
+  try{
+    const r=await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+    const d=await r.json();
+    if(d.status===1&&d.product){
+      const p=d.product;
+      const n=d.product.nutriments||{};
+      const cho=parseFloat(n['carbohydrates_100g'])||null;
+      const sug=parseFloat(n['sugars_100g'])||null;
+      const fib=parseFloat(n['fiber_100g'])||null;
+      const net=cho!=null&&fib!=null?Math.max(0,cho-fib):cho;
+      const name=p.product_name_it||p.product_name||p.product_name_en||"Prodotto sconosciuto";
+      const brand=p.brands||"";
+      if(cho==null){
+        state.scannerResult={error:"Prodotto trovato ma senza valori nutrizionali. Aggiungilo manualmente nella scheda I miei."};
+      }else{
+        state.scannerResult={name,brand,cho,sug,fib,net};
+      }
+    }else{
+      state.scannerResult={error:"Prodotto non trovato nel database Open Food Facts. Aggiungilo manualmente nella scheda I miei."};
+    }
+  }catch(e){
+    state.scannerResult={error:"Errore di rete. Controlla la connessione e riprova."};
+  }
+  render();
+}
+
+function retryScanner(){
+  state.scannerResult=null;
+  state.scannerStatus="Inquadra il barcode del prodotto…";
+  render();
+  startScanLoop();
+}
+
+function stopScanner(){
+  if(scannerTimer){clearInterval(scannerTimer);scannerTimer=null;}
+  if(scannerStream){scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null;}
+  state.scannerActive=false;
+  state.scannerResult=null;
+  state.scannerStatus="";
+  render();
+}
+
+function useScanResult(){
+  const sr=state.scannerResult;
+  if(!sr||sr.error)return;
+  stopScanner();
+  state.selected={
+    name:sr.name,
+    cho100:sr.cho,
+    sug100:sr.sug,
+    fib100:sr.fib,
+    cat:sr.brand||"Barcode",
+    src:"barcode"
+  };
+  state.grams=100;
+  state.tab="cerca";
+  render();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+loadFromStorage();
+render();
+</script>
+</body>
+</html>
