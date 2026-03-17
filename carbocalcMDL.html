@@ -1124,60 +1124,46 @@ function startScanner(){
   render();
 }
 
+async function loadQuagga(){
+  if(window.Quagga)return;
+  return new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/quagga2@0.7.4/dist/quagga.min.js';
+    s.onload=resolve;
+    s.onerror=reject;
+    document.head.appendChild(s);
+  });
+}
+
 async function onBarcodePhoto(e){
   const file=e.target.files&&e.target.files[0];
   if(!file)return;
-  state.scannerStatus="Analisi immagine in corso…";
+  state.scannerStatus="Analisi barcode in corso…";
   render();
+  const url=URL.createObjectURL(file);
   try{
-    // Prova BarcodeDetector nativo se disponibile
-    if('BarcodeDetector' in window){
-      const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','qr_code']});
-      const bitmap=await createImageBitmap(file);
-      const barcodes=await detector.detect(bitmap);
-      if(barcodes&&barcodes.length>0){
-        lookupBarcode(barcodes[0].rawValue);
-        return;
+    await loadQuagga();
+    Quagga.decodeSingle({
+      decoder:{
+        readers:['ean_reader','ean_8_reader','upc_reader','upc_e_reader','code_128_reader'],
+        multiple:false
+      },
+      locate:true,
+      src:url
+    },function(result){
+      URL.revokeObjectURL(url);
+      if(result&&result.codeResult&&result.codeResult.code){
+        lookupBarcode(result.codeResult.code);
+      } else {
+        state.scannerStatus="Barcode non rilevato. Riprova: avvicina il telefono, assicurati che il barcode sia a fuoco e ben illuminato.";
+        render();
       }
-    }
-    // Fallback: estrai il barcode leggendo i pixel via canvas + algoritmo EAN
-    const barcode=await extractBarcodeFromImage(file);
-    if(barcode){
-      lookupBarcode(barcode);
-    } else {
-      // Ultimo tentativo: invia immagine all'API Open Food Facts per match visivo
-      state.scannerStatus="Barcode non rilevato. Riprova tenendo il telefono fermo e con buona luce.";
-      render();
-    }
+    });
   }catch(err){
+    URL.revokeObjectURL(url);
     state.scannerStatus="Errore durante l'analisi. Riprova.";
     render();
   }
-}
-
-async function extractBarcodeFromImage(file){
-  // Cerca pattern numerici EAN-13 nell'immagine via canvas
-  return new Promise(resolve=>{
-    const img=new Image();
-    const url=URL.createObjectURL(file);
-    img.onload=()=>{
-      URL.revokeObjectURL(url);
-      const canvas=document.createElement('canvas');
-      // Ridimensiona per velocità
-      const maxW=800;
-      const scale=Math.min(1,maxW/img.width);
-      canvas.width=img.width*scale;
-      canvas.height=img.height*scale;
-      const ctx=canvas.getContext('2d');
-      ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      // Scansiona righe orizzontali cercando pattern barcode
-      const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
-      // Cerca regioni ad alto contrasto orizzontale (signature dei barcode)
-      resolve(null); // senza libreria non possiamo decodificare EAN
-    };
-    img.onerror=()=>{URL.revokeObjectURL(url);resolve(null);};
-    img.src=url;
-  });
 }
 
 async function lookupBarcode(barcode){
