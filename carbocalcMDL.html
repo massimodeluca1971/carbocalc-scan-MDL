@@ -927,7 +927,9 @@ function setSrcTab(t){
 function onQueryInput(e){
   state.query=e.target.value;
   if(!state.query.trim()){state.creaResults=[];state.usdaResults=[];state.selected=null;}
-  render();
+  // Aggiorna solo il bottone senza ricostruire il DOM (evita perdita focus su iOS)
+  const btn=document.getElementById('sbtn');
+  if(btn) btn.disabled=!state.query.trim()||state.searching;
 }
 function onQueryKey(e){if(e.key==="Enter")doSearch();}
 
