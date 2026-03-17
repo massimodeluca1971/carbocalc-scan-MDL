@@ -1124,13 +1124,19 @@ function startScanner(){
   render();
 }
 
-async function loadQuagga(){
-  if(window.Quagga)return;
+async function loadZXingBrowser(){
+  if(window.ZXingBrowser)return;
   return new Promise((resolve,reject)=>{
     const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/quagga2@0.7.4/dist/quagga.min.js';
-    s.onload=resolve;
-    s.onerror=reject;
+    s.src='https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.4/umd/index.min.js';
+    s.onload=()=>{window.ZXingBrowser=window.ZXingBrowser||window.ZXing;resolve();};
+    s.onerror=()=>{
+      // Fallback: carica zxing/library classico
+      const s2=document.createElement('script');
+      s2.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.2/umd/index.min.js';
+      s2.onload=resolve;s2.onerror=reject;
+      document.head.appendChild(s2);
+    };
     document.head.appendChild(s);
   });
 }
@@ -1140,28 +1146,56 @@ async function onBarcodePhoto(e){
   if(!file)return;
   state.scannerStatus="Analisi barcode in corso…";
   render();
-  const url=URL.createObjectURL(file);
+
   try{
-    await loadQuagga();
-    Quagga.decodeSingle({
-      decoder:{
-        readers:['ean_reader','ean_8_reader','upc_reader','upc_e_reader','code_128_reader'],
-        multiple:false
-      },
-      locate:true,
-      src:url
-    },function(result){
-      URL.revokeObjectURL(url);
-      if(result&&result.codeResult&&result.codeResult.code){
-        lookupBarcode(result.codeResult.code);
-      } else {
-        state.scannerStatus="Barcode non rilevato. Riprova: avvicina il telefono, assicurati che il barcode sia a fuoco e ben illuminato.";
-        render();
-      }
+    // Converti file in base64 data URL — funziona in PWA iOS senza restrizioni blob
+    const dataUrl=await new Promise((res,rej)=>{
+      const reader=new FileReader();
+      reader.onload=ev=>res(ev.target.result);
+      reader.onerror=rej;
+      reader.readAsDataURL(file);
     });
+
+    await loadZXingBrowser();
+
+    // Disegna su canvas e prova lettura con ZXing
+    const img=new Image();
+    await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=dataUrl;});
+
+    const canvas=document.createElement('canvas');
+    canvas.width=img.width;canvas.height=img.height;
+    canvas.getContext('2d').drawImage(img,0,0);
+
+    const ZX=window.ZXing||window.ZXingBrowser;
+    const hints=new Map();
+    hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS,[
+      ZX.BarcodeFormat.EAN_13,
+      ZX.BarcodeFormat.EAN_8,
+      ZX.BarcodeFormat.UPC_A,
+      ZX.BarcodeFormat.UPC_E,
+      ZX.BarcodeFormat.CODE_128,
+    ]);
+    hints.set(ZX.DecodeHintType.TRY_HARDER,true);
+
+    const reader=new ZX.MultiFormatReader();
+    reader.setHints(hints);
+    const imageData=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height);
+    const lum=new ZX.RGBLuminanceSource(imageData.data,canvas.width,canvas.height);
+    const bmp=new ZX.BinaryBitmap(new ZX.HybridBinarizer(lum));
+    const result=reader.decode(bmp);
+
+    if(result&&result.getText()){
+      lookupBarcode(result.getText());
+    } else {
+      state.scannerStatus="Barcode non letto. Riprova più vicino e con buona luce.";
+      render();
+    }
   }catch(err){
-    URL.revokeObjectURL(url);
-    state.scannerStatus="Errore durante l'analisi. Riprova.";
+    if(err&&err.name==='NotFoundException'){
+      state.scannerStatus="Barcode non trovato nella foto. Riprova avvicinandoti alla confezione.";
+    } else {
+      state.scannerStatus="Errore: "+((err&&err.message)||"sconosciuto")+". Riprova.";
+    }
     render();
   }
 }
