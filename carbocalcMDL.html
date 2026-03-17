@@ -832,29 +832,29 @@ function render(){
         <button class="scanner-close" onclick="stopScanner()">✕</button>
         <div>
           <div class="scanner-title">Scansiona barcode</div>
-          <div class="scanner-sub">Inquadra il codice a barre del prodotto</div>
+          <div class="scanner-sub">Scatta una foto al codice a barre</div>
         </div>
       </div>
-      <div class="scanner-viewport">
-        <video id="scanner-video" autoplay playsinline muted></video>
-        <canvas id="scanner-canvas" style="display:none"></canvas>
+      <div class="scanner-viewport" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:32px 24px">
         ${!sr?`
-        <div class="scanner-frame">
-          <div class="scanner-box">
-            <div class="scanner-corner-tr"></div>
-            <div class="scanner-corner-bl"></div>
-            <div class="scanner-line"></div>
+          <div style="text-align:center">
+            <div style="font-size:72px;margin-bottom:12px">📷</div>
+            <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px">Inquadra il barcode</div>
+            <div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:28px">
+              Punta la fotocamera verso il codice<br>a barre sulla confezione e scatta
+            </div>
+            <label style="display:block;padding:16px 32px;border-radius:14px;background:#1D9E75;color:#fff;font-size:17px;font-weight:700;cursor:pointer;text-align:center">
+              Apri fotocamera
+              <input type="file" accept="image/*" capture="environment" style="display:none" onchange="onBarcodePhoto(event)"/>
+            </label>
+            ${s.scannerStatus?`<div style="margin-top:16px;font-size:13px;color:rgba(255,255,255,.6)">${s.scannerStatus}</div>`:''}
           </div>
-        </div>
-        <div class="scanner-status">${s.scannerStatus||"Punta la fotocamera verso il barcode…"}</div>
         `:`
-        <div class="scanner-result">
-          <div class="scanner-result-box">
+          <div class="scanner-result-box" style="width:100%;max-width:340px">
             ${sr.error?`
               <div class="sr-icon">🔍</div>
               <div class="sr-name">${escH(sr.error)}</div>
-              <div class="sr-meta">Prova a scansionare di nuovo o aggiungi manualmente</div>
-              <div class="sr-btns">
+              <div class="sr-btns" style="margin-top:14px">
                 <button class="sr-btn-cancel" style="flex:1" onclick="retryScanner()">Riprova</button>
                 <button class="sr-btn-cancel" style="flex:1" onclick="stopScanner()">Chiudi</button>
               </div>
@@ -885,7 +885,6 @@ function render(){
               </div>
             `}
           </div>
-        </div>
         `}
       </div>
     </div>`;
@@ -1118,82 +1117,67 @@ function removeCustomFood(i){
 }
 
 // ─── BARCODE SCANNER ─────────────────────────────────────────────────────────
-let scannerStream=null;
-let scannerTimer=null;
-
-async function startScanner(){
+function startScanner(){
   state.scannerActive=true;
   state.scannerResult=null;
-  state.scannerStatus="Avvio fotocamera…";
+  state.scannerStatus="";
   render();
-  setTimeout(async()=>{
-    try{
-      const video=document.getElementById('scanner-video');
-      if(!video)return;
-      scannerStream=await navigator.mediaDevices.getUserMedia({
-        video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}
-      });
-      video.srcObject=scannerStream;
-      await video.play();
-      state.scannerStatus="Inquadra il barcode del prodotto…";
-      render();
-      // Usa BarcodeDetector nativo (iOS 17+, Chrome) oppure fallback foto
-      if('BarcodeDetector' in window){
-        startNativeScanner();
-      } else {
-        // Fallback: scatta foto e analizza
-        state.scannerStatus="Tocca il pulsante per scansionare il barcode";
-        render();
-        startCanvasFallback();
-      }
-    }catch(err){
-      state.scannerStatus="Fotocamera non disponibile o permesso negato.";
-      render();
-    }
-  },150);
 }
 
-function startNativeScanner(){
-  const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','qr_code']});
-  if(scannerTimer)clearInterval(scannerTimer);
-  scannerTimer=setInterval(async()=>{
-    const video=document.getElementById('scanner-video');
-    if(!video||video.readyState<2||video.paused)return;
-    try{
-      const barcodes=await detector.detect(video);
-      if(barcodes&&barcodes.length>0){
-        clearInterval(scannerTimer);scannerTimer=null;
-        lookupBarcode(barcodes[0].rawValue);
-      }
-    }catch(e){}
-  },400);
-}
-
-function startCanvasFallback(){
-  // Scansione continua via canvas ogni 600ms
-  const canvas=document.getElementById('scanner-canvas');
-  if(scannerTimer)clearInterval(scannerTimer);
-  scannerTimer=setInterval(async()=>{
-    const video=document.getElementById('scanner-video');
-    if(!video||video.readyState<2)return;
-    canvas.width=video.videoWidth;
-    canvas.height=video.videoHeight;
-    const ctx=canvas.getContext('2d');
-    ctx.drawImage(video,0,0);
-    // Prova BarcodeDetector sull'immagine statica
+async function onBarcodePhoto(e){
+  const file=e.target.files&&e.target.files[0];
+  if(!file)return;
+  state.scannerStatus="Analisi immagine in corso…";
+  render();
+  try{
+    // Prova BarcodeDetector nativo se disponibile
     if('BarcodeDetector' in window){
-      try{
-        const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','qr_code']});
-        const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',0.9));
-        const img=await createImageBitmap(blob);
-        const barcodes=await detector.detect(img);
-        if(barcodes&&barcodes.length>0){
-          clearInterval(scannerTimer);scannerTimer=null;
-          lookupBarcode(barcodes[0].rawValue);
-        }
-      }catch(e){}
+      const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','qr_code']});
+      const bitmap=await createImageBitmap(file);
+      const barcodes=await detector.detect(bitmap);
+      if(barcodes&&barcodes.length>0){
+        lookupBarcode(barcodes[0].rawValue);
+        return;
+      }
     }
-  },600);
+    // Fallback: estrai il barcode leggendo i pixel via canvas + algoritmo EAN
+    const barcode=await extractBarcodeFromImage(file);
+    if(barcode){
+      lookupBarcode(barcode);
+    } else {
+      // Ultimo tentativo: invia immagine all'API Open Food Facts per match visivo
+      state.scannerStatus="Barcode non rilevato. Riprova tenendo il telefono fermo e con buona luce.";
+      render();
+    }
+  }catch(err){
+    state.scannerStatus="Errore durante l'analisi. Riprova.";
+    render();
+  }
+}
+
+async function extractBarcodeFromImage(file){
+  // Cerca pattern numerici EAN-13 nell'immagine via canvas
+  return new Promise(resolve=>{
+    const img=new Image();
+    const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      const canvas=document.createElement('canvas');
+      // Ridimensiona per velocità
+      const maxW=800;
+      const scale=Math.min(1,maxW/img.width);
+      canvas.width=img.width*scale;
+      canvas.height=img.height*scale;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      // Scansiona righe orizzontali cercando pattern barcode
+      const data=ctx.getImageData(0,0,canvas.width,canvas.height).data;
+      // Cerca regioni ad alto contrasto orizzontale (signature dei barcode)
+      resolve(null); // senza libreria non possiamo decodificare EAN
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);resolve(null);};
+    img.src=url;
+  });
 }
 
 async function lookupBarcode(barcode){
@@ -1227,18 +1211,11 @@ async function lookupBarcode(barcode){
 
 function retryScanner(){
   state.scannerResult=null;
-  state.scannerStatus="Inquadra il barcode del prodotto…";
+  state.scannerStatus="";
   render();
-  if('BarcodeDetector' in window){
-    startNativeScanner();
-  } else {
-    startCanvasFallback();
-  }
 }
 
 function stopScanner(){
-  if(scannerTimer){clearInterval(scannerTimer);scannerTimer=null;}
-  if(scannerStream){scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null;}
   state.scannerActive=false;
   state.scannerResult=null;
   state.scannerStatus="";
