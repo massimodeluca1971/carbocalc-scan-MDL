@@ -6,109 +6,146 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="apple-mobile-web-app-title" content="CarbOCalc"/>
-<meta name="theme-color" content="#0F6E56"/>
+<meta name="theme-color" content="#6B4FA8"/>
 <title>CarbOCalc — Omnipod 5</title>
 <style>
 :root{
-  --green:#1D9E75;--green-dark:#0F6E56;--green-light:#E1F5EE;--green-mid:#9FE1CB;
-  --blue:#185FA5;--blue-light:#E6F1FB;
-  --bg:#F5F5F5;--card:#fff;--text:#1a1a1a;--sub:#6b6b6b;--border:#e0e0e0;
-  --red:#E24B4A;--amber:#BA7517;--amber-light:#FAEEDA;
+  --green:#1A9E6E;
+  --green-dark:#0D7A54;
+  --green-light:#E2F7EF;
+  --green-mid:#5EC99A;
+  --lav-bg:#EAE4F6;
+  --lav-card:#F4F0FC;
+  --lav-border:#C8BBEA;
+  --lav-deep:#6B4FA8;
+  --lav-mid:#9880CC;
+  --lav-light:#EDE8F8;
+  --amber:#B86E0A;
+  --amber-light:#FEF3E2;
+  --blue:#185FA5;
+  --blue-light:#E6F1FB;
+  --red:#D94040;
+  --text:#1E1A2E;
+  --sub:#7A7090;
+  --card:#FFFFFF;
+  --border:#DDD6F0;
+  --bg:var(--lav-bg);
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bot:env(safe-area-inset-bottom,0px);
 }
 @media(prefers-color-scheme:dark){
-  :root{--bg:#111;--card:#1e1e1e;--text:#f0f0f0;--sub:#999;--border:#333;
-    --green-light:#0a3326;--blue-light:#0a1f38;--amber-light:#2a1f07}
+  :root{
+    --lav-bg:#1A1525;--lav-card:#241E35;--lav-border:#3D3460;
+    --lav-deep:#A07FE0;--lav-mid:#7860B8;--lav-light:#2A2240;
+    --card:#2A2240;--border:#3D3460;--bg:#1A1525;
+    --text:#F0EAF8;--sub:#9A8FBB;--green-light:#0D3D2A;
+    --amber-light:#2A1C04;--blue-light:#0A1F38;
+  }
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;overflow:hidden}
+html,body{height:100%;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;overflow:hidden}
 #root{display:flex;flex-direction:column;height:100%;max-width:430px;margin:0 auto;background:var(--bg)}
 
 /* TOPBAR */
 .topbar{background:var(--card);border-bottom:0.5px solid var(--border);
-  padding:calc(var(--safe-top) + 12px) 16px 12px;flex-shrink:0;z-index:20}
-.topbar-brand{display:flex;align-items:center;gap:7px;margin-bottom:12px}
+  padding:calc(var(--safe-top) + 12px) 16px 12px;flex-shrink:0;z-index:20;
+  box-shadow:0 1px 8px rgba(107,79,168,.08)}
+.topbar-brand{display:flex;align-items:center;gap:7px;margin-bottom:10px}
 .brand-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
-.brand-name{font-size:13px;font-weight:600;letter-spacing:.08em;color:var(--sub)}
-.brand-badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:10px;
-  background:var(--green-light);color:var(--green-dark);font-weight:600;letter-spacing:.04em}
+.brand-name{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--lav-deep)}
+.brand-badge{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;
+  background:var(--lav-light);color:var(--lav-deep);font-weight:700;letter-spacing:.04em}
 .search-row{display:flex;gap:8px}
-.search-input{flex:1;padding:12px 14px;font-size:16px;border:0.5px solid var(--border);
-  border-radius:14px;background:var(--bg);color:var(--text);outline:none;
+.search-input{flex:1;padding:12px 14px;font-size:16px;border:1.5px solid var(--lav-border);
+  border-radius:14px;background:var(--lav-light);color:var(--text);outline:none;
   -webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
-.search-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,.12)}
-.search-btn{padding:12px 18px;border-radius:14px;border:none;
-  background:var(--green);color:#fff;font-size:15px;font-weight:600;
-  cursor:pointer;min-width:84px;display:flex;align-items:center;justify-content:center;gap:6px}
-.search-btn:active{opacity:.8;transform:scale(.97)}
+.search-input:focus{border-color:var(--lav-deep);background:var(--card);
+  box-shadow:0 0 0 3px rgba(107,79,168,.12)}
+.search-btn{padding:12px 20px;border-radius:14px;border:none;
+  background:var(--green);color:#fff;font-size:15px;font-weight:700;
+  cursor:pointer;white-space:nowrap}
+.search-btn:active{opacity:.85;transform:scale(.97)}
 .search-btn:disabled{background:var(--green-mid);cursor:default}
 .source-tabs{display:flex;gap:6px;margin-top:10px}
-.stab{flex:1;padding:7px;border-radius:10px;border:0.5px solid var(--border);
-  background:var(--bg);font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;text-align:center}
-.stab.active{background:var(--green-light);border-color:var(--green);color:var(--green-dark)}
+.stab{flex:1;padding:7px;border-radius:10px;border:1px solid var(--border);
+  background:var(--lav-light);font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;text-align:center}
+.stab.active{background:var(--lav-light);border-color:var(--lav-deep);color:var(--lav-deep)}
 
 /* BOTTOM NAV */
 .bottomnav{display:flex;background:var(--card);border-top:0.5px solid var(--border);
-  padding-bottom:var(--safe-bot);flex-shrink:0;z-index:20}
+  padding-bottom:var(--safe-bot);flex-shrink:0;z-index:20;
+  box-shadow:0 -1px 8px rgba(107,79,168,.07)}
 .bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;
-  padding:10px 4px 8px;gap:4px;cursor:pointer;border:none;background:transparent;
-  color:var(--sub);font-size:10px;font-weight:600;letter-spacing:.04em;transition:color .12s}
-.bnav-btn.active{color:var(--green)}
+  padding:10px 4px 8px;gap:3px;cursor:pointer;border:none;background:transparent;
+  color:var(--sub);font-size:10px;font-weight:700;letter-spacing:.04em}
+.bnav-btn.active{color:var(--lav-deep)}
+.bnav-btn.active svg{stroke:var(--lav-deep)}
 .bnav-icon{width:24px;height:24px;position:relative}
-.bnav-badge{position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;
+.bnav-badge{position:absolute;top:-4px;right:-6px;min-width:16px;height:16px;
   border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-weight:700;
   display:flex;align-items:center;justify-content:center;padding:0 3px}
 
-/* SCROLL AREA */
+/* SCROLL */
 .scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+
+/* CATEGORY GRID */
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px}
+.cat-card{background:var(--card);border-radius:16px;border:1px solid var(--border);
+  padding:14px 14px 12px;cursor:pointer;transition:transform .1s,border-color .1s;
+  display:flex;flex-direction:column;gap:6px}
+.cat-card:active{transform:scale(.96)}
+.cat-card:hover{border-color:var(--lav-mid)}
+.cat-emoji{font-size:28px;line-height:1}
+.cat-name{font-size:13px;font-weight:700;color:var(--text)}
+.cat-count{font-size:11px;color:var(--sub)}
 
 /* FOOD CARDS */
 .section-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--sub);
-  padding:14px 16px 6px;text-transform:uppercase}
+  padding:12px 16px 6px;text-transform:uppercase}
 .food-card{background:var(--card);margin:0 16px 8px;border-radius:14px;
-  border:0.5px solid var(--border);padding:13px 14px;cursor:pointer;
-  transition:border-color .1s,transform .1s}
-.food-card:active{transform:scale(.98);background:var(--bg)}
+  border:1px solid var(--border);padding:13px 14px;cursor:pointer;transition:border-color .1s,transform .1s}
+.food-card:active{transform:scale(.98)}
 .food-card.selected{border:2px solid var(--green);background:var(--green-light)}
 .food-card.selected .fc-name{color:var(--green-dark)}
 .fc-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px;line-height:1.3}
 .fc-badges{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
-.badge{font-size:11px;font-weight:600;padding:2px 7px;border-radius:7px}
+.badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:7px}
 .b-cho{background:var(--green-light);color:var(--green-dark)}
 .b-sug{background:var(--blue-light);color:var(--blue)}
-.b-fib{background:#f0f0f0;color:#555}
+.b-fib{background:var(--lav-light);color:var(--lav-deep)}
 .b-src-crea{background:var(--green-light);color:var(--green-dark);margin-left:auto}
 .b-src-usda{background:var(--amber-light);color:var(--amber);margin-left:auto}
-.b-src-custom{background:#FBEAF0;color:#993556;margin-left:auto}
-@media(prefers-color-scheme:dark){.b-fib{background:#2a2a2a;color:#aaa}}
+.b-src-custom{background:var(--lav-light);color:var(--lav-deep);margin-left:auto}
 
 /* RESULT PANEL */
-.result-panel{background:var(--card);border-top:0.5px solid var(--border);
-  padding:14px 16px;flex-shrink:0;z-index:10}
-.sel-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.sel-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.3;flex:1}
-.quick-row{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px}
+.result-panel{background:var(--card);border-top:1px solid var(--border);
+  padding:14px 16px;flex-shrink:0;z-index:10;
+  box-shadow:0 -2px 12px rgba(107,79,168,.08)}
+.sel-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sel-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.3;flex:1}
+.quick-row{display:flex;gap:5px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px}
 .quick-row::-webkit-scrollbar{display:none}
-.qbtn{padding:8px 13px;border-radius:10px;border:0.5px solid var(--border);
-  background:var(--bg);color:var(--text);font-size:13px;font-weight:600;
+.qbtn{padding:7px 11px;border-radius:9px;border:1px solid var(--border);
+  background:var(--lav-light);color:var(--text);font-size:13px;font-weight:700;
   cursor:pointer;white-space:nowrap;flex-shrink:0}
 .qbtn:active{transform:scale(.95)}
-.qbtn.active{background:var(--green);border-color:var(--green);color:#fff}
+.qbtn.active{background:var(--lav-deep);border-color:var(--lav-deep);color:#fff}
 .gram-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .gram-lbl{font-size:13px;color:var(--sub);width:38px;flex-shrink:0}
 .gram-slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;
   background:var(--border);outline:none}
 .gram-slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;
-  border-radius:50%;background:var(--green);cursor:pointer;
-  border:3px solid var(--card);box-shadow:0 0 0 1.5px var(--green)}
+  border-radius:50%;background:var(--lav-deep);cursor:pointer;
+  border:3px solid var(--card);box-shadow:0 0 0 1.5px var(--lav-deep)}
 .gram-num{width:62px;padding:8px 4px;font-size:18px;font-weight:700;text-align:center;
-  border:0.5px solid var(--border);border-radius:10px;background:var(--bg);
+  border:1px solid var(--border);border-radius:10px;background:var(--lav-light);
   color:var(--text);font-variant-numeric:tabular-nums;outline:none;-webkit-appearance:none}
+.gram-num:focus{border-color:var(--lav-deep)}
 .gram-g{font-size:14px;color:var(--sub)}
 .metrics-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
-.met-box{background:var(--bg);border-radius:11px;padding:10px 10px 9px}
-.met-box.big{background:var(--green-light)}
+.met-box{background:var(--lav-light);border-radius:12px;padding:10px 10px 9px;border:1px solid var(--border)}
+.met-box.big{background:var(--green-light);border-color:var(--green-mid)}
 .met-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--sub);
   text-transform:uppercase;margin-bottom:3px}
 .met-lbl.green{color:var(--green-dark)}
@@ -117,147 +154,117 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .met-val.blue{color:var(--blue)}
 .met-unit{font-size:12px;font-weight:400;margin-left:1px;color:var(--sub)}
 .met-sub{font-size:10px;color:var(--green);margin-top:2px}
-.panel-btns{display:flex;gap:8px;align-items:stretch}
-.btn-copy{padding:11px 14px;border-radius:13px;border:0.5px solid var(--border);
-  background:var(--bg);color:var(--sub);font-size:13px;font-weight:600;
+.panel-btns{display:flex;gap:8px}
+.btn-add{flex:1;padding:14px;border-radius:13px;border:none;
+  background:var(--green-dark);color:#fff;font-size:15px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-add:active{opacity:.85;transform:scale(.98)}
+.btn-copy{padding:11px 14px;border-radius:13px;border:1px solid var(--border);
+  background:var(--lav-light);color:var(--sub);font-size:13px;font-weight:700;
   cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap}
 .btn-copy:active{opacity:.8;transform:scale(.97)}
 .btn-copy.done{background:var(--green-light);border-color:var(--green);color:var(--green-dark)}
-.btn-add{flex:1;padding:14px;border-radius:13px;border:none;
-  background:var(--green-dark);color:#fff;font-size:15px;font-weight:700;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:8px}
-.btn-add:active{opacity:.85;transform:scale(.98)}
-.btn-fav{padding:11px 13px;border-radius:13px;border:0.5px solid var(--border);
-  background:var(--bg);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.btn-fav{padding:11px 13px;border-radius:13px;border:1px solid var(--border);
+  background:var(--lav-light);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center}
 .btn-fav:active{transform:scale(.95)}
 
 /* MEAL SCREEN */
-.meal-total-card{margin:16px;background:var(--green-dark);border-radius:18px;padding:20px}
+.meal-total-card{margin:16px;background:linear-gradient(135deg,var(--lav-deep),var(--green-dark));
+  border-radius:20px;padding:22px 20px}
 .mt-lbl{font-size:12px;font-weight:700;letter-spacing:.07em;color:rgba(255,255,255,.7);margin-bottom:6px}
-.mt-val{font-size:56px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+.mt-val{font-size:60px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
 .mt-unit{font-size:20px;font-weight:400;color:rgba(255,255,255,.8)}
-.mt-sub{font-size:12px;color:rgba(255,255,255,.65);margin-top:5px}
+.mt-sub{font-size:12px;color:rgba(255,255,255,.6);margin-top:6px}
+.mt-bar-wrap{margin-top:14px;background:rgba(255,255,255,.2);border-radius:6px;height:6px;overflow:hidden}
+.mt-bar-fill{height:100%;border-radius:6px;background:#fff;transition:width .4s ease}
 .mt-actions{display:flex;gap:8px;margin-top:14px}
 .mt-btn{flex:1;padding:10px;border-radius:10px;border:none;
-  background:rgba(255,255,255,.18);color:#fff;font-size:13px;font-weight:700;cursor:pointer}
-.mt-btn:active{background:rgba(255,255,255,.28)}
+  background:rgba(255,255,255,.2);color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.mt-btn:active{background:rgba(255,255,255,.3)}
 .mt-btn.danger{background:rgba(255,80,80,.25)}
 .meal-item{background:var(--card);margin:0 16px 8px;border-radius:14px;
-  border:0.5px solid var(--border);padding:13px 14px;
+  border:1px solid var(--border);padding:13px 14px;
   display:flex;align-items:center;gap:12px}
-.mi-name{flex:1;font-size:14px;font-weight:600;color:var(--text)}
+.mi-name{flex:1;font-size:14px;font-weight:700;color:var(--text)}
 .mi-grams{font-size:12px;color:var(--sub);margin-top:2px}
-.mi-cho{font-size:20px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums;white-space:nowrap}
-.mi-del{width:32px;height:32px;border-radius:50%;border:none;background:var(--bg);
+.mi-cho{font-size:22px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mi-del{width:32px;height:32px;border-radius:50%;border:none;background:var(--lav-light);
   color:var(--sub);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .mi-del:active{background:var(--border)}
-.empty-meal{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:60px 30px;gap:14px;text-align:center}
-.empty-icon{font-size:44px}
-.empty-title{font-size:17px;font-weight:700;color:var(--text)}
-.empty-sub{font-size:14px;color:var(--sub);line-height:1.6}
 
-/* FAV SCREEN */
-.fav-item{background:var(--card);margin:0 16px 8px;border-radius:14px;
-  border:0.5px solid var(--border);padding:13px 14px;
-  display:flex;align-items:center;gap:10px;cursor:pointer}
-.fav-item:active{transform:scale(.98)}
-.fi-info{flex:1}
-.fi-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
-.fi-meta{font-size:12px;color:var(--sub)}
+/* FAV / CUSTOM */
+.fav-item,.custom-item{background:var(--card);margin:0 16px 8px;border-radius:14px;
+  border:1px solid var(--border);padding:13px 14px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.fav-item:active,.custom-item:active{transform:scale(.98)}
+.fi-info,.ci-info{flex:1}
+.fi-name,.ci-name{font-size:14px;font-weight:700;color:var(--text);margin-bottom:3px}
+.fi-meta,.ci-meta{font-size:12px;color:var(--sub)}
 .fi-star{font-size:20px;cursor:pointer;padding:6px}
+.ci-del{width:34px;height:34px;border-radius:50%;border:none;background:var(--lav-light);
+  color:var(--sub);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-/* SPINNER */
-.spinner{display:inline-block;width:16px;height:16px;
-  border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
-  border-radius:50%;animation:spin .65s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* EMPTY STATE */
-.empty-state{display:flex;flex-direction:column;align-items:center;
-  justify-content:center;flex:1;padding:50px 24px;gap:14px;text-align:center}
-
-/* MISC */
-.no-results{text-align:center;padding:40px 24px;font-size:14px;color:var(--sub);line-height:1.7}
-.warn-pill{margin:0 16px 4px;background:var(--amber-light);border-radius:10px;
-  padding:8px 12px;font-size:11px;color:var(--amber);line-height:1.5}
-.toast{position:fixed;bottom:calc(80px + var(--safe-bot));left:50%;transform:translateX(-50%);
-  background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:24px;
-  font-size:14px;font-weight:600;z-index:100;white-space:nowrap;
-  animation:fadeup .3s ease,fadedown .3s ease 1.7s forwards}
-@keyframes fadeup{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-@keyframes fadedown{from{opacity:1}to{opacity:0}}
-
-.add-form{background:var(--card);margin:0 16px 12px;border-radius:14px;border:0.5px solid var(--border);padding:16px}
-.add-form-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px}
+/* ADD FORM */
+.add-form{background:var(--card);margin:0 16px 12px;border-radius:16px;
+  border:1px solid var(--border);padding:18px}
+.add-form-title{font-size:15px;font-weight:700;color:var(--lav-deep);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .form-row{display:flex;gap:8px;margin-bottom:10px;align-items:flex-end}
 .form-field{display:flex;flex-direction:column;gap:5px;flex:1}
 .form-lbl{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--sub);text-transform:uppercase}
-.form-input{padding:10px 12px;font-size:15px;border:0.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);outline:none;-webkit-appearance:none;width:100%}
-.form-input:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(29,158,117,.12)}
-.form-num{padding:10px 8px;font-size:15px;border:0.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);outline:none;text-align:center;width:100%;-webkit-appearance:none}
-.form-num:focus{border-color:var(--green)}
-.btn-save{width:100%;padding:13px;border-radius:12px;border:none;background:var(--green-dark);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
+.form-input{padding:11px 12px;font-size:15px;border:1.5px solid var(--border);border-radius:11px;
+  background:var(--lav-light);color:var(--text);outline:none;-webkit-appearance:none;width:100%}
+.form-input:focus{border-color:var(--lav-deep)}
+.form-num{padding:10px 8px;font-size:15px;border:1.5px solid var(--border);border-radius:11px;
+  background:var(--lav-light);color:var(--text);outline:none;text-align:center;width:100%;-webkit-appearance:none}
+.form-num:focus{border-color:var(--lav-deep)}
+.form-hint{font-size:11px;color:var(--sub);text-align:center;margin-top:2px}
+.btn-save{width:100%;padding:14px;border-radius:13px;border:none;
+  background:var(--lav-deep);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
 .btn-save:active{opacity:.85;transform:scale(.98)}
 .form-error{font-size:12px;color:var(--red);margin-top:-4px;margin-bottom:6px}
-.custom-item{background:var(--card);margin:0 16px 8px;border-radius:14px;border:0.5px solid var(--border);padding:13px 14px;display:flex;align-items:center;gap:10px}
-.ci-info{flex:1}
-.ci-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px}
-.ci-meta{font-size:12px;color:var(--sub)}
-.ci-del{width:34px;height:34px;border-radius:50%;border:none;background:var(--bg);color:var(--sub);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.ci-del:active{background:var(--border)}
 
-.confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;display:flex;align-items:flex-end;justify-content:center;padding-bottom:calc(var(--safe-bot) + 90px)}
-.confirm-box{background:var(--card);border-radius:16px;padding:20px;width:calc(100% - 32px);max-width:400px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18)}
-.confirm-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px}
-.confirm-sub{font-size:13px;color:var(--sub);margin-bottom:18px;line-height:1.5}
+/* CONFIRM */
+.confirm-overlay{position:fixed;inset:0;background:rgba(30,26,46,.5);z-index:200;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:calc(var(--safe-bot) + 90px)}
+.confirm-box{background:var(--card);border-radius:20px;padding:22px;
+  width:calc(100% - 32px);max-width:400px;text-align:center}
+.confirm-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px}
+.confirm-sub{font-size:13px;color:var(--sub);margin-bottom:20px;line-height:1.5}
 .confirm-btns{display:flex;gap:10px}
-.confirm-btn-cancel{flex:1;padding:13px;border-radius:12px;border:0.5px solid var(--border);background:var(--bg);color:var(--text);font-size:15px;font-weight:600;cursor:pointer}
-.confirm-btn-ok{flex:1;padding:13px;border-radius:12px;border:none;background:var(--red);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
-.confirm-btn-ok:active{opacity:.85}
-.confirm-btn-cancel:active{background:var(--border)}
+.confirm-btn-cancel{flex:1;padding:13px;border-radius:12px;border:1px solid var(--border);
+  background:var(--lav-light);color:var(--text);font-size:15px;font-weight:700;cursor:pointer}
+.confirm-btn-ok{flex:1;padding:13px;border-radius:12px;border:none;
+  background:var(--red);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
 
-.scan-btn{padding:12px 13px;border-radius:14px;border:0.5px solid var(--border);
-  background:var(--bg);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.scan-btn:active{background:var(--border);transform:scale(.96)}
-.scanner-overlay{position:fixed;inset:0;background:#000;z-index:300;display:flex;flex-direction:column}
-.scanner-topbar{padding:calc(var(--safe-top) + 14px) 16px 14px;display:flex;align-items:center;gap:12px;background:rgba(0,0,0,.7)}
-.scanner-close{width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.scanner-title{font-size:15px;font-weight:700;color:#fff}
-.scanner-sub{font-size:12px;color:rgba(255,255,255,.65);margin-top:2px}
-.scanner-viewport{flex:1;position:relative;overflow:hidden}
-.scanner-viewport video{width:100%;height:100%;object-fit:cover}
-.scanner-frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
-.scanner-box{width:240px;height:160px;border-radius:12px;position:relative}
-.scanner-box::before,.scanner-box::after{content:"";position:absolute;width:36px;height:36px;border-color:#fff;border-style:solid}
-.scanner-box::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:8px 0 0 0}
-.scanner-box::after{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 8px 0}
-.scanner-corner-tr{position:absolute;top:0;right:0;width:36px;height:36px;border-top:3px solid #fff;border-right:3px solid #fff;border-radius:0 8px 0 0}
-.scanner-corner-bl{position:absolute;bottom:0;left:0;width:36px;height:36px;border-bottom:3px solid #fff;border-left:3px solid #fff;border-radius:0 0 0 8px}
-.scanner-line{position:absolute;left:8px;right:8px;height:2px;background:rgba(29,158,117,.9);border-radius:1px;animation:scanline 2s ease-in-out infinite}
-@keyframes scanline{0%{top:16px;opacity:1}50%{top:calc(100% - 16px);opacity:1}100%{top:16px;opacity:1}}
-.scanner-status{position:absolute;bottom:0;left:0;right:0;padding:16px;background:rgba(0,0,0,.6);text-align:center;font-size:13px;color:rgba(255,255,255,.85);min-height:52px;display:flex;align-items:center;justify-content:center}
-.scanner-result{position:absolute;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:24px}
-.scanner-result-box{background:var(--card);border-radius:18px;padding:20px;width:100%;max-width:340px;text-align:center}
-.sr-icon{font-size:36px;margin-bottom:10px}
-.sr-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;line-height:1.3}
-.sr-meta{font-size:13px;color:var(--sub);margin-bottom:14px}
-.sr-values{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px}
-.sr-val-box{background:var(--bg);border-radius:10px;padding:10px 6px}
-.sr-val-lbl{font-size:10px;font-weight:700;letter-spacing:.04em;color:var(--sub);text-transform:uppercase;margin-bottom:3px}
-.sr-val-num{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
-.sr-val-num.green{color:var(--green)}
-.sr-val-num.blue{color:var(--blue)}
-.sr-val-unit{font-size:11px;color:var(--sub)}
-.sr-btns{display:flex;gap:8px}
-.sr-btn-ok{flex:1;padding:13px;border-radius:12px;border:none;background:var(--green-dark);color:#fff;font-size:14px;font-weight:700;cursor:pointer}
-.sr-btn-cancel{padding:13px 14px;border-radius:12px;border:0.5px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;font-weight:600;cursor:pointer}
+/* EMPTY */
+.empty-state{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:32px 24px 16px;text-align:center;gap:6px}
+.empty-icon{font-size:40px;margin-bottom:4px}
+.empty-title{font-size:17px;font-weight:700;color:var(--text)}
+.empty-sub{font-size:13px;color:var(--sub);line-height:1.6}
+.empty-meal{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:60px 30px;gap:14px;text-align:center}
+
+/* MISC */
+.no-results{text-align:center;padding:40px 24px;font-size:14px;color:var(--sub);line-height:1.7}
+.section-back{display:flex;align-items:center;gap:8px;padding:12px 16px 4px;cursor:pointer}
+.section-back-arrow{font-size:18px;color:var(--lav-deep)}
+.section-back-lbl{font-size:13px;font-weight:700;color:var(--lav-deep)}
+.spinner{display:inline-block;width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:calc(80px + var(--safe-bot));left:50%;
+  transform:translateX(-50%);background:#2A2240;color:#fff;padding:10px 20px;
+  border-radius:24px;font-size:14px;font-weight:700;z-index:100;white-space:nowrap;
+  animation:fadeup .3s ease,fadedown .3s ease 1.7s forwards}
+@keyframes fadeup{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes fadedown{from{opacity:1}to{opacity:0}}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script>
-// ─── CREA DATABASE eTCA 2019 ──────────────────────────────────────────────────
 const CREA=[
   // CEREALI E DERIVATI
   {n:"Pane bianco",c:"Cereali",cho:56.8,sug:1.5,fib:3.2},
@@ -479,470 +486,21 @@ const CREA=[
   {n:"Maionese",c:"Condimenti",cho:3.5,sug:2.0,fib:0},
 ];
 
+
 const QUICK=[30,50,80,100,125,150,200,250,300];
 
-function searchCREA(q){
-  const t=q.trim().toLowerCase();
-  if(!t)return[];
-  const words=t.split(/\s+/);
-  const matchFn=f=>{const name=f.n.toLowerCase();return words.every(w=>name.includes(w));};
-  const sort=(a,b)=>{
-    // Alimenti personalizzati prima
-    const aCustom=!!a.custom, bCustom=!!b.custom;
-    if(aCustom&&!bCustom)return-1;if(bCustom&&!aCustom)return 1;
-    const ai=a.n.toLowerCase().indexOf(t),bi=b.n.toLowerCase().indexOf(t);
-    if(ai===0&&bi!==0)return-1;if(bi===0&&ai!==0)return 1;
-    return a.n.localeCompare(b.n,"it");
-  };
-  const creaMapped=CREA.filter(matchFn);
-  const customMapped=state.custom
-    .filter(matchFn)
-    .map(f=>({...f,custom:true}));
-  return [...customMapped,...creaMapped].sort(sort);
-}
-
-function fmt(v,d=1){
-  if(v==null)return"—";
-  const n=parseFloat((v).toFixed(d));
-  return n%1===0?String(n):n.toFixed(d);
-}
-function calcFor(v100,g){
-  if(v100==null)return null;
-  return v100*g/100;
-}
-
-// ─── SVG ICONS ────────────────────────────────────────────────────────────────
-const icons={
-  search:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
-  fork:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
-  star:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
-  star_fill:`<svg width="24" height="24" viewBox="0 0 24 24" fill="#BA7517" stroke="#BA7517" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
-  edit:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
-  trash:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
-  plus:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
-  copy:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
-  camera:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
-};
-
-// ─── APP STATE ────────────────────────────────────────────────────────────────
-let state={
-  tab:"cerca",
-  query:"",
-  creaResults:[],
-  usdaResults:[],
-  srcTab:"crea",
-  searching:false,
-  selected:null,
-  grams:100,
-  meal:[],    // [{name,cho,fib,sug,grams,src}]
-  favs:[],    // [{n,c,cho,sug,fib,src}]
-  custom:[],  // alimenti personali
-  addForm:{name:"",cho:"",sug:"",fib:"",error:""},
-  toast:null,
-  copied:false,
-  confirmClear:false,
-  scannerActive:false,
-  scannerStatus:"",
-};
-
-function loadFromStorage(){
-  try{
-    const m=localStorage.getItem("cc_meal");
-    const f=localStorage.getItem("cc_favs");
-    const c=localStorage.getItem("cc_custom");
-    if(m)state.meal=JSON.parse(m);
-    if(f)state.favs=JSON.parse(f);
-    if(c)state.custom=JSON.parse(c);
-  }catch(e){}
-}
-function saveToStorage(){
-  try{
-    localStorage.setItem("cc_meal",JSON.stringify(state.meal));
-    localStorage.setItem("cc_favs",JSON.stringify(state.favs));
-    localStorage.setItem("cc_custom",JSON.stringify(state.custom));
-  }catch(e){}
-}
-
-function showToast(msg){
-  state.toast=msg;
-  render();
-  setTimeout(()=>{state.toast=null;render();},2200);
-}
-
-// ─── RENDER ───────────────────────────────────────────────────────────────────
-const root=document.getElementById("root");
-function render(){
-  const s=state;
-  const mealCHO=s.meal.reduce((acc,i)=>acc+(i.netcho??i.cho),0);
-
-  let html=`<div class="topbar">
-    <div class="topbar-brand">
-      <span class="brand-dot"></span>
-      <span class="brand-name">CARBOCALC — OMNIPOD 5</span>
-      <span class="brand-badge">CREA + USDA</span>
-    </div>`;
-
-  if(s.tab==="cerca"){
-    html+=`
-    <div class="search-row">
-      <input class="search-input" id="si" type="text" autocorrect="off" autocapitalize="off"
-        spellcheck="false" placeholder="Cerca alimento (pane, mela, pasta…)"
-        value="${escH(s.query)}" oninput="onQueryInput(event)" onkeydown="onQueryKey(event)"/>
-      <button class="search-btn" id="sbtn" onclick="doSearch()" ${s.searching||!s.query.trim()?'disabled':''}>
-        ${s.searching?'<span class="spinner"></span>':'Cerca'}
-      </button>
-      <button class="scan-btn" onclick="startScanner()" title="Scansiona barcode">${icons.camera}</button>
-    </div>`;
-    if(s.creaResults.length>0||s.usdaResults.length>0){
-      html+=`<div class="source-tabs">
-        <button class="stab${s.srcTab==="crea"?" active":""}" onclick="setSrcTab('crea')">
-          CREA Italia${s.creaResults.length>0?` (${s.creaResults.length})`:""}
-        </button>
-        <button class="stab${s.srcTab==="usda"?" active":""}" onclick="setSrcTab('usda')">
-          USDA${s.searching?" …":s.usdaResults.length>0?` (${s.usdaResults.length})`:""}
-        </button>
-      </div>`;
-    }
-  }
-
-  html+=`</div>`; // end topbar
-
-  // SCROLL AREA
-  html+=`<div class="scroll-area" id="sarea">`;
-
-  if(s.tab==="cerca"){
-    const foods=s.srcTab==="crea"?s.creaResults:s.usdaResults;
-    if(!s.query&&s.creaResults.length===0){
-      html+=`<div class="empty-state">
-        <div style="font-size:46px">🍽️</div>
-        <div class="empty-title">Cerca un alimento</div>
-        <div class="empty-sub">Scrivi il nome in italiano.<br>Database CREA (istantaneo) +<br>USDA internazionale come backup.</div>
-      </div>`;
-    } else if(foods.length===0&&!s.searching){
-      html+=`<div class="no-results">Nessun risultato.<br>Prova con un termine diverso<br>o usa la tab USDA.</div>`;
-    } else {
-      html+=`<div class="section-lbl">${s.srcTab==="crea"?"Fonte CREA — eTCA 2019 (Italia)":"Fonte USDA FoodData Central"} · per 100g</div>`;
-      foods.forEach((f,i)=>{
-        const sel=s.selected&&s.selected.name===f.n;
-        html+=`<div class="food-card${sel?" selected":""}" onclick="selectFood(${i})">
-          <div class="fc-name">${escH(f.n)}</div>
-          <div class="fc-badges">
-            <span class="badge b-cho">CHO ${fmt(f.cho)}g</span>
-            <span class="badge b-sug">Zucc ${fmt(f.sug)}g</span>
-            ${f.fib>0?`<span class="badge b-fib">Fibre ${fmt(f.fib)}g</span>`:""}
-            <span class="badge ${f.custom?'b-src-custom':s.srcTab==='crea'?'b-src-crea':'b-src-usda'}">${f.custom?'MIO':s.srcTab.toUpperCase()}</span>
-          </div>
-        </div>`;
-      });
-    }
-    html+=`<div style="height:${s.selected?260:40}px"></div>`;
-  }
-
-  if(s.tab==="pasto"){
-    const netTotal=s.meal.reduce((a,i)=>a+(i.netcho??i.cho),0);
-    html+=`<div class="meal-total-card">
-      <div class="mt-lbl">CARBOIDRATI PASTO IN CORSO</div>
-      <div class="mt-val">${fmt(netTotal,1)}<span class="mt-unit"> g CHO</span></div>
-      <div class="mt-sub">${s.meal.length} aliment${s.meal.length===1?"o":"i"} · Valore da inserire in Omnipod 5</div>
-      <div class="mt-actions">
-        <button class="mt-btn" onclick="copyMealCHO()">${s.copied?"✓ Copiato!":"Copia per Omnipod 5"}</button>
-        <button class="mt-btn danger" onclick="state.confirmClear=true;render()">Azzera pasto</button>
-      </div>
-    </div>`;
-    if(s.meal.length===0){
-      html+=`<div class="empty-meal">
-        <div class="empty-icon">🍽️</div>
-        <div class="empty-title">Pasto vuoto</div>
-        <div class="empty-sub">Aggiungi alimenti dalla<br>schermata "Cerca".</div>
-      </div>`;
-    } else {
-      html+=`<div class="section-lbl">Alimenti del pasto</div>`;
-      s.meal.forEach((item,i)=>{
-        const cho=item.netcho??item.cho;
-        html+=`<div class="meal-item">
-          <div style="flex:1">
-            <div class="mi-name">${escH(item.name)}</div>
-            <div class="mi-grams">${item.grams}g · CHO netti</div>
-          </div>
-          <div class="mi-cho">${fmt(cho,1)}g</div>
-          <button class="mi-del" onclick="removeMealItem(${i})">${icons.trash}</button>
-        </div>`;
-      });
-    }
-    html+=`<div style="height:20px"></div>`;
-  }
-
-  if(s.tab==="miei"){
-    html+=`<div class="add-form">
-      <div class="add-form-title">
-        <span style="font-size:20px">+</span> Aggiungi alimento
-      </div>
-      <div class="form-field" style="margin-bottom:10px">
-        <label class="form-lbl">Nome alimento</label>
-        <input class="form-input wide" type="text" placeholder="Es. Pasta di farro" autocorrect="off"
-          value="${escH(s.addForm.name)}" oninput="onFormInput('name',event)"/>
-      </div>
-      <div style="font-size:11px;color:var(--sub);margin-bottom:8px">Valori per 100g</div>
-      <div class="form-row">
-        <div class="form-field">
-          <label class="form-lbl">CHO totali</label>
-          <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
-            value="${s.addForm.cho}" oninput="onFormInput('cho',event)"/>
-          <div class="form-hint">g</div>
-        </div>
-        <div class="form-field">
-          <label class="form-lbl">di cui zuccheri</label>
-          <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
-            value="${s.addForm.sug}" oninput="onFormInput('sug',event)"/>
-          <div class="form-hint">g</div>
-        </div>
-        <div class="form-field">
-          <label class="form-lbl">fibre</label>
-          <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
-            value="${s.addForm.fib}" oninput="onFormInput('fib',event)"/>
-          <div class="form-hint">g</div>
-        </div>
-      </div>
-      ${s.addForm.error?`<div class="form-error">${s.addForm.error}</div>`:""}
-      <button class="btn-save" onclick="saveCustomFood()">Salva alimento</button>
-    </div>`;
-    if(s.custom.length>0){
-      html+=`<div class="section-lbl">I tuoi alimenti (${s.custom.length})</div>`;
-      s.custom.forEach((f,i)=>{
-        html+=`<div class="custom-item">
-          <div class="ci-info">
-            <div class="ci-name">${escH(f.n)}</div>
-            <div class="ci-meta">CHO ${fmt(f.cho)}g &nbsp;·&nbsp; Zucc ${fmt(f.sug)}g &nbsp;·&nbsp; Fibre ${fmt(f.fib)}g &nbsp;(per 100g)</div>
-          </div>
-          <button class="ci-del" onclick="removeCustomFood(${i})" title="Elimina">${icons.trash}</button>
-        </div>`;
-      });
-    } else {
-      html+=`<div class="no-results" style="padding-top:16px">Nessun alimento personale ancora.<br>Aggiungine uno con il modulo qui sopra.</div>`;
-    }
-    html+=`<div style="height:20px"></div>`;
-  }
-
-  if(s.tab==="preferiti"){
-    if(s.favs.length===0){
-      html+=`<div class="empty-meal">
-        <div class="empty-icon">⭐</div>
-        <div class="empty-title">Nessun preferito</div>
-        <div class="empty-sub">Salva i tuoi alimenti abituali<br>dalla schermata "Cerca"<br>toccando la ★ dorata.</div>
-      </div>`;
-    } else {
-      html+=`<div class="section-lbl">I tuoi preferiti — tocca per selezionare</div>`;
-      s.favs.forEach((f,i)=>{
-        html+=`<div class="fav-item" onclick="selectFav(${i})">
-          <div class="fi-info">
-            <div class="fi-name">${escH(f.n)}</div>
-            <div class="fi-meta">CHO ${fmt(f.cho)}g · Zucc ${fmt(f.sug)}g · Fibre ${fmt(f.fib)}g &nbsp;(per 100g)</div>
-          </div>
-          <div class="fi-star" onclick="removeFav(event,${i})">${icons.star_fill}</div>
-        </div>`;
-      });
-    }
-    html+=`<div style="height:20px"></div>`;
-  }
-
-  html+=`</div>`; // end scroll-area
-
-  // RESULT PANEL (cerca tab only, when food selected)
-  if(s.tab==="cerca"&&s.selected){
-    const f=s.selected;
-    const cho=calcFor(f.cho100,s.grams);
-    const sug=calcFor(f.sug100,s.grams);
-    const fib=calcFor(f.fib100,s.grams);
-    const net=cho!=null&&fib!=null?Math.max(0,cho-fib):cho;
-    const isFav=s.favs.some(fv=>fv.n===f.name);
-
-    html+=`<div class="result-panel">
-      <div class="sel-header">
-        <span class="badge ${f.src==='custom'?'b-src-custom':f.src==='barcode'?'b-src-usda':f.src==='crea'?'b-src-crea':'b-src-usda'}">${f.src==='custom'?'MIO':f.src==='barcode'?'BARCODE':f.src.toUpperCase()}</span>
-        <span class="sel-name">${escH(f.name)}</span>
-      </div>
-      <div class="quick-row">
-        ${QUICK.map(g=>`<button class="qbtn${s.grams===g?" active":""}" onclick="setGrams(${g})">${g}g</button>`).join("")}
-      </div>
-      <div class="gram-row">
-        <span class="gram-lbl">Grammi</span>
-        <input class="gram-slider" type="range" min="1" max="500" step="1"
-          value="${s.grams}" oninput="onSlider(event)"/>
-        <input class="gram-num" type="number" min="1" max="2000"
-          value="${s.grams}" oninput="onGramNum(event)"/>
-        <span class="gram-g">g</span>
-      </div>
-      <div class="metrics-row">
-        <div class="met-box big">
-          <div class="met-lbl green">CHO netti</div>
-          <div class="met-val green">${net!=null?fmt(net,1):"—"}<span class="met-unit" style="color:var(--green)">g</span></div>
-          ${fib!=null&&fib>0?`<div class="met-sub">−${fmt(fib,1)}g fibre</div>`:""}
-        </div>
-        <div class="met-box">
-          <div class="met-lbl">CHO tot</div>
-          <div class="met-val">${cho!=null?fmt(cho,1):"—"}<span class="met-unit">g</span></div>
-        </div>
-        <div class="met-box">
-          <div class="met-lbl">Zuccheri</div>
-          <div class="met-val blue">${sug!=null?fmt(sug,1):"—"}<span class="met-unit" style="color:var(--blue)">g</span></div>
-        </div>
-      </div>
-      <div class="panel-btns">
-        <button class="btn-add" onclick="addToMeal()">
-          ${icons.plus} Aggiungi al pasto
-        </button>
-        <button class="btn-copy${s.copied?" done":""}" onclick="copyCHO()" title="Copia CHO negli appunti">
-          ${icons.copy} ${s.copied?"Copiato!":"Copia CHO"}
-        </button>
-        <button class="btn-fav" onclick="toggleFav()" title="${isFav?"Rimuovi preferito":"Salva preferito"}">
-          ${isFav?icons.star_fill:icons.star}
-        </button>
-      </div>
-    </div>`;
-  }
-
-  // BOTTOM NAV
-  const mealCount=s.meal.length;
-  html+=`<div class="bottomnav">
-    <button class="bnav-btn${s.tab==="cerca"?" active":""}" onclick="setTab('cerca')">
-      <div class="bnav-icon">${icons.search}</div>
-      CERCA
-    </button>
-    <button class="bnav-btn${s.tab==="pasto"?" active":""}" onclick="setTab('pasto')">
-      <div class="bnav-icon">
-        ${icons.fork}
-        ${mealCount>0?`<span class="bnav-badge">${mealCount}</span>`:""}
-      </div>
-      PASTO
-    </button>
-    <button class="bnav-btn${s.tab==="preferiti"?" active":""}" onclick="setTab('preferiti')">
-      <div class="bnav-icon">${icons.star}</div>
-      PREFERITI
-    </button>
-    <button class="bnav-btn${s.tab==="miei"?" active":""}" onclick="setTab('miei')">
-      <div class="bnav-icon">${icons.edit}</div>
-      I MIEI
-    </button>
-  </div>`;
-
-  if(s.scannerActive){
-    const sr=s.scannerResult;
-    html+=`<div class="scanner-overlay">
-      <div class="scanner-topbar">
-        <button class="scanner-close" onclick="stopScanner()">✕</button>
-        <div>
-          <div class="scanner-title">Scansiona barcode</div>
-          <div class="scanner-sub">Scatta una foto al codice a barre</div>
-        </div>
-      </div>
-      <div class="scanner-viewport" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:32px 24px">
-        ${!sr?`
-          <div style="text-align:center">
-            <div style="font-size:72px;margin-bottom:12px">📷</div>
-            <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px">Inquadra il barcode</div>
-            <div style="font-size:13px;color:rgba(255,255,255,.65);line-height:1.6;margin-bottom:28px">
-              Punta la fotocamera verso il codice<br>a barre sulla confezione e scatta
-            </div>
-            <label style="display:block;padding:16px 32px;border-radius:14px;background:#1D9E75;color:#fff;font-size:17px;font-weight:700;cursor:pointer;text-align:center">
-              Apri fotocamera
-              <input type="file" accept="image/*" capture="environment" style="display:none" onchange="onBarcodePhoto(event)"/>
-            </label>
-            ${s.scannerStatus?`<div style="margin-top:16px;font-size:13px;color:rgba(255,255,255,.6)">${s.scannerStatus}</div>`:''}
-          </div>
-        `:`
-          <div class="scanner-result-box" style="width:100%;max-width:340px">
-            ${sr.error?`
-              <div class="sr-icon">🔍</div>
-              <div class="sr-name">${escH(sr.error)}</div>
-              <div class="sr-btns" style="margin-top:14px">
-                <button class="sr-btn-cancel" style="flex:1" onclick="retryScanner()">Riprova</button>
-                <button class="sr-btn-cancel" style="flex:1" onclick="stopScanner()">Chiudi</button>
-              </div>
-            `:`
-              <div class="sr-icon">✅</div>
-              <div class="sr-name">${escH(sr.name)}</div>
-              <div class="sr-meta">${escH(sr.brand||"")} · per 100g</div>
-              <div class="sr-values">
-                <div class="sr-val-box">
-                  <div class="sr-val-lbl">CHO netti</div>
-                  <div class="sr-val-num green">${fmt(sr.net??sr.cho,1)}</div>
-                  <div class="sr-val-unit">g</div>
-                </div>
-                <div class="sr-val-box">
-                  <div class="sr-val-lbl">CHO tot</div>
-                  <div class="sr-val-num">${fmt(sr.cho,1)}</div>
-                  <div class="sr-val-unit">g</div>
-                </div>
-                <div class="sr-val-box">
-                  <div class="sr-val-lbl">Zuccheri</div>
-                  <div class="sr-val-num blue">${fmt(sr.sug,1)}</div>
-                  <div class="sr-val-unit">g</div>
-                </div>
-              </div>
-              <div class="sr-btns">
-                <button class="sr-btn-cancel" onclick="retryScanner()">Riprova</button>
-                <button class="sr-btn-ok" onclick="useScanResult()">Usa questo alimento</button>
-              </div>
-            `}
-          </div>
-        `}
-      </div>
-    </div>`;
-  }
-
-  if(s.confirmClear){
-    html+=`<div class="confirm-overlay" onclick="state.confirmClear=false;render()">
-      <div class="confirm-box" onclick="event.stopPropagation()">
-        <div class="confirm-title">Azzera il pasto?</div>
-        <div class="confirm-sub">Tutti gli alimenti aggiunti<br>verranno rimossi.</div>
-        <div class="confirm-btns">
-          <button class="confirm-btn-cancel" onclick="state.confirmClear=false;render()">Annulla</button>
-          <button class="confirm-btn-ok" onclick="doClearMeal()">Azzera</button>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  if(s.toast){
-    html+=`<div class="toast">${s.toast}</div>`;
-  }
-
-  root.innerHTML=html;
-  const si=document.getElementById("si");
-  if(si&&document.activeElement!==si){}
-}
-
-function escH(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
-
-// ─── EVENT HANDLERS ──────────────────────────────────────────────────────────
-function setTab(t){state.tab=t;render();}
-function setSrcTab(t){
-  state.srcTab=t;
-  if(t==="usda"&&state.usdaResults.length===0&&!state.searching&&state.query)
-    fetchUSDA(state.query);
-  render();
-}
-
-function onQueryInput(e){
-  state.query=e.target.value;
-  if(!state.query.trim()){state.creaResults=[];state.usdaResults=[];state.selected=null;}
-  // Aggiorna solo il bottone senza ricostruire il DOM (evita perdita focus su iOS)
-  const btn=document.getElementById('sbtn');
-  if(btn) btn.disabled=!state.query.trim()||state.searching;
-}
-function onQueryKey(e){if(e.key==="Enter")doSearch();}
-
-function doSearch(){
-  const q=state.query.trim();
-  if(!q)return;
-  const cr=searchCREA(q);
-  state.creaResults=cr;
-  state.usdaResults=[];
-  state.selected=null;
-  state.srcTab=cr.length>0?"crea":"usda";
-  if(cr.length===0)fetchUSDA(q);
-  render();
-}
+const CATS=[
+  {id:'cereali',label:'Cereali & Pasta',emoji:'🍝',keywords:['Cereali']},
+  {id:'frutta',label:'Frutta',emoji:'🍎',keywords:['Frutta']},
+  {id:'verdura',label:'Verdura',emoji:'🥦',keywords:['Verdura']},
+  {id:'legumi',label:'Legumi',emoji:'🫘',keywords:['Legumi']},
+  {id:'latticini',label:'Latticini & Uova',emoji:'🥛',keywords:['Latticini']},
+  {id:'carni',label:'Carni & Pesce',emoji:'🍗',keywords:['Carni','Pesce']},
+  {id:'dolci',label:'Dolci & Snack',emoji:'🍫',keywords:['Dolci','Snack']},
+  {id:'bevande',label:'Bevande',emoji:'🥤',keywords:['Bevande']},
+  {id:'fruttasecca',label:'Frutta secca',emoji:'🥜',keywords:['Frutta secca']},
+  {id:'condimenti',label:'Condimenti',emoji:'🫙',keywords:['Condimenti']},
+];
 
 // Dizionario italiano→inglese per ricerca USDA
 // Usato al posto dell'API Claude — funziona offline e ovunque
@@ -1001,6 +559,7 @@ function translateToEng(q){
   // (USDA a volte riconosce termini italiani comuni)
   return t;
 }
+
 
 async function fetchUSDA(q){
   state.searching=true;render();
@@ -1116,175 +675,519 @@ function removeCustomFood(i){
   render();
 }
 
-// ─── BARCODE SCANNER ─────────────────────────────────────────────────────────
-function startScanner(){
-  state.scannerActive=true;
-  state.scannerResult=null;
-  state.scannerStatus="";
-  render();
-}
 
-async function loadZXingBrowser(){
-  if(window.ZXingBrowser)return;
-  return new Promise((resolve,reject)=>{
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.4/umd/index.min.js';
-    s.onload=()=>{window.ZXingBrowser=window.ZXingBrowser||window.ZXing;resolve();};
-    s.onerror=()=>{
-      // Fallback: carica zxing/library classico
-      const s2=document.createElement('script');
-      s2.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.2/umd/index.min.js';
-      s2.onload=resolve;s2.onerror=reject;
-      document.head.appendChild(s2);
-    };
-    document.head.appendChild(s);
-  });
-}
 
-async function onBarcodePhoto(e){
-  const file=e.target.files&&e.target.files[0];
-  if(!file)return;
-  state.scannerStatus="Analisi barcode in corso…";
-  render();
 
-  try{
-    // Converti file in base64 data URL — funziona in PWA iOS senza restrizioni blob
-    const dataUrl=await new Promise((res,rej)=>{
-      const reader=new FileReader();
-      reader.onload=ev=>res(ev.target.result);
-      reader.onerror=rej;
-      reader.readAsDataURL(file);
-    });
 
-    await loadZXingBrowser();
 
-    // Disegna su canvas e prova lettura con ZXing
-    const img=new Image();
-    await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=dataUrl;});
 
-    // Ridimensiona a max 1200px — foto iPhone 12MP sono troppo grandi per ZXing
-    const MAX=1200;
-    const scale=Math.min(1,MAX/Math.max(img.width,img.height));
-    const W=Math.round(img.width*scale);
-    const H=Math.round(img.height*scale);
-
-    const ZX=window.ZXing||window.ZXingBrowser;
-    const hints=new Map();
-    hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS,[
-      ZX.BarcodeFormat.EAN_13,
-      ZX.BarcodeFormat.EAN_8,
-      ZX.BarcodeFormat.UPC_A,
-      ZX.BarcodeFormat.UPC_E,
-      ZX.BarcodeFormat.CODE_128,
-    ]);
-    hints.set(ZX.DecodeHintType.TRY_HARDER,true);
-    const reader=new ZX.MultiFormatReader();
-    reader.setHints(hints);
-
-    // Prova con immagine intera ridimensionata
-    const tryDecode=(w,h,sx,sy,sw,sh)=>{
-      const c=document.createElement('canvas');
-      c.width=w;c.height=h;
-      c.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,w,h);
-      const d=c.getContext('2d').getImageData(0,0,w,h);
-      const lum=new ZX.RGBLuminanceSource(d.data,w,h);
-      const bmp=new ZX.BinaryBitmap(new ZX.HybridBinarizer(lum));
-      return reader.decode(bmp);
-    };
-
-    let found=null;
-    const attempts=[
-      // Tutta la foto ridimensionata
-      ()=>tryDecode(W,H,0,0,img.width,img.height),
-      // Metà inferiore (barcode spesso in basso sulla confezione)
-      ()=>tryDecode(W,Math.round(H/2),0,Math.round(img.height/2),img.width,Math.round(img.height/2)),
-      // Metà superiore
-      ()=>tryDecode(W,Math.round(H/2),0,0,img.width,Math.round(img.height/2)),
-      // Striscia centrale orizzontale
-      ()=>tryDecode(W,Math.round(H*0.4),0,Math.round(img.height*0.3),img.width,Math.round(img.height*0.4)),
-    ];
-
-    for(const attempt of attempts){
-      try{const r=attempt();if(r&&r.getText()){found=r.getText();break;}}
-      catch(ex){/* continua */}
-    }
-
-    if(found){
-      lookupBarcode(found);
-    } else {
-      state.scannerStatus="Barcode non letto. Riprova: avvicina a 15-20cm, centra il barcode e tieni fermo.";
-      render();
-    }
-  }catch(err){
-    if(err&&err.name==='NotFoundException'){
-      state.scannerStatus="Barcode non trovato nella foto. Riprova avvicinandoti alla confezione.";
-    } else {
-      state.scannerStatus="Errore: "+((err&&err.message)||"sconosciuto")+". Riprova.";
-    }
-    render();
-  }
-}
-
-async function lookupBarcode(barcode){
-  state.scannerStatus="Codice rilevato: "+barcode+"  —  Ricerca prodotto…";
-  render();
-  try{
-    const r=await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
-    const d=await r.json();
-    if(d.status===1&&d.product){
-      const p=d.product;
-      const n=d.product.nutriments||{};
-      const cho=parseFloat(n['carbohydrates_100g'])||null;
-      const sug=parseFloat(n['sugars_100g'])||null;
-      const fib=parseFloat(n['fiber_100g'])||null;
-      const net=cho!=null&&fib!=null?Math.max(0,cho-fib):cho;
-      const name=p.product_name_it||p.product_name||p.product_name_en||"Prodotto sconosciuto";
-      const brand=p.brands||"";
-      if(cho==null){
-        state.scannerResult={error:"Prodotto trovato ma senza valori nutrizionali. Aggiungilo manualmente nella scheda I miei."};
-      }else{
-        state.scannerResult={name,brand,cho,sug,fib,net};
-      }
-    }else{
-      state.scannerResult={error:"Prodotto non trovato nel database Open Food Facts. Aggiungilo manualmente nella scheda I miei."};
-    }
-  }catch(e){
-    state.scannerResult={error:"Errore di rete. Controlla la connessione e riprova."};
-  }
-  render();
-}
-
-function retryScanner(){
-  state.scannerResult=null;
-  state.scannerStatus="";
-  render();
-}
-
-function stopScanner(){
-  state.scannerActive=false;
-  state.scannerResult=null;
-  state.scannerStatus="";
-  render();
-}
-
-function useScanResult(){
-  const sr=state.scannerResult;
-  if(!sr||sr.error)return;
-  stopScanner();
-  state.selected={
-    name:sr.name,
-    cho100:sr.cho,
-    sug100:sr.sug,
-    fib100:sr.fib,
-    cat:sr.brand||"Barcode",
-    src:"barcode"
+function searchCREA(q){
+  const t=q.trim().toLowerCase();
+  if(!t)return[];
+  const words=t.split(/\s+/);
+  const matchFn=f=>{const name=f.n.toLowerCase();return words.every(w=>name.includes(w));};
+  const sort=(a,b)=>{
+    const aC=!!a.custom,bC=!!b.custom;
+    if(aC&&!bC)return-1;if(bC&&!aC)return 1;
+    const ai=a.n.toLowerCase().indexOf(t),bi=b.n.toLowerCase().indexOf(t);
+    if(ai===0&&bi!==0)return-1;if(bi===0&&ai!==0)return 1;
+    return a.n.localeCompare(b.n,'it');
   };
-  state.grams=100;
-  state.tab="cerca";
+  const creaMapped=CREA.filter(matchFn);
+  const customMapped=state.custom.filter(matchFn).map(f=>({...f,custom:true}));
+  return[...customMapped,...creaMapped].sort(sort);
+}
+
+function catFoods(cat){
+  return CREA.filter(f=>cat.keywords.includes(f.c));
+}
+
+function fmt(v,d=1){
+  if(v==null)return'—';
+  const n=parseFloat((v).toFixed(d));
+  return n%1===0?String(n):n.toFixed(d);
+}
+function calcFor(v100,g){if(v100==null)return null;return v100*g/100;}
+
+const icons={
+  search:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  fork:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
+  star:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  star_fill:`<svg width="22" height="22" viewBox="0 0 24 24" fill="#B86E0A" stroke="#B86E0A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  edit:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  trash:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`,
+  plus:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  copy:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+  back:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>`,
+};
+
+let state={
+  tab:'cerca',
+  query:'',
+  creaResults:[],
+  usdaResults:[],
+  srcTab:'crea',
+  searching:false,
+  selected:null,
+  grams:100,
+  activeCat:null,
+  meal:[],
+  favs:[],
+  custom:[],
+  addForm:{name:'',cho:'',sug:'',fib:'',error:''},
+  toast:null,
+  copied:false,
+  confirmClear:false,
+};
+
+function loadFromStorage(){
+  try{
+    const m=localStorage.getItem('cc_meal');
+    const f=localStorage.getItem('cc_favs');
+    const c=localStorage.getItem('cc_custom');
+    if(m)state.meal=JSON.parse(m);
+    if(f)state.favs=JSON.parse(f);
+    if(c)state.custom=JSON.parse(c);
+  }catch(e){}
+}
+function saveToStorage(){
+  try{
+    localStorage.setItem('cc_meal',JSON.stringify(state.meal));
+    localStorage.setItem('cc_favs',JSON.stringify(state.favs));
+    localStorage.setItem('cc_custom',JSON.stringify(state.custom));
+  }catch(e){}
+}
+function showToast(msg){
+  state.toast=msg;render();
+  setTimeout(()=>{state.toast=null;render();},2200);
+}
+
+const root=document.getElementById('root');
+function render(){
+  const s=state;
+  const mealCHO=s.meal.reduce((a,i)=>a+(i.netcho??i.cho),0);
+  const mealMax=120;
+  const barPct=Math.min(100,(mealCHO/mealMax)*100);
+
+  let html=`<div class="topbar"><div class="topbar-brand">
+    <span class="brand-dot"></span>
+    <span class="brand-name">CARBOCALC — OMNIPOD 5</span>
+    <span class="brand-badge">CREA + USDA</span>
+  </div>`;
+
+  if(s.tab==='cerca'){
+    html+=`<div class="search-row">
+      <input class="search-input" id="si" type="text" autocorrect="off" autocapitalize="off"
+        spellcheck="false" placeholder="Cerca alimento in italiano…"
+        value="${escH(s.query)}" oninput="onQueryInput(event)" onkeydown="onQueryKey(event)"/>
+      <button class="search-btn" onclick="doSearch()" ${s.searching||!s.query.trim()?'disabled':''}>
+        ${s.searching?'<span class="spinner"></span>':'Cerca'}
+      </button>
+    </div>`;
+    if(s.creaResults.length>0||s.usdaResults.length>0){
+      html+=`<div class="source-tabs">
+        <button class="stab${s.srcTab==='crea'?' active':''}" onclick="setSrcTab('crea')">
+          CREA Italia${s.creaResults.length>0?` (${s.creaResults.length})`:''}
+        </button>
+        <button class="stab${s.srcTab==='usda'?' active':''}" onclick="setSrcTab('usda')">
+          USDA${s.searching?' …':s.usdaResults.length>0?` (${s.usdaResults.length})`:''}
+        </button>
+      </div>`;
+    }
+  }
+
+  html+=`</div><div class="scroll-area" id="sarea">`;
+
+  // ── CERCA ──
+  if(s.tab==='cerca'){
+    const foods=s.srcTab==='crea'?s.creaResults:s.usdaResults;
+
+    // Categoria attiva
+    if(s.activeCat&&!s.query){
+      const cat=CATS.find(c=>c.id===s.activeCat);
+      const list=[...state.custom.filter(f=>f.c==='Personale'),...catFoods(cat)];
+      html+=`<div class="section-back" onclick="state.activeCat=null;render()">
+        <span class="section-back-arrow">${icons.back}</span>
+        <span class="section-back-lbl">${cat.emoji} ${cat.label}</span>
+      </div>`;
+      html+=`<div class="section-lbl">${list.length} alimenti · per 100g</div>`;
+      list.forEach((f,i)=>{
+        const sel=s.selected&&s.selected.name===f.n;
+        html+=`<div class="food-card${sel?' selected':''}" onclick="selectFoodDirect(${i},'cat')">
+          <div class="fc-name">${escH(f.n)}</div>
+          <div class="fc-badges">
+            <span class="badge b-cho">CHO ${fmt(f.cho)}g</span>
+            <span class="badge b-sug">Zucc ${fmt(f.sug)}g</span>
+            ${f.fib>0?`<span class="badge b-fib">F ${fmt(f.fib)}g</span>`:''}
+            <span class="badge ${f.custom?'b-src-custom':'b-src-crea'}">${f.custom?'MIO':'CREA'}</span>
+          </div>
+        </div>`;
+      });
+
+    } else if(!s.query&&s.creaResults.length===0){
+      // Home con griglia categorie
+      html+=`<div class="empty-state">
+        <div class="empty-icon">🍽️</div>
+        <div class="empty-title">Cosa mangi oggi?</div>
+        <div class="empty-sub">Cerca per nome oppure scegli una categoria</div>
+      </div>
+      <div class="cat-grid">`;
+      CATS.forEach(cat=>{
+        const n=catFoods(cat).length;
+        html+=`<div class="cat-card" onclick="openCat('${cat.id}')">
+          <span class="cat-emoji">${cat.emoji}</span>
+          <span class="cat-name">${cat.label}</span>
+          <span class="cat-count">${n} alimenti</span>
+        </div>`;
+      });
+      html+=`</div>`;
+
+    } else if(foods.length===0&&!s.searching){
+      html+=`<div class="no-results">Nessun risultato.<br>Prova con un termine diverso<br>o usa la tab USDA.</div>`;
+    } else {
+      html+=`<div class="section-lbl">${s.srcTab==='crea'?'CREA — eTCA 2019 (Italia)':'USDA FoodData Central'} · per 100g</div>`;
+      foods.forEach((f,i)=>{
+        const sel=s.selected&&s.selected.name===f.n;
+        html+=`<div class="food-card${sel?' selected':''}" onclick="selectFood(${i})">
+          <div class="fc-name">${escH(f.n)}</div>
+          <div class="fc-badges">
+            <span class="badge b-cho">CHO ${fmt(f.cho)}g</span>
+            <span class="badge b-sug">Zucc ${fmt(f.sug)}g</span>
+            ${f.fib>0?`<span class="badge b-fib">F ${fmt(f.fib)}g</span>`:''}
+            <span class="badge ${f.custom?'b-src-custom':s.srcTab==='crea'?'b-src-crea':'b-src-usda'}">${f.custom?'MIO':s.srcTab.toUpperCase()}</span>
+          </div>
+        </div>`;
+      });
+    }
+    html+=`<div style="height:${s.selected?270:20}px"></div>`;
+  }
+
+  // ── PASTO ──
+  if(s.tab==='pasto'){
+    html+=`<div class="meal-total-card">
+      <div class="mt-lbl">CARBOIDRATI PASTO IN CORSO</div>
+      <div class="mt-val">${fmt(mealCHO,1)}<span class="mt-unit"> g</span></div>
+      <div class="mt-sub">${s.meal.length} aliment${s.meal.length===1?'o':'i'} · da inserire in Omnipod 5</div>
+      <div class="mt-bar-wrap"><div class="mt-bar-fill" style="width:${barPct}%"></div></div>
+      <div class="mt-actions">
+        <button class="mt-btn" onclick="copyMealCHO()">${s.copied?'✓ Copiato!':'Copia per Omnipod 5'}</button>
+        <button class="mt-btn danger" onclick="state.confirmClear=true;render()">Azzera</button>
+      </div>
+    </div>`;
+    if(s.meal.length===0){
+      html+=`<div class="empty-meal"><div style="font-size:44px">🍽️</div>
+        <div class="empty-title">Pasto vuoto</div>
+        <div class="empty-sub">Aggiungi alimenti dalla schermata Cerca.</div></div>`;
+    } else {
+      html+=`<div class="section-lbl">Alimenti del pasto</div>`;
+      s.meal.forEach((item,i)=>{
+        const cho=item.netcho??item.cho;
+        html+=`<div class="meal-item">
+          <div style="flex:1">
+            <div class="mi-name">${escH(item.name)}</div>
+            <div class="mi-grams">${item.grams}g · CHO netti</div>
+          </div>
+          <div class="mi-cho">${fmt(cho,1)}g</div>
+          <button class="mi-del" onclick="removeMealItem(${i})">${icons.trash}</button>
+        </div>`;
+      });
+    }
+    html+=`<div style="height:20px"></div>`;
+  }
+
+  // ── PREFERITI ──
+  if(s.tab==='preferiti'){
+    if(s.favs.length===0){
+      html+=`<div class="empty-meal"><div style="font-size:44px">⭐</div>
+        <div class="empty-title">Nessun preferito</div>
+        <div class="empty-sub">Salva i tuoi alimenti abituali<br>dalla schermata Cerca toccando ★</div></div>`;
+    } else {
+      html+=`<div class="section-lbl">I tuoi preferiti · tocca per selezionare</div>`;
+      s.favs.forEach((f,i)=>{
+        html+=`<div class="fav-item" onclick="selectFav(${i})">
+          <div class="fi-info">
+            <div class="fi-name">${escH(f.n)}</div>
+            <div class="fi-meta">CHO ${fmt(f.cho)}g · Zucc ${fmt(f.sug)}g · Fibre ${fmt(f.fib)}g (per 100g)</div>
+          </div>
+          <div class="fi-star" onclick="removeFav(event,${i})">${icons.star_fill}</div>
+        </div>`;
+      });
+    }
+    html+=`<div style="height:20px"></div>`;
+  }
+
+  // ── I MIEI ──
+  if(s.tab==='miei'){
+    html+=`<div class="add-form">
+      <div class="add-form-title">${icons.plus} Aggiungi alimento personale</div>
+      <div class="form-field" style="margin-bottom:10px">
+        <label class="form-lbl">Nome alimento</label>
+        <input class="form-input" type="text" placeholder="Es. Pasta di farro" autocorrect="off"
+          value="${escH(s.addForm.name)}" oninput="onFormInput('name',event)"/>
+      </div>
+      <div style="font-size:11px;color:var(--sub);margin-bottom:8px;font-weight:600">Valori per 100g</div>
+      <div class="form-row">
+        <div class="form-field">
+          <label class="form-lbl">CHO totali</label>
+          <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
+            value="${s.addForm.cho}" oninput="onFormInput('cho',event)"/>
+          <div class="form-hint">g</div>
+        </div>
+        <div class="form-field">
+          <label class="form-lbl">Zuccheri</label>
+          <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
+            value="${s.addForm.sug}" oninput="onFormInput('sug',event)"/>
+          <div class="form-hint">g</div>
+        </div>
+        <div class="form-field">
+          <label class="form-lbl">Fibre</label>
+          <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
+            value="${s.addForm.fib}" oninput="onFormInput('fib',event)"/>
+          <div class="form-hint">g</div>
+        </div>
+      </div>
+      ${s.addForm.error?`<div class="form-error">${s.addForm.error}</div>`:''}
+      <button class="btn-save" onclick="saveCustomFood()">Salva alimento</button>
+    </div>`;
+    if(s.custom.length>0){
+      html+=`<div class="section-lbl">I tuoi alimenti (${s.custom.length})</div>`;
+      s.custom.forEach((f,i)=>{
+        html+=`<div class="custom-item">
+          <div class="ci-info">
+            <div class="ci-name">${escH(f.n)}</div>
+            <div class="ci-meta">CHO ${fmt(f.cho)}g · Zucc ${fmt(f.sug)}g · Fibre ${fmt(f.fib)}g (per 100g)</div>
+          </div>
+          <button class="ci-del" onclick="removeCustomFood(${i})">${icons.trash}</button>
+        </div>`;
+      });
+    } else {
+      html+=`<div class="no-results" style="padding-top:10px">Nessun alimento personale ancora.</div>`;
+    }
+    html+=`<div style="height:20px"></div>`;
+  }
+
+  html+=`</div>`; // end scroll-area
+
+  // ── RESULT PANEL ──
+  if(s.tab==='cerca'&&s.selected){
+    const f=s.selected;
+    const cho=calcFor(f.cho100,s.grams);
+    const sug=calcFor(f.sug100,s.grams);
+    const fib=calcFor(f.fib100,s.grams);
+    const net=cho!=null&&fib!=null?Math.max(0,cho-fib):cho;
+    const isFav=s.favs.some(fv=>fv.n===f.name);
+    const srcClass=f.src==='custom'?'b-src-custom':f.src==='crea'?'b-src-crea':'b-src-usda';
+    const srcLabel=f.src==='custom'?'MIO':f.src==='barcode'?'BARCODE':f.src.toUpperCase();
+
+    html+=`<div class="result-panel">
+      <div class="sel-header">
+        <span class="badge ${srcClass}">${srcLabel}</span>
+        <span class="sel-name">${escH(f.name)}</span>
+      </div>
+      <div class="quick-row">
+        ${QUICK.map(g=>`<button class="qbtn${s.grams===g?' active':''}" onclick="setGrams(${g})">${g}g</button>`).join('')}
+      </div>
+      <div class="gram-row">
+        <span class="gram-lbl">Grammi</span>
+        <input class="gram-slider" type="range" min="1" max="500" step="1"
+          value="${s.grams}" oninput="onSlider(event)"/>
+        <input class="gram-num" type="number" min="1" max="2000"
+          value="${s.grams}" oninput="onGramNum(event)"/>
+        <span class="gram-g">g</span>
+      </div>
+      <div class="metrics-row">
+        <div class="met-box big">
+          <div class="met-lbl green">CHO netti</div>
+          <div class="met-val green">${net!=null?fmt(net,1):'—'}<span class="met-unit" style="color:var(--green)">g</span></div>
+          ${fib!=null&&fib>0?`<div class="met-sub">−${fmt(fib,1)}g fibre</div>`:''}
+        </div>
+        <div class="met-box">
+          <div class="met-lbl">CHO tot</div>
+          <div class="met-val">${cho!=null?fmt(cho,1):'—'}<span class="met-unit">g</span></div>
+        </div>
+        <div class="met-box">
+          <div class="met-lbl">Zuccheri</div>
+          <div class="met-val blue">${sug!=null?fmt(sug,1):'—'}<span class="met-unit" style="color:var(--blue)">g</span></div>
+        </div>
+      </div>
+      <div class="panel-btns">
+        <button class="btn-add" onclick="addToMeal()">${icons.plus} Aggiungi al pasto</button>
+        <button class="btn-copy${s.copied?' done':''}" onclick="copyCHO()">${icons.copy} ${s.copied?'Copiato!':'Copia CHO'}</button>
+        <button class="btn-fav" onclick="toggleFav()">${isFav?icons.star_fill:icons.star}</button>
+      </div>
+    </div>`;
+  }
+
+  // ── BOTTOM NAV ──
+  const mc=s.meal.length;
+  html+=`<div class="bottomnav">
+    <button class="bnav-btn${s.tab==='cerca'?' active':''}" onclick="setTab('cerca')">
+      <div class="bnav-icon">${icons.search}</div>CERCA
+    </button>
+    <button class="bnav-btn${s.tab==='pasto'?' active':''}" onclick="setTab('pasto')">
+      <div class="bnav-icon">${icons.fork}${mc>0?`<span class="bnav-badge">${mc}</span>`:''}</div>PASTO
+    </button>
+    <button class="bnav-btn${s.tab==='preferiti'?' active':''}" onclick="setTab('preferiti')">
+      <div class="bnav-icon">${icons.star}</div>PREFERITI
+    </button>
+    <button class="bnav-btn${s.tab==='miei'?' active':''}" onclick="setTab('miei')">
+      <div class="bnav-icon">${icons.edit}</div>I MIEI
+    </button>
+  </div>`;
+
+  if(s.confirmClear){
+    html+=`<div class="confirm-overlay" onclick="state.confirmClear=false;render()">
+      <div class="confirm-box" onclick="event.stopPropagation()">
+        <div class="confirm-title">Azzera il pasto?</div>
+        <div class="confirm-sub">Tutti gli alimenti aggiunti verranno rimossi.</div>
+        <div class="confirm-btns">
+          <button class="confirm-btn-cancel" onclick="state.confirmClear=false;render()">Annulla</button>
+          <button class="confirm-btn-ok" onclick="doClearMeal()">Azzera</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  if(s.toast) html+=`<div class="toast">${s.toast}</div>`;
+
+  root.innerHTML=html;
+}
+
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── HANDLERS ──
+function setTab(t){state.tab=t;render();}
+function setSrcTab(t){
+  state.srcTab=t;
+  if(t==='usda'&&state.usdaResults.length===0&&!state.searching&&state.query)fetchUSDA(state.query);
+  render();
+}
+function openCat(id){state.activeCat=id;state.selected=null;render();}
+
+function onQueryInput(e){
+  state.query=e.target.value;
+  state.activeCat=null;
+  if(!state.query.trim()){state.creaResults=[];state.usdaResults=[];state.selected=null;}
+  const btn=document.getElementById('sbtn')||document.querySelector('.search-btn');
+  if(btn)btn.disabled=!state.query.trim()||state.searching;
+}
+function onQueryKey(e){if(e.key==='Enter')doSearch();}
+
+function doSearch(){
+  const q=state.query.trim();
+  if(!q)return;
+  const cr=searchCREA(q);
+  state.creaResults=cr;state.usdaResults=[];state.selected=null;state.activeCat=null;
+  state.srcTab=cr.length>0?'crea':'usda';
+  if(cr.length===0)fetchUSDA(q);
   render();
 }
 
-// ─── INIT ─────────────────────────────────────────────────────────────────────
+function selectFood(i){
+  const foods=state.srcTab==='crea'?state.creaResults:state.usdaResults;
+  const f=foods[i];
+  const src=f.custom?'custom':(f.src||state.srcTab);
+  state.selected={name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c,src};
+  state.grams=100;render();
+  setTimeout(()=>document.getElementById('sarea')?.scrollTo({top:99999,behavior:'smooth'}),80);
+}
+
+function selectFoodDirect(i,mode){
+  let f;
+  if(mode==='cat'){
+    const cat=CATS.find(c=>c.id===state.activeCat);
+    const list=[...state.custom.filter(x=>x.c==='Personale'),...catFoods(cat)];
+    f=list[i];
+  }
+  if(!f)return;
+  const src=f.custom?'custom':'crea';
+  state.selected={name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c,src};
+  state.grams=100;render();
+  setTimeout(()=>document.getElementById('sarea')?.scrollTo({top:99999,behavior:'smooth'}),80);
+}
+
+function selectFav(i){
+  const f=state.favs[i];
+  state.selected={name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c||'',src:f.src||'crea'};
+  state.grams=100;state.tab='cerca';render();
+}
+
+function setGrams(g){state.grams=g;render();}
+function onSlider(e){state.grams=Number(e.target.value);render();}
+function onGramNum(e){state.grams=Math.max(1,Number(e.target.value)||1);render();}
+
+function copyCHO(){
+  const f=state.selected;if(!f)return;
+  const cho=calcFor(f.cho100,state.grams);
+  const fib=calcFor(f.fib100,state.grams);
+  const net=cho!=null&&fib!=null?Math.max(0,cho-fib):cho;
+  const val=fmt(net??cho,1);
+  navigator.clipboard.writeText(val).then(()=>{
+    state.copied=true;render();setTimeout(()=>{state.copied=false;render();},2500);
+  }).catch(()=>showToast('CHO: '+val+'g'));
+}
+
+function copyMealCHO(){
+  const tot=state.meal.reduce((a,i)=>a+(i.netcho??i.cho),0);
+  const val=fmt(tot,1);
+  navigator.clipboard.writeText(val).then(()=>{
+    state.copied=true;render();setTimeout(()=>{state.copied=false;render();},2500);
+    showToast('✓ '+val+'g CHO copiati');
+  }).catch(()=>showToast('CHO pasto: '+val+'g'));
+}
+
+function addToMeal(){
+  const f=state.selected;if(!f)return;
+  const cho=calcFor(f.cho100,state.grams);
+  const fib=calcFor(f.fib100,state.grams);
+  const sug=calcFor(f.sug100,state.grams);
+  const net=cho!=null&&fib!=null?Math.max(0,cho-fib):cho;
+  const nome=f.name;
+  state.meal.push({name:nome,grams:state.grams,cho,sug,fib,netcho:net,src:f.src});
+  saveToStorage();
+  state.query='';state.creaResults=[];state.usdaResults=[];
+  state.selected=null;state.grams=100;state.activeCat=null;
+  showToast('✓ '+nome+' aggiunto al pasto');render();
+}
+
+function removeMealItem(i){state.meal.splice(i,1);saveToStorage();render();}
+function clearMeal(){state.confirmClear=true;render();}
+function doClearMeal(){state.meal=[];state.confirmClear=false;saveToStorage();showToast('Pasto azzerato');render();}
+
+function toggleFav(){
+  const f=state.selected;if(!f)return;
+  const idx=state.favs.findIndex(fv=>fv.n===f.name);
+  if(idx>=0){state.favs.splice(idx,1);showToast('Rimosso dai preferiti');}
+  else{state.favs.push({n:f.name,c:f.cat||'',cho:f.cho100,sug:f.sug100,fib:f.fib100,src:f.src});showToast('⭐ Salvato nei preferiti');}
+  saveToStorage();render();
+}
+function removeFav(e,i){e.stopPropagation();state.favs.splice(i,1);saveToStorage();render();}
+
+function onFormInput(field,e){state.addForm[field]=e.target.value;state.addForm.error='';render();}
+
+function saveCustomFood(){
+  const f=state.addForm;
+  const name=f.name.trim();
+  if(!name){state.addForm.error='Inserisci il nome.';render();return;}
+  const cho=parseFloat(f.cho);
+  if(isNaN(cho)||cho<0||cho>100){state.addForm.error='Carboidrati non validi (0–100g).';render();return;}
+  const sug=parseFloat(f.sug)||0;
+  const fib=parseFloat(f.fib)||0;
+  if(state.custom.some(c=>c.n.toLowerCase()===name.toLowerCase())){
+    state.addForm.error='Hai già un alimento con questo nome.';render();return;
+  }
+  state.custom.unshift({n:name,c:'Personale',cho,sug,fib});
+  saveToStorage();
+  state.addForm={name:'',cho:'',sug:'',fib:'',error:''};
+  showToast('✓ '+name+' aggiunto');render();
+}
+
+function removeCustomFood(i){
+  const nome=state.custom[i].n;
+  state.custom.splice(i,1);saveToStorage();showToast(nome+' eliminato');render();
+}
+
+// ── INIT ──
 loadFromStorage();
 render();
 </script>
