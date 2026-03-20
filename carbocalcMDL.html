@@ -1118,7 +1118,18 @@ function render(){
         </div>`;
       });
     }
-    html+=`<div style="height:${s.selected?270:20}px"></div>`;
+    html+=`<div style="height:${(()=>{
+      if(!s.selected) return 20;
+      const gi=getGI(s.selected.name);
+      const hasGI=gi!==null;
+      const hasDose=s.profilo.saved;
+      // Stima altezza pannello: base + GI panel + dose panel
+      let h=310; // header + quick buttons + stepper + metriche + bottoni
+      if(hasGI) h+=220; // pannello IG/CG + sezione sperimentale
+      if(hasDose) h+=200; // pannello dose
+      else h+=80; // pannello dose minimale (no profilo)
+      return h;
+    })()}px"></div>`;
   }
 
   // ── PASTO ──
@@ -1434,7 +1445,15 @@ function render(){
 
   if(s.toast) html+=`<div class="toast">${s.toast}</div>`;
 
+  // Salvo la posizione di scroll prima di riscrivere il DOM
+  const sarea=document.getElementById('sarea');
+  const savedScroll=sarea?sarea.scrollTop:0;
+
   root.innerHTML=html;
+
+  // Ripristino la posizione di scroll dopo il re-render
+  const newSarea=document.getElementById('sarea');
+  if(newSarea&&savedScroll>0) newSarea.scrollTop=savedScroll;
 }
 
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
