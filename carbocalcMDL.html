@@ -888,28 +888,50 @@ function toggleFav(){
 
 function removeFav(e,i){e.stopPropagation();state.favs.splice(i,1);saveToStorage();render();}
 
-function onFormInput(field,e){state.addForm[field]=e.target.value;state.addForm.error="";render();}
+function onFormInput(field,e){state.addForm[field]=e.target.value;state.addForm.error='';}
 
 function saveCustomFood(){
   const f=state.addForm;
   const name=f.name.trim();
-  if(!name){state.addForm.error="Inserisci il nome dell'alimento.";render();return;}
+  if(!name){
+    state.addForm.error="Inserisci il nome dell'alimento.";
+    // Mostra errore aggiornando solo il div errore, senza render() completo
+    const errEl=document.getElementById('cf-error');
+    if(errEl) errEl.textContent=state.addForm.error;
+    return;
+  }
   const cho=parseFloat(f.cho);
-  if(isNaN(cho)||cho<0||cho>100){state.addForm.error="Carboidrati non validi (0–100g).";render();return;}
+  if(isNaN(cho)||cho<0||cho>100){
+    state.addForm.error="Carboidrati non validi (0–100g).";
+    const errEl=document.getElementById('cf-error');
+    if(errEl) errEl.textContent=state.addForm.error;
+    return;
+  }
   const sug=parseFloat(f.sug)||0;
   const fib=parseFloat(f.fib)||0;
-  // IG opzionale: accettato solo se è un numero tra 0 e 120
-  const giRaw=f.gi.trim();
+  const giRaw=(f.gi||'').trim();
   const gi=giRaw===''?null:parseFloat(giRaw);
   if(giRaw!==''&&(isNaN(gi)||gi<0||gi>120)){
-    state.addForm.error="Indice Glicemico non valido (0–120, o lascia vuoto).";render();return;
+    state.addForm.error="Indice Glicemico non valido (0–120, o lascia vuoto).";
+    const errEl=document.getElementById('cf-error');
+    if(errEl) errEl.textContent=state.addForm.error;
+    return;
   }
   if(state.custom.some(c=>c.n.toLowerCase()===name.toLowerCase())){
-    state.addForm.error="Hai già un alimento con questo nome.";render();return;
+    state.addForm.error="Hai già un alimento con questo nome.";
+    const errEl=document.getElementById('cf-error');
+    if(errEl) errEl.textContent=state.addForm.error;
+    return;
   }
   state.custom.unshift({n:name,c:"Personale",cho,sug,fib,...(gi!==null&&{gi})});
   saveToStorage();
+  // Reset stato form
   state.addForm={name:"",cho:"",sug:"",fib:"",gi:"",error:""};
+  // Pulisce fisicamente i campi nel DOM (non controllati da value=)
+  ['cf-name','cf-cho','cf-sug','cf-fib','cf-gi'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.value='';
+  });
   showToast("✓ "+name+" aggiunto"+(gi!==null?` · IG ${gi}`:''));
   render();
 }
@@ -1210,8 +1232,8 @@ function render(){
           <div class="profilo-icr-wrap">
             <span class="profilo-icr-prefix">1 UI ogni</span>
             <input class="form-num" type="number" min="1" max="30" step="0.5" placeholder="6"
-              value="${escH(pf.icr)}" style="width:70px"
-              oninput="state.profiloForm.icr=event.target.value;state.profilo.saved=false;render()"/>
+              id="icr-input" style="width:70px"
+              oninput="state.profiloForm.icr=event.target.value;state.profilo.saved=false;"/>
             <span class="profilo-icr-prefix">g CHO</span>
           </div>
         </div>
@@ -1234,36 +1256,37 @@ function render(){
       <div class="form-field" style="margin-bottom:10px">
         <label class="form-lbl">Nome alimento</label>
         <input class="form-input" type="text" placeholder="Es. Pasta di farro" autocorrect="off"
-          value="${escH(s.addForm.name)}" oninput="onFormInput('name',event)"/>
+          autocapitalize="words" id="cf-name"
+          oninput="onFormInput('name',event)"/>
       </div>
       <div style="font-size:11px;color:var(--sub);margin-bottom:8px;font-weight:600">Valori per 100g</div>
       <div class="form-row">
         <div class="form-field">
           <label class="form-lbl">CHO totali</label>
           <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
-            value="${s.addForm.cho}" oninput="onFormInput('cho',event)"/>
+            id="cf-cho" oninput="onFormInput('cho',event)"/>
           <div class="form-hint">g</div>
         </div>
         <div class="form-field">
           <label class="form-lbl">Zuccheri</label>
           <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
-            value="${s.addForm.sug}" oninput="onFormInput('sug',event)"/>
+            id="cf-sug" oninput="onFormInput('sug',event)"/>
           <div class="form-hint">g</div>
         </div>
         <div class="form-field">
           <label class="form-lbl">Fibre</label>
           <input class="form-num" type="number" min="0" max="100" step="0.1" placeholder="0.0"
-            value="${s.addForm.fib}" oninput="onFormInput('fib',event)"/>
+            id="cf-fib" oninput="onFormInput('fib',event)"/>
           <div class="form-hint">g</div>
         </div>
         <div class="form-field">
           <label class="form-lbl" style="white-space:nowrap">IG <span style="font-weight:400;text-transform:none;letter-spacing:0">(opz.)</span></label>
           <input class="form-num" type="number" min="0" max="120" step="1" placeholder="—"
-            value="${s.addForm.gi}" oninput="onFormInput('gi',event)"/>
+            id="cf-gi" oninput="onFormInput('gi',event)"/>
           <div class="form-hint">0–120</div>
         </div>
       </div>
-      ${s.addForm.error?`<div class="form-error">${s.addForm.error}</div>`:''}
+      ${s.addForm.error?`<div class="form-error" id="cf-error">${s.addForm.error}</div>`:`<div class="form-error" id="cf-error" style="display:none"></div>`}
       <button class="btn-save" onclick="saveCustomFood()">Salva alimento</button>
     </div>`;
     if(s.custom.length>0){
@@ -1468,9 +1491,16 @@ function render(){
 
   root.innerHTML=html;
 
-  // Ripristino la posizione di scroll dopo il re-render
+  // Popola i campi non-controllati dopo il render (evita sovrascrittura durante digitazione)
   const newSarea=document.getElementById('sarea');
   if(newSarea&&savedScroll>0) newSarea.scrollTop=savedScroll;
+
+  // ICR field: popola solo se il campo è vuoto (prima apertura)
+  setTimeout(()=>{
+    const icrEl=document.getElementById('icr-input');
+    if(icrEl&&icrEl.value===''&&state.profiloForm.icr)
+      icrEl.value=state.profiloForm.icr;
+  },0);
 }
 
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -1583,7 +1613,7 @@ function toggleFav(){
 }
 function removeFav(e,i){e.stopPropagation();state.favs.splice(i,1);saveToStorage();render();}
 
-function onFormInput(field,e){state.addForm[field]=e.target.value;state.addForm.error='';render();}
+function onFormInput(field,e){state.addForm[field]=e.target.value;state.addForm.error='';}
 
 function saveCustomFood(){
   const f=state.addForm;
