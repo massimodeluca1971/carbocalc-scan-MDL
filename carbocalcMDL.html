@@ -57,6 +57,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);
 .brand-badge{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;
   background:var(--lav-light);color:var(--lav-deep);font-weight:700;letter-spacing:.04em}
 .search-row{display:flex;gap:8px}
+.search-input-wrap{flex:1;position:relative;display:flex;align-items:center}
+.search-input-wrap .search-input{width:100%}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  width:22px;height:22px;border-radius:50%;border:none;background:var(--sub);
+  color:var(--card);font-size:13px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;flex-shrink:0}
+.search-clear:active{background:var(--lav-deep)}
 .search-input{flex:1;padding:12px 14px;font-size:16px;border:1.5px solid var(--lav-border);
   border-radius:14px;background:var(--lav-light);color:var(--text);outline:none;
   -webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
@@ -1063,10 +1071,15 @@ function render(){
   </div>`;
 
   if(s.tab==='cerca'){
+    const hasQuery=s.query.trim().length>0||s.creaResults.length>0||s.usdaResults.length>0||s.activeCat;
     html+=`<div class="search-row">
-      <input class="search-input" id="si" type="text" autocorrect="off" autocapitalize="off"
-        spellcheck="false" placeholder="Cerca alimento in italiano…"
-        value="${escH(s.query)}" oninput="onQueryInput(event)" onkeydown="onQueryKey(event)"/>
+      <div class="search-input-wrap">
+        <input class="search-input" id="si" type="text" autocorrect="off" autocapitalize="off"
+          spellcheck="false" placeholder="Cerca alimento in italiano…"
+          style="${hasQuery?'padding-right:36px':''}"
+          value="${escH(s.query)}" oninput="onQueryInput(event)" onkeydown="onQueryKey(event)"/>
+        ${hasQuery?`<button class="search-clear" onclick="goHome()" title="Torna alla home">✕</button>`:''}
+      </div>
       <button class="search-btn" onclick="doSearch()" ${s.searching||!s.query.trim()?'disabled':''}>
         ${s.searching?'<span class="spinner"></span>':'Cerca'}
       </button>
@@ -1507,6 +1520,14 @@ function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 
 // ── HANDLERS ──
 function setTab(t){state.tab=t;render();}
+function goHome(){
+  state.query='';state.creaResults=[];state.usdaResults=[];
+  state.selected=null;state.activeCat=null;state.srcTab='crea';
+  // Pulisce il campo di ricerca nel DOM (non controllato)
+  const si=document.getElementById('si');
+  if(si) si.value='';
+  render();
+}
 function setSrcTab(t){
   state.srcTab=t;
   if(t==='usda'&&state.usdaResults.length===0&&!state.searching&&state.query)fetchUSDA(state.query);
