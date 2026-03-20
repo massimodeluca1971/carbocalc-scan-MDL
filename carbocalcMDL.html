@@ -117,6 +117,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);
 .b-src-crea{background:var(--green-light);color:var(--green-dark);margin-left:auto}
 .b-src-usda{background:var(--amber-light);color:var(--amber);margin-left:auto}
 .b-src-custom{background:var(--lav-light);color:var(--lav-deep);margin-left:auto}
+.b-gi-low{background:#E2F7EF;color:#0D7A54;border:1px solid #5EC99A}
+.b-gi-mid{background:#FEF3E2;color:#B86E0A;border:1px solid #E09020}
+.b-gi-high{background:#FDEAEA;color:#D94040;border:1px solid #E08080}
+@media(prefers-color-scheme:dark){
+  .b-gi-low{background:#0D3D2A;color:#5EC99A;border-color:#1A6040}
+  .b-gi-mid{background:#2A1C04;color:#E0A050;border-color:#704010}
+  .b-gi-high{background:#2D1212;color:#E08080;border-color:#703030}
+}
 
 /* RESULT PANEL */
 .result-panel{background:var(--card);border-top:1px solid var(--border);
@@ -131,18 +139,21 @@ html,body{height:100%;background:var(--bg);color:var(--text);
   cursor:pointer;white-space:nowrap;flex-shrink:0}
 .qbtn:active{transform:scale(.95)}
 .qbtn.active{background:var(--lav-deep);border-color:var(--lav-deep);color:#fff}
-.gram-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.gram-lbl{font-size:13px;color:var(--sub);width:38px;flex-shrink:0}
-.gram-slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;
-  background:var(--border);outline:none}
-.gram-slider::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;
-  border-radius:50%;background:var(--lav-deep);cursor:pointer;
-  border:3px solid var(--card);box-shadow:0 0 0 1.5px var(--lav-deep)}
-.gram-num{width:62px;padding:8px 4px;font-size:18px;font-weight:700;text-align:center;
-  border:1px solid var(--border);border-radius:10px;background:var(--lav-light);
+.gram-row{display:flex;align-items:center;gap:6px;margin-bottom:12px}
+.gram-lbl{font-size:12px;color:var(--sub);flex-shrink:0}
+.gram-steppers{display:flex;align-items:center;gap:5px;flex:1}
+.gram-step-group{display:flex;gap:4px}
+.gbtn{padding:9px 11px;border-radius:10px;border:1.5px solid var(--lav-border);
+  background:var(--lav-light);color:var(--lav-deep);font-size:13px;font-weight:700;
+  cursor:pointer;white-space:nowrap;flex-shrink:0;min-width:44px;text-align:center;
+  -webkit-tap-highlight-color:transparent}
+.gbtn:active{background:var(--lav-deep);color:#fff;border-color:var(--lav-deep);transform:scale(.94)}
+.gram-center{display:flex;align-items:center;gap:5px;flex:1;justify-content:center}
+.gram-num{width:72px;padding:9px 4px;font-size:20px;font-weight:700;text-align:center;
+  border:2px solid var(--lav-border);border-radius:12px;background:var(--lav-light);
   color:var(--text);font-variant-numeric:tabular-nums;outline:none;-webkit-appearance:none}
-.gram-num:focus{border-color:var(--lav-deep)}
-.gram-g{font-size:14px;color:var(--sub)}
+.gram-num:focus{border-color:var(--lav-deep);background:var(--card)}
+.gram-g{font-size:14px;color:var(--sub);font-weight:600}
 .metrics-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
 .met-box{background:var(--lav-light);border-radius:12px;padding:10px 10px 9px;border:1px solid var(--border)}
 .met-box.big{background:var(--green-light);border-color:var(--green-mid)}
@@ -222,6 +233,85 @@ html,body{height:100%;background:var(--bg);color:var(--text);
   background:var(--lav-deep);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
 .btn-save:active{opacity:.85;transform:scale(.98)}
 .form-error{font-size:12px;color:var(--red);margin-top:-4px;margin-bottom:6px}
+
+/* GI / CG PANEL */
+.gi-panel{border-radius:12px;padding:11px 13px;margin-bottom:10px;border:1.5px solid var(--border)}
+.gi-panel.gi-green{background:var(--green-light);border-color:var(--green-mid)}
+.gi-panel.gi-amber{background:var(--amber-light);border-color:#E09020}
+.gi-panel.gi-red{background:#FDEAEA;border-color:#E08080}
+@media(prefers-color-scheme:dark){
+  .gi-panel.gi-red{background:#2D1212;border-color:#A04040}
+}
+.gi-header{display:flex;align-items:center;gap:6px;margin-bottom:9px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+.gi-header.gi-green{color:var(--green-dark)}
+.gi-header.gi-amber{color:var(--amber)}
+.gi-header.gi-red{color:var(--red)}
+.gi-nums{display:flex;gap:8px;margin-bottom:0}
+.gi-box{flex:1;background:rgba(255,255,255,.55);border-radius:9px;padding:8px 10px;text-align:center;border:1px solid rgba(0,0,0,.06)}
+@media(prefers-color-scheme:dark){.gi-box{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.08)}}
+.gi-box-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--sub);text-transform:uppercase;margin-bottom:2px}
+.gi-box-val{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;color:var(--text)}
+.gi-box-sub{font-size:10px;color:var(--sub);margin-top:2px}
+.gi-exp{margin-top:9px;padding:9px 11px;border-radius:10px;background:rgba(107,79,168,.07);border:1px solid var(--lav-border)}
+.gi-exp-head{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--lav-deep);text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.gi-exp-row{display:flex;align-items:baseline;gap:6px}
+.gi-exp-val{font-size:20px;font-weight:700;color:var(--lav-deep);font-variant-numeric:tabular-nums}
+.gi-exp-unit{font-size:12px;color:var(--lav-mid);font-weight:600}
+.gi-exp-note{font-size:10px;color:var(--sub);margin-top:5px;line-height:1.45}
+
+/* PROFILO INSULINICO */
+.profilo-card{background:var(--card);margin:0 16px 12px;border-radius:16px;
+  border:2px solid var(--lav-border);padding:18px}
+.profilo-title{font-size:15px;font-weight:700;color:var(--lav-deep);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.profilo-subtitle{font-size:11px;color:var(--sub);margin-bottom:16px;line-height:1.45}
+.profilo-row{display:flex;gap:10px;margin-bottom:12px;align-items:flex-end}
+.profilo-field{display:flex;flex-direction:column;gap:5px;flex:1}
+.profilo-lbl{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--sub);text-transform:uppercase}
+.profilo-icr-wrap{display:flex;align-items:center;gap:6px}
+.profilo-icr-prefix{font-size:14px;font-weight:700;color:var(--sub);white-space:nowrap}
+.profilo-saved{font-size:12px;font-weight:700;color:var(--green);display:flex;align-items:center;gap:5px;margin-top:4px}
+.insulin-type-grid{display:flex;gap:6px;flex-wrap:wrap}
+.insulin-chip{padding:7px 12px;border-radius:10px;border:1.5px solid var(--border);
+  background:var(--lav-light);color:var(--sub);font-size:12px;font-weight:700;
+  cursor:pointer;white-space:nowrap}
+.insulin-chip.active{background:var(--lav-deep);border-color:var(--lav-deep);color:#fff}
+.insulin-chip:active{transform:scale(.96)}
+
+/* PANNELLO DOSE */
+.dose-panel{background:linear-gradient(135deg,rgba(107,79,168,.07),rgba(26,158,110,.06));
+  border:1.5px solid var(--lav-border);border-radius:12px;padding:12px 13px;margin-bottom:10px}
+.dose-header{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--lav-deep);
+  text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.dose-rows{display:flex;flex-direction:column;gap:7px}
+.dose-row{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;
+  background:var(--card);border:1px solid var(--border)}
+.dose-row.dose-main{border-color:var(--lav-mid);background:var(--lav-light)}
+.dose-row.dose-gi{border-color:#C070C0;background:rgba(192,112,192,.08)}
+@media(prefers-color-scheme:dark){
+  .dose-row.dose-gi{background:rgba(192,112,192,.12)}
+}
+.dose-icon{font-size:18px;flex-shrink:0}
+.dose-info{flex:1}
+.dose-lbl{font-size:11px;font-weight:700;color:var(--sub);margin-bottom:1px}
+.dose-desc{font-size:10px;color:var(--sub);line-height:1.3}
+.dose-val{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--lav-deep);white-space:nowrap}
+.dose-val span{font-size:13px;font-weight:600;color:var(--lav-mid)}
+.dose-gi-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;
+  letter-spacing:.06em;padding:2px 7px;border-radius:6px;background:rgba(192,112,192,.2);
+  color:#9030A0;margin-top:3px;text-transform:uppercase}
+@media(prefers-color-scheme:dark){.dose-gi-badge{color:#D080D0;background:rgba(192,112,192,.2)}}
+.dose-delta{font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;white-space:nowrap}
+.dose-delta.up{background:#FDEAEA;color:var(--red)}
+.dose-delta.down{background:var(--green-light);color:var(--green-dark)}
+.dose-delta.eq{background:var(--lav-light);color:var(--lav-deep)}
+@media(prefers-color-scheme:dark){
+  .dose-delta.up{background:#3D1212;color:#E08080}
+  .dose-delta.down{background:#0D3D2A;color:#5EC99A}
+}
+.dose-timing{margin-top:9px;padding:8px 10px;border-radius:9px;
+  background:rgba(184,110,10,.08);border:1px solid rgba(184,110,10,.25);
+  font-size:10px;color:var(--amber);line-height:1.5;font-weight:600}
+.dose-no-profile{font-size:12px;color:var(--sub);text-align:center;padding:8px 0;line-height:1.6}
 
 /* CONFIRM */
 .confirm-overlay{position:fixed;inset:0;background:rgba(30,26,46,.5);z-index:200;
@@ -487,6 +577,153 @@ const CREA=[
 ];
 
 
+// ── INDICE GLICEMICO (Fonte: University of Sydney GI Database + tabelle cliniche) ──
+// Classificazione IG: basso ≤55 | medio 56-69 | alto ≥70
+// Classificazione CG: basso ≤10 | medio 11-19 | alto ≥20
+const GI_DB={
+  // CEREALI E DERIVATI
+  "Pane bianco":75,"Pane integrale":71,"Pane di segale":58,
+  "Pane tipo rosetta / ciabatta":73,"Pane al malto":55,"Pane senza glutine":75,
+  "Grissini":73,"Crackers":65,"Crackers integrali":57,
+  "Fette biscottate":76,"Fette biscottate integrali":65,
+  "Pasta secca (cruda)":49,"Pasta integrale (cruda)":42,
+  "Pasta cotta":49,"Pasta integrale (cotta)":42,
+  "Spaghetti (cotti)":46,"Pennette / rigatoni (cotti)":47,
+  "Tagliatelle (crude)":50,"Tagliatelle (cotte)":50,
+  "Gnocchi di patate":68,"Tortellini (crudi)":50,"Tortellini (cotti)":50,
+  "Riso bianco (crudo)":72,"Riso bianco (cotto)":72,
+  "Riso integrale (crudo)":55,"Riso integrale (cotto)":55,
+  "Risotto (cotto, base)":69,"Farro (crudo)":45,"Farro (cotto)":45,
+  "Orzo perlato (crudo)":28,"Orzo perlato (cotto)":28,
+  "Polenta (cotta)":70,"Polenta istantanea (cotta)":90,
+  "Piadina romagnola":70,"Pizza margherita":60,"Pizza bianca":70,
+  "Focaccia":70,"Semola di grano duro":60,
+  "Cous cous (cotto)":65,"Fiocchi d'avena":55,
+  "Corn flakes":81,"Muesli":57,
+  // FRUTTA FRESCA
+  "Mela":36,"Pera":38,"Banana":51,"Arancia":43,
+  "Mandarino":47,"Clementine":47,
+  "Uva bianca":59,"Uva nera":59,
+  "Fragole":40,"Ciliegie":22,"Pesca":42,
+  "Nettarina / pesca noce":42,"Albicocca":57,
+  "Ananas":59,"Anguria / cocomero":76,"Melone":65,
+  "Kiwi":52,"Fico":61,"Susina / prugna":40,
+  "Mango":51,"Pompelmo":25,"Melagrana":53,
+  "Castagne":60,"Datteri":103,"Mirtilli":25,
+  "Lamponi":32,"More":25,"Avocado":10,
+  // VERDURA (solo quelle con CHO significativi)
+  "Patata (bollita)":78,"Patata (cruda)":65,"Patata dolce":63,
+  "Carota":39,"Piselli (freschi)":51,"Piselli (surgelati)":51,
+  "Mais (in chicchi)":52,"Barbabietola rossa":64,"Zucca gialla":75,
+  // LEGUMI
+  "Fagioli borlotti (secchi)":41,"Fagioli borlotti (cotti)":41,
+  "Fagioli cannellini (secchi)":31,"Fagioli cannellini (cotti)":31,
+  "Fagioli neri (secchi)":30,"Ceci (secchi)":28,"Ceci (cotti)":28,
+  "Lenticchie (secche)":32,"Lenticchie (cotte)":32,
+  "Fave (secche)":40,"Fave (cotte)":40,"Edamame":18,
+  // LATTICINI
+  "Latte intero":31,"Latte parzialmente scremato":30,"Latte scremato":32,
+  "Yogurt intero naturale":35,"Yogurt greco naturale":33,
+  "Yogurt magro":33,"Yogurt alla frutta":33,
+  // BEVANDE
+  "Succo d'arancia (100%)":50,"Succo di mela (100%)":44,
+  "Coca-Cola":63,"Aranciata":66,"Gassosa / bibite zuccherate":66,
+  "Birra (media gradazione)":66,
+  "Latte di soia":34,"Latte di avena":65,
+  "Latte di riso":86,"Latte di mandorla":25,
+  // DOLCI E SNACK
+  "Cioccolato fondente (>70%)":23,"Cioccolato fondente":49,
+  "Cioccolato al latte":43,"Miele":61,
+  "Zucchero bianco":65,"Zucchero di canna":65,
+  "Marmellata (media)":51,"Nutella":33,
+  "Gelato alla crema":51,"Gelato alla frutta":42,
+  "Cornetto / brioche":67,"Biscotti secchi":58,
+  "Biscotti frollini":55,"Cantucci":58,
+  "Pandoro":68,"Panettone":56,"Colomba pasquale":56,
+  "Patatine fritte (confezionate)":51,
+  "Popcorn (salati)":65,"Crackers al riso (gallette)":82,
+  // FRUTTA SECCA (generalmente basso IG)
+  "Arachidi":14,"Mandorle":0,"Noci":15,
+  "Nocciole":15,"Anacardi":25,"Pistacchi":15,
+};
+
+function getGI(name){
+  if(GI_DB[name]!==undefined) return GI_DB[name];
+  // Fuzzy: cerca il nome più simile nel database
+  const nl=name.toLowerCase();
+  for(const[k,v] of Object.entries(GI_DB)){
+    const kl=k.toLowerCase();
+    if(nl===kl||nl.includes(kl)||kl.includes(nl)) return v;
+  }
+  return null;
+}
+
+function giClass(gi){
+  if(gi<=55) return 'gi-green';
+  if(gi<=69) return 'gi-amber';
+  return 'gi-red';
+}
+function giBadgeClass(gi){
+  if(gi<=55) return 'b-gi-low';
+  if(gi<=69) return 'b-gi-mid';
+  return 'b-gi-high';
+}
+function giBadgeEmoji(gi){
+  if(gi<=55) return '🟢';
+  if(gi<=69) return '🟡';
+  return '🔴';
+}
+function cgClass(cg){
+  if(cg<=10) return 'gi-green';
+  if(cg<=19) return 'gi-amber';
+  return 'gi-red';
+}
+function giLabel(gi){
+  if(gi<=55) return 'basso';
+  if(gi<=69) return 'medio';
+  return 'alto';
+}
+function cgLabel(cg){
+  if(cg<=10) return 'basso';
+  if(cg<=19) return 'medio';
+  return 'alto';
+}
+function giEmoji(gi){
+  if(gi<=55) return '🟢';
+  if(gi<=69) return '🟡';
+  return '🔴';
+}
+function giAlertMsg(gi,cg){
+  if(gi>=70||cg>=20) return 'Picco glicemico rapido — considera dose o anticipo maggiore';
+  if(gi>=56||cg>=11) return 'Impatto moderato — valuta un lieve anticipo del bolo';
+  return 'Impatto glicemico graduale';
+}
+
+const INSULIN_TYPES=[
+  {id:'fiasp',   label:'Fiasp',      onset:'~2 min',  peak:'~60 min', note:'Inizio azione ultrarapido. Per IG alto considera 5–10 min di anticipo. Per IG basso puoi bolizzare a pasto iniziato.'},
+  {id:'lispro',  label:'Humalog',    onset:'~15 min', peak:'~75 min', note:'Inizio azione rapido. Per IG alto anticipa il bolo di 15 min. Per IG medio/basso anche a pasto.'},
+  {id:'aspart',  label:'NovoRapid',  onset:'~15 min', peak:'~75 min', note:'Simile a Humalog. Per IG alto anticipa 15 min. Per IG basso puoi somministrare a pasto.'},
+  {id:'lyumjev', label:'Lyumjev',    onset:'~2 min',  peak:'~55 min', note:'Ultra-rapida come Fiasp. Per IG alto valuta 5 min di anticipo. Per IG basso a pasto iniziato.'},
+  {id:'glulisine',label:'Apidra',    onset:'~12 min', peak:'~70 min', note:'Analogo rapido. Anticipa di 10–15 min per IG alto. Per IG basso puoi somministrare a pasto.'},
+];
+
+function getInsulinInfo(id){
+  return INSULIN_TYPES.find(t=>t.id===id)||INSULIN_TYPES[0];
+}
+
+function calcDose(cho_g, icr){
+  if(!cho_g||!icr||icr<=0) return null;
+  return Math.round((cho_g/icr)*10)/10;
+}
+
+function doseTimingMsg(gi, insulinId){
+  const ins=getInsulinInfo(insulinId);
+  if(gi===null) return ins.note;
+  if(gi>=70) return `⏱ IG alto + ${ins.label}: ${ins.note}`;
+  if(gi>=56) return `⏱ IG medio + ${ins.label}: ${ins.note}`;
+  return `⏱ IG basso + ${ins.label}: ${ins.note}`;
+}
+
 const QUICK=[30,50,80,100,125,150,200,250,300];
 
 const CATS=[
@@ -595,8 +832,8 @@ function selectFav(i){
 }
 
 function setGrams(g){state.grams=g;render();}
-function onSlider(e){state.grams=Number(e.target.value);render();}
-function onGramNum(e){const v=Math.max(1,Number(e.target.value)||1);state.grams=v;render();}
+function adjustGrams(delta){state.grams=Math.max(1,Math.min(2000,state.grams+delta));render();}
+function onGramNum(e){state.grams=Math.max(1,Number(e.target.value)||1);render();}
 
 function copyCHO(){
   const f=state.selected;if(!f)return;
@@ -675,6 +912,15 @@ function removeCustomFood(i){
   render();
 }
 
+function saveProfilo(){
+  const icr=parseFloat(state.profiloForm.icr);
+  if(isNaN(icr)||icr<1||icr>30) return;
+  state.profilo={icr,insulinType:state.profiloForm.insulinType,saved:true};
+  saveToStorage();
+  showToast('✓ Profilo insulinico salvato');
+  render();
+}
+
 
 
 
@@ -735,6 +981,8 @@ let state={
   favs:[],
   custom:[],
   addForm:{name:'',cho:'',sug:'',fib:'',error:''},
+  profilo:{icr:6,insulinType:'fiasp',saved:false},
+  profiloForm:{icr:'6',insulinType:'fiasp'},
   toast:null,
   copied:false,
   confirmClear:false,
@@ -745,9 +993,15 @@ function loadFromStorage(){
     const m=localStorage.getItem('cc_meal');
     const f=localStorage.getItem('cc_favs');
     const c=localStorage.getItem('cc_custom');
+    const p=localStorage.getItem('cc_profilo');
     if(m)state.meal=JSON.parse(m);
     if(f)state.favs=JSON.parse(f);
     if(c)state.custom=JSON.parse(c);
+    if(p){
+      const prof=JSON.parse(p);
+      state.profilo={icr:prof.icr||6,insulinType:prof.insulinType||'fiasp',saved:true};
+      state.profiloForm={icr:String(prof.icr||6),insulinType:prof.insulinType||'fiasp'};
+    }
   }catch(e){}
 }
 function saveToStorage(){
@@ -755,6 +1009,7 @@ function saveToStorage(){
     localStorage.setItem('cc_meal',JSON.stringify(state.meal));
     localStorage.setItem('cc_favs',JSON.stringify(state.favs));
     localStorage.setItem('cc_custom',JSON.stringify(state.custom));
+    localStorage.setItem('cc_profilo',JSON.stringify({icr:state.profilo.icr,insulinType:state.profilo.insulinType}));
   }catch(e){}
 }
 function showToast(msg){
@@ -813,12 +1068,14 @@ function render(){
       html+=`<div class="section-lbl">${list.length} alimenti · per 100g</div>`;
       list.forEach((f,i)=>{
         const sel=s.selected&&s.selected.name===f.n;
+        const fgi=getGI(f.n);
         html+=`<div class="food-card${sel?' selected':''}" onclick="selectFoodDirect(${i},'cat')">
           <div class="fc-name">${escH(f.n)}</div>
           <div class="fc-badges">
             <span class="badge b-cho">CHO ${fmt(f.cho)}g</span>
             <span class="badge b-sug">Zucc ${fmt(f.sug)}g</span>
             ${f.fib>0?`<span class="badge b-fib">F ${fmt(f.fib)}g</span>`:''}
+            ${fgi!==null?`<span class="badge ${giBadgeClass(fgi)}" title="Indice Glicemico">${giBadgeEmoji(fgi)} IG ${fgi}</span>`:''}
             <span class="badge ${f.custom?'b-src-custom':'b-src-crea'}">${f.custom?'MIO':'CREA'}</span>
           </div>
         </div>`;
@@ -848,12 +1105,14 @@ function render(){
       html+=`<div class="section-lbl">${s.srcTab==='crea'?'CREA — eTCA 2019 (Italia)':'USDA FoodData Central'} · per 100g</div>`;
       foods.forEach((f,i)=>{
         const sel=s.selected&&s.selected.name===f.n;
+        const fgi=getGI(f.n);
         html+=`<div class="food-card${sel?' selected':''}" onclick="selectFood(${i})">
           <div class="fc-name">${escH(f.n)}</div>
           <div class="fc-badges">
             <span class="badge b-cho">CHO ${fmt(f.cho)}g</span>
             <span class="badge b-sug">Zucc ${fmt(f.sug)}g</span>
             ${f.fib>0?`<span class="badge b-fib">F ${fmt(f.fib)}g</span>`:''}
+            ${fgi!==null?`<span class="badge ${giBadgeClass(fgi)}" title="Indice Glicemico">${giBadgeEmoji(fgi)} IG ${fgi}</span>`:''}
             <span class="badge ${f.custom?'b-src-custom':s.srcTab==='crea'?'b-src-crea':'b-src-usda'}">${f.custom?'MIO':s.srcTab.toUpperCase()}</span>
           </div>
         </div>`;
@@ -918,6 +1177,37 @@ function render(){
 
   // ── I MIEI ──
   if(s.tab==='miei'){
+    const pf=s.profiloForm;
+    const icrVal=parseFloat(pf.icr)||0;
+    const profiloOk=icrVal>=1&&icrVal<=30;
+    html+=`<div class="profilo-card">
+      <div class="profilo-title">💉 Profilo insulinico</div>
+      <div class="profilo-subtitle">Inserisci il tuo rapporto insulina/CHO e il tipo di insulina.<br>I suggerimenti dose sono <strong>sperimentali</strong> e soggetti a valutazione medica.</div>
+      <div class="profilo-row">
+        <div class="profilo-field">
+          <label class="profilo-lbl">Rapporto insulina/CHO</label>
+          <div class="profilo-icr-wrap">
+            <span class="profilo-icr-prefix">1 UI ogni</span>
+            <input class="form-num" type="number" min="1" max="30" step="0.5" placeholder="6"
+              value="${escH(pf.icr)}" style="width:70px"
+              oninput="state.profiloForm.icr=event.target.value;state.profilo.saved=false;render()"/>
+            <span class="profilo-icr-prefix">g CHO</span>
+          </div>
+        </div>
+      </div>
+      <div class="profilo-field" style="margin-bottom:12px">
+        <label class="profilo-lbl">Tipo di insulina</label>
+        <div class="insulin-type-grid">
+          ${INSULIN_TYPES.map(t=>`<button class="insulin-chip${pf.insulinType===t.id?' active':''}"
+            onclick="state.profiloForm.insulinType='${t.id}';state.profilo.saved=false;render()">${t.label}</button>`).join('')}
+        </div>
+      </div>
+      ${!profiloOk&&pf.icr?`<div class="form-error" style="margin-bottom:8px">Rapporto non valido (1–30 g/UI).</div>`:''}
+      <button class="btn-save" style="background:var(--lav-deep)" onclick="saveProfilo()" ${profiloOk?'':'disabled'}>
+        ${s.profilo.saved?'✓ Profilo salvato':'Salva profilo'}
+      </button>
+      ${s.profilo.saved?`<div class="profilo-saved">✓ Attivo: 1 UI ogni ${s.profilo.icr}g CHO · ${getInsulinInfo(s.profilo.insulinType).label}</div>`:''}
+    </div>`;
     html+=`<div class="add-form">
       <div class="add-form-title">${icons.plus} Aggiungi alimento personale</div>
       <div class="form-field" style="margin-bottom:10px">
@@ -989,11 +1279,23 @@ function render(){
       </div>
       <div class="gram-row">
         <span class="gram-lbl">Grammi</span>
-        <input class="gram-slider" type="range" min="1" max="500" step="1"
-          value="${s.grams}" oninput="onSlider(event)"/>
-        <input class="gram-num" type="number" min="1" max="2000"
-          value="${s.grams}" oninput="onGramNum(event)"/>
-        <span class="gram-g">g</span>
+        <div class="gram-steppers">
+          <div class="gram-step-group">
+            <button class="gbtn" onclick="adjustGrams(-50)">−50</button>
+            <button class="gbtn" onclick="adjustGrams(-10)">−10</button>
+            <button class="gbtn" onclick="adjustGrams(-5)">−5</button>
+          </div>
+          <div class="gram-center">
+            <input class="gram-num" type="number" min="1" max="2000"
+              value="${s.grams}" oninput="onGramNum(event)"/>
+            <span class="gram-g">g</span>
+          </div>
+          <div class="gram-step-group">
+            <button class="gbtn" onclick="adjustGrams(5)">+5</button>
+            <button class="gbtn" onclick="adjustGrams(10)">+10</button>
+            <button class="gbtn" onclick="adjustGrams(50)">+50</button>
+          </div>
+        </div>
       </div>
       <div class="metrics-row">
         <div class="met-box big">
@@ -1010,6 +1312,88 @@ function render(){
           <div class="met-val blue">${sug!=null?fmt(sug,1):'—'}<span class="met-unit" style="color:var(--blue)">g</span></div>
         </div>
       </div>
+      ${(()=>{
+        const gi=getGI(f.name);
+        if(gi===null) return '';
+        const cg=net!=null ? parseFloat((gi*net/100).toFixed(1)) : null;
+        const dominantCls=cg!=null?(cgClass(cg)):(giClass(gi));
+        const dominantGi=gi;
+        return `<div class="gi-panel ${dominantCls}">
+          <div class="gi-header ${dominantCls}">${giEmoji(dominantGi)} Indice Glicemico · ${giAlertMsg(dominantGi,cg??0)}</div>
+          <div class="gi-nums">
+            <div class="gi-box">
+              <div class="gi-box-lbl">IG (per 100g)</div>
+              <div class="gi-box-val">${gi}</div>
+              <div class="gi-box-sub">${giLabel(gi)}</div>
+            </div>
+            ${cg!=null?`<div class="gi-box">
+              <div class="gi-box-lbl">Carico glicemico</div>
+              <div class="gi-box-val">${fmt(cg,1)}</div>
+              <div class="gi-box-sub">${cgLabel(cg)} · per ${s.grams}g</div>
+            </div>`:''}
+          </div>
+          ${cg!=null?`<div class="gi-exp">
+            <div class="gi-exp-head">⚗️ Sperimentale — solo guida</div>
+            <div class="gi-exp-row">
+              <span class="gi-exp-val">${fmt(cg,1)}</span>
+              <span class="gi-exp-unit">g glucosio-equivalente</span>
+            </div>
+            <div class="gi-exp-note">Questa porzione ha l'effetto glicemico di ~${fmt(cg,1)}g di glucosio puro.<br>CHO netti reali: ${fmt(net,1)}g — usa sempre questi per il bolo Omnipod 5.</div>
+          </div>`:''}
+        </div>`;
+      })()}
+      ${(()=>{
+        const icr=s.profilo.icr;
+        const insulinType=s.profilo.insulinType;
+        const gi=getGI(f.name);
+        const cg=gi!==null&&net!=null ? parseFloat((gi*net/100).toFixed(1)) : null;
+        const doseStd=calcDose(net,icr);
+        // Correttore IG: moltiplicatore sulla dose base (direzione corretta: IG alto → più insulina)
+        // Livelli sperimentali basati su letteratura clinica (non validati per uso autonomo)
+        let giMult=null, giMultLabel=null;
+        if(gi!==null){
+          if(gi>=85){giMult=1.15;giMultLabel='+15% (IG molto alto)';}
+          else if(gi>=70){giMult=1.10;giMultLabel='+10% (IG alto)';}
+          else if(gi>=56){giMult=1.05;giMultLabel='+5% (IG medio)';}
+          else{giMult=1.00;giMultLabel='nessuna correzione (IG basso)';}
+        }
+        const doseGI=(doseStd!==null&&giMult!==null) ? parseFloat((doseStd*giMult).toFixed(1)) : null;
+        const delta=(doseGI!==null&&doseStd!==null) ? parseFloat((doseGI-doseStd).toFixed(1)) : null;
+        const deltaClass=delta===null?'eq':delta>0.05?'up':delta<-0.05?'down':'eq';
+        const deltaStr=delta===null?'—':delta>0.05?`+${delta} UI`:delta<-0.05?`${delta} UI`:'= uguale';
+        if(!s.profilo.saved) return `<div class="dose-panel">
+          <div class="dose-header">💉 Suggerimento dose</div>
+          <div class="dose-no-profile">Imposta il tuo profilo insulinico<br>nella tab <strong>I Miei</strong> per vedere i suggerimenti.</div>
+        </div>`;
+        const ins=getInsulinInfo(insulinType);
+        return `<div class="dose-panel">
+          <div class="dose-header">💉 Suggerimento dose insulinica · <span style="font-weight:400;letter-spacing:0;text-transform:none;opacity:.7">${ins.label}</span></div>
+          <div class="dose-rows">
+            <div class="dose-row dose-main">
+              <div class="dose-icon">🔵</div>
+              <div class="dose-info">
+                <div class="dose-lbl">Dose standard (CHO netti)</div>
+                <div class="dose-desc">${fmt(net,1)}g ÷ ${icr} g/UI — usa questa per Omnipod 5</div>
+              </div>
+              <div class="dose-val">${doseStd!==null?fmt(doseStd,1):'—'}<span> UI</span></div>
+            </div>
+            ${doseGI!==null?`<div class="dose-row dose-gi">
+              <div class="dose-icon">⚗️</div>
+              <div class="dose-info">
+                <div class="dose-lbl">Correzione IG (sperimentale)</div>
+                <div class="dose-desc">${fmt(doseStd,1)} UI × ${giMult.toFixed(2)} = ${giMultLabel}</div>
+                <div><span class="dose-gi-badge">⚗️ sperimentale · solo guida medica</span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+                <div class="dose-val">${fmt(doseGI,1)}<span> UI</span></div>
+                ${delta!==null?`<span class="dose-delta ${deltaClass}">${deltaStr}</span>`:''}
+              </div>
+            </div>`:''}
+          </div>
+          <div class="dose-timing">${doseTimingMsg(gi,insulinType)}</div>
+          <div style="font-size:10px;color:var(--sub);margin-top:8px;line-height:1.5">⚠️ Questi valori sono orientativi e non sostituiscono le indicazioni del tuo medico diabetologo. Inserisci sempre i <strong>CHO netti reali</strong> in Omnipod 5.</div>
+        </div>`;
+      })()}
       <div class="panel-btns">
         <button class="btn-add" onclick="addToMeal()">${icons.plus} Aggiungi al pasto</button>
         <button class="btn-copy${s.copied?' done':''}" onclick="copyCHO()">${icons.copy} ${s.copied?'Copiato!':'Copia CHO'}</button>
