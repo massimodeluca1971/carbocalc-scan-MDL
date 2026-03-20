@@ -648,6 +648,10 @@ const GI_DB={
 };
 
 function getGI(name){
+  // Prima controlla se è un alimento personalizzato con IG salvato
+  const customFood=state.custom.find(f=>f.n===name);
+  if(customFood&&customFood.gi!=null) return customFood.gi;
+  // Poi cerca nel database CREA
   if(GI_DB[name]!==undefined) return GI_DB[name];
   // Fuzzy: cerca il nome più simile nel database
   const nl=name.toLowerCase();
@@ -894,13 +898,19 @@ function saveCustomFood(){
   if(isNaN(cho)||cho<0||cho>100){state.addForm.error="Carboidrati non validi (0–100g).";render();return;}
   const sug=parseFloat(f.sug)||0;
   const fib=parseFloat(f.fib)||0;
+  // IG opzionale: accettato solo se è un numero tra 0 e 120
+  const giRaw=f.gi.trim();
+  const gi=giRaw===''?null:parseFloat(giRaw);
+  if(giRaw!==''&&(isNaN(gi)||gi<0||gi>120)){
+    state.addForm.error="Indice Glicemico non valido (0–120, o lascia vuoto).";render();return;
+  }
   if(state.custom.some(c=>c.n.toLowerCase()===name.toLowerCase())){
     state.addForm.error="Hai già un alimento con questo nome.";render();return;
   }
-  state.custom.unshift({n:name,c:"Personale",cho,sug,fib});
+  state.custom.unshift({n:name,c:"Personale",cho,sug,fib,...(gi!==null&&{gi})});
   saveToStorage();
-  state.addForm={name:"",cho:"",sug:"",fib:"",error:""};
-  showToast("✓ "+name+" aggiunto ai tuoi alimenti");
+  state.addForm={name:"",cho:"",sug:"",fib:"",gi:"",error:""};
+  showToast("✓ "+name+" aggiunto"+(gi!==null?` · IG ${gi}`:''));
   render();
 }
 
@@ -980,7 +990,7 @@ let state={
   meal:[],
   favs:[],
   custom:[],
-  addForm:{name:'',cho:'',sug:'',fib:'',error:''},
+  addForm:{name:'',cho:'',sug:'',fib:'',gi:'',error:''},
   profilo:{icr:6,insulinType:'fiasp',saved:false},
   profiloForm:{icr:'6',insulinType:'fiasp'},
   toast:null,
@@ -1246,6 +1256,12 @@ function render(){
             value="${s.addForm.fib}" oninput="onFormInput('fib',event)"/>
           <div class="form-hint">g</div>
         </div>
+        <div class="form-field">
+          <label class="form-lbl" style="white-space:nowrap">IG <span style="font-weight:400;text-transform:none;letter-spacing:0">(opz.)</span></label>
+          <input class="form-num" type="number" min="0" max="120" step="1" placeholder="—"
+            value="${s.addForm.gi}" oninput="onFormInput('gi',event)"/>
+          <div class="form-hint">0–120</div>
+        </div>
       </div>
       ${s.addForm.error?`<div class="form-error">${s.addForm.error}</div>`:''}
       <button class="btn-save" onclick="saveCustomFood()">Salva alimento</button>
@@ -1253,10 +1269,11 @@ function render(){
     if(s.custom.length>0){
       html+=`<div class="section-lbl">I tuoi alimenti (${s.custom.length})</div>`;
       s.custom.forEach((f,i)=>{
+        const fgi=f.gi!=null?f.gi:null;
         html+=`<div class="custom-item">
           <div class="ci-info">
             <div class="ci-name">${escH(f.n)}</div>
-            <div class="ci-meta">CHO ${fmt(f.cho)}g · Zucc ${fmt(f.sug)}g · Fibre ${fmt(f.fib)}g (per 100g)</div>
+            <div class="ci-meta">CHO ${fmt(f.cho)}g · Zucc ${fmt(f.sug)}g · Fibre ${fmt(f.fib)}g${fgi!=null?` · <span style="font-weight:700;color:${fgi<=55?'var(--green-dark)':fgi<=69?'var(--amber)':'var(--red)'}">${giBadgeEmoji(fgi)} IG ${fgi}</span>`:' · IG non inserito'} (per 100g)</div>
           </div>
           <button class="ci-del" onclick="removeCustomFood(${i})">${icons.trash}</button>
         </div>`;
