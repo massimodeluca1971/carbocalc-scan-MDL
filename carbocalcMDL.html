@@ -931,10 +931,11 @@ function saveCustomFood(){
     if(errEl) errEl.textContent=state.addForm.error;
     return;
   }
-  state.custom.unshift({n:name,c:"Personale",cho,sug,fib,...(gi!==null&&{gi})});
+  state.custom.unshift({n:name,c:state.addForm.cat||'Cereali',cho,sug,fib,...(gi!==null&&{gi})});
   saveToStorage();
-  // Reset stato form
-  state.addForm={name:"",cho:"",sug:"",fib:"",gi:"",error:""};
+  // Reset stato form — mantiene la categoria selezionata per comodità
+  const catMemory=state.addForm.cat||'Cereali';
+  state.addForm={name:"",cho:"",sug:"",fib:"",gi:"",cat:catMemory,error:""};
   // Pulisce fisicamente i campi nel DOM (non controllati da value=)
   ['cf-name','cf-cho','cf-sug','cf-fib','cf-gi'].forEach(id=>{
     const el=document.getElementById(id);
@@ -1020,7 +1021,7 @@ let state={
   meal:[],
   favs:[],
   custom:[],
-  addForm:{name:'',cho:'',sug:'',fib:'',gi:'',error:''},
+  addForm:{name:'',cho:'',sug:'',fib:'',gi:'',cat:'Cereali',error:''},
   profilo:{icr:6,insulinType:'fiasp',saved:false},
   profiloForm:{icr:'6',insulinType:'fiasp'},
   toast:null,
@@ -1105,7 +1106,8 @@ function render(){
     // Categoria attiva
     if(s.activeCat&&!s.query){
       const cat=CATS.find(c=>c.id===s.activeCat);
-      const list=[...state.custom.filter(f=>f.c==='Personale'),...catFoods(cat)];
+      const customInCat=state.custom.filter(f=>cat.keywords.includes(f.c)).map(f=>({...f,custom:true}));
+      const list=[...customInCat,...catFoods(cat)];
       html+=`<div class="section-back" onclick="state.activeCat=null;render()">
         <span class="section-back-arrow">${icons.back}</span>
         <span class="section-back-lbl">${cat.emoji} ${cat.label}</span>
@@ -1135,7 +1137,7 @@ function render(){
       </div>
       <div class="cat-grid">`;
       CATS.forEach(cat=>{
-        const n=catFoods(cat).length;
+        const n=catFoods(cat).length+state.custom.filter(f=>cat.keywords.includes(f.c)).length;
         html+=`<div class="cat-card" onclick="openCat('${cat.id}')">
           <span class="cat-emoji">${cat.emoji}</span>
           <span class="cat-name">${cat.label}</span>
@@ -1267,8 +1269,18 @@ function render(){
     html+=`<div class="add-form">
       <div class="add-form-title">${icons.plus} Aggiungi alimento personale</div>
       <div class="form-field" style="margin-bottom:10px">
+        <label class="form-lbl">Categoria</label>
+        <div class="insulin-type-grid">`
+        +CATS.map(function(cat){
+          const active=s.addForm.cat===cat.keywords[0]?' active':'';
+          const kw=cat.keywords[0];
+          return '<button class="insulin-chip'+active+'" onclick="state.addForm.cat=\''+kw+'\';render()">'+cat.emoji+' '+cat.label+'</button>';
+        }).join('')+
+        `</div>
+      </div>
+      <div class="form-field" style="margin-bottom:10px">
         <label class="form-lbl">Nome alimento</label>
-        <input class="form-input" type="text" placeholder="Es. Pasta di farro" autocorrect="off"
+        <input class="form-input" type="text" placeholder="Es. Pasta senatore Cappelli" autocorrect="off"
           autocapitalize="words" id="cf-name"
           oninput="onFormInput('name',event)"/>
       </div>
@@ -1309,7 +1321,7 @@ function render(){
         html+=`<div class="custom-item">
           <div class="ci-info">
             <div class="ci-name">${escH(f.n)}</div>
-            <div class="ci-meta">CHO ${fmt(f.cho)}g · Zucc ${fmt(f.sug)}g · Fibre ${fmt(f.fib)}g${fgi!=null?` · <span style="font-weight:700;color:${fgi<=55?'var(--green-dark)':fgi<=69?'var(--amber)':'var(--red)'}">${giBadgeEmoji(fgi)} IG ${fgi}</span>`:' · IG non inserito'} (per 100g)</div>
+            <div class="ci-meta">${escH(f.c)} · CHO ${fmt(f.cho)}g · Zucc ${fmt(f.sug)}g · Fibre ${fmt(f.fib)}g${fgi!=null?` · <span style="font-weight:700;color:${fgi<=55?'var(--green-dark)':fgi<=69?'var(--amber)':'var(--red)'}">${giBadgeEmoji(fgi)} IG ${fgi}</span>`:' · IG non inserito'} (per 100g)</div>
           </div>
           <button class="ci-del" onclick="removeCustomFood(${i})">${icons.trash}</button>
         </div>`;
@@ -1567,7 +1579,7 @@ function selectFoodDirect(i,mode){
   let f;
   if(mode==='cat'){
     const cat=CATS.find(c=>c.id===state.activeCat);
-    const list=[...state.custom.filter(x=>x.c==='Personale'),...catFoods(cat)];
+    const list=[...state.custom.filter(f=>cat.keywords.includes(f.c)).map(f=>({...f,custom:true})),...catFoods(cat)];
     f=list[i];
   }
   if(!f)return;
