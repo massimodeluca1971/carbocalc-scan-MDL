@@ -136,8 +136,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);
 
 /* RESULT PANEL */
 .result-panel{background:var(--card);border-top:1px solid var(--border);
-  padding:14px 16px;flex-shrink:0;z-index:10;
-  box-shadow:0 -2px 12px rgba(107,79,168,.08)}
+  padding:14px 16px 14px;flex-shrink:0;z-index:10;
+  box-shadow:0 -2px 12px rgba(107,79,168,.08);
+  max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.result-panel::-webkit-scrollbar{display:none}
 .sel-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .sel-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.3;flex:1}
 .quick-row{display:flex;gap:5px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px}
@@ -1165,18 +1167,7 @@ function render(){
         </div>`;
       });
     }
-    html+=`<div style="height:${(()=>{
-      if(!s.selected) return 20;
-      const gi=getGI(s.selected.name);
-      const hasGI=gi!==null;
-      const hasDose=s.profilo.saved;
-      // Stima altezza pannello: base + GI panel + dose panel
-      let h=310; // header + quick buttons + stepper + metriche + bottoni
-      if(hasGI) h+=220; // pannello IG/CG + sezione sperimentale
-      if(hasDose) h+=200; // pannello dose
-      else h+=80; // pannello dose minimale (no profilo)
-      return h;
-    })()}px"></div>`;
+    html+=`<div style="height:${s.selected?20:20}px"></div>`;
   }
 
   // ── PASTO ──
@@ -1350,6 +1341,11 @@ function render(){
         <span class="badge ${srcClass}">${srcLabel}</span>
         <span class="sel-name">${escH(f.name)}</span>
       </div>
+      <div class="panel-btns" style="margin-bottom:12px">
+        <button class="btn-add" onclick="addToMeal()">${icons.plus} Aggiungi al pasto</button>
+        <button class="btn-copy${s.copied?' done':''}" onclick="copyCHO()">${icons.copy} ${s.copied?'Copiato!':'Copia CHO'}</button>
+        <button class="btn-fav" onclick="toggleFav()">${isFav?icons.star_fill:icons.star}</button>
+      </div>
       <div class="quick-row">
         ${QUICK.map(g=>`<button class="qbtn${s.grams===g?' active':''}" onclick="setGrams(${g})">${g}g</button>`).join('')}
       </div>
@@ -1470,11 +1466,6 @@ function render(){
           <div style="font-size:10px;color:var(--sub);margin-top:8px;line-height:1.5">⚠️ Questi valori sono orientativi e non sostituiscono le indicazioni del tuo medico diabetologo. Inserisci sempre i <strong>CHO netti reali</strong> in Omnipod 5.</div>
         </div>`;
       })()}
-      <div class="panel-btns">
-        <button class="btn-add" onclick="addToMeal()">${icons.plus} Aggiungi al pasto</button>
-        <button class="btn-copy${s.copied?' done':''}" onclick="copyCHO()">${icons.copy} ${s.copied?'Copiato!':'Copia CHO'}</button>
-        <button class="btn-fav" onclick="toggleFav()">${isFav?icons.star_fill:icons.star}</button>
-      </div>
     </div>`;
   }
 
