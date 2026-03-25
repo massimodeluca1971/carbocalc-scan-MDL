@@ -60,7 +60,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);
 .brand-badge{margin-left:auto;font-size:10px;padding:2px 8px;border-radius:10px;
   background:var(--lav-light);color:var(--lav-deep);font-weight:700;letter-spacing:.04em}
 .search-row{display:flex;gap:8px}
-.search-input-wrap{flex:1;position:relative;display:flex;align-items:center}
+.search-input-wrap{flex:1;position:relative;display:flex;align-items:center;align-self:stretch}
 .search-input-wrap .search-input{width:100%}
 .search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);
   width:22px;height:22px;border-radius:50%;border:none;background:var(--sub);
@@ -78,6 +78,21 @@ html,body{height:100%;background:var(--bg);color:var(--text);
   cursor:pointer;white-space:nowrap}
 .search-btn:active{opacity:.85;transform:scale(.97)}
 .search-btn:disabled{background:var(--green-mid);cursor:default}
+
+/* AUTOCOMPLETE */
+.suggestions-box{position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:var(--card);border:1.5px solid var(--lav-border);border-radius:14px;
+  box-shadow:0 8px 24px rgba(107,79,168,.18);z-index:100;overflow:hidden;
+  max-height:280px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.suggestions-box::-webkit-scrollbar{display:none}
+.sug-item{padding:11px 14px;display:flex;align-items:center;gap:10px;
+  cursor:pointer;border-bottom:0.5px solid var(--border)}
+.sug-item:last-child{border-bottom:none}
+.sug-item:active{background:var(--lav-light)}
+.sug-name{flex:1;font-size:14px;font-weight:600;color:var(--text)}
+.sug-cho{font-size:12px;font-weight:700;color:var(--green-dark);
+  background:var(--green-light);padding:2px 7px;border-radius:7px;white-space:nowrap}
+.sug-gi{font-size:11px;font-weight:700;padding:2px 6px;border-radius:6px;white-space:nowrap}
 .source-tabs{display:flex;gap:6px;margin-top:10px}
 .stab{flex:1;padding:7px;border-radius:10px;border:1px solid var(--border);
   background:var(--lav-light);font-size:12px;font-weight:700;color:var(--sub);cursor:pointer;text-align:center}
@@ -1085,6 +1100,7 @@ function render(){
           style="${hasQuery?'padding-right:36px':''}"
           value="${escH(s.query)}" oninput="onQueryInput(event)" onkeydown="onQueryKey(event)"/>
         ${hasQuery?`<button class="search-clear" onclick="goHome()" title="Torna alla home">✕</button>`:''}
+        <div id="suggestions"></div>
       </div>
       <button class="search-btn" onclick="doSearch()" ${s.searching||!s.query.trim()?'disabled':''}>
         ${s.searching?'<span class="spinner"></span>':'Cerca'}
@@ -1544,15 +1560,85 @@ function openCat(id){state.activeCat=id;state.selected=null;render();}
 function onQueryInput(e){
   state.query=e.target.value;
   state.activeCat=null;
-  if(!state.query.trim()){state.creaResults=[];state.usdaResults=[];state.selected=null;}
+  if(!state.query.trim()){
+    state.creaResults=[];state.usdaResults=[];state.selected=null;
+    updateSuggestions('');
+  } else {
+    updateSuggestions(state.query);
+  }
   const btn=document.getElementById('sbtn')||document.querySelector('.search-btn');
   if(btn)btn.disabled=!state.query.trim()||state.searching;
 }
-function onQueryKey(e){if(e.key==='Enter')doSearch();}
+
+function updateSuggestions(q){
+  const box=document.getElementById('suggestions');
+  if(!box) return;
+  const t=q.trim();
+  if(t.length<2){box.innerHTML='';return;}
+
+  const results=searchCREA(t).slice(0,6);
+  if(results.length===0){box.innerHTML='';return;}
+
+  let html='<div class="suggestions-box">';
+  results.forEach((f,i)=>{
+    const gi=getGI(f.n);
+    const giHtml=gi!==null
+      ? `<span class="sug-gi ${giBadgeClass(gi)}">${giBadgeEmoji(gi)} ${gi}</span>`
+      : '';
+    const name=f.n.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // Evidenzia la parte digitata nel nome
+    const tLow=t.toLowerCase();
+    const nLow=name.toLowerCase();
+    const idx=nLow.indexOf(tLow);
+    const nameHtml=idx>=0
+      ? name.slice(0,idx)+'<strong>'+name.slice(idx,idx+t.length)+'</strong>'+name.slice(idx+t.length)
+      : name;
+    html+=`<div class="sug-item" ontouchstart="" onclick="selectFromSuggestion(${i})">
+      <span class="sug-name">${nameHtml}</span>
+      ${giHtml}
+      <span class="sug-cho">CHO ${fmt(f.cho)}g</span>
+    </div>`;
+  });
+  html+='</div>';
+  box.innerHTML=html;
+  // Salva i risultati correnti per selectFromSuggestion
+  window._sugResults=results;
+}
+
+function selectFromSuggestion(i){
+  const f=window._sugResults&&window._sugResults[i];
+  if(!f) return;
+  // Chiudi suggerimenti
+  const box=document.getElementById('suggestions');
+  if(box) box.innerHTML='';
+  // Aggiorna il campo di testo
+  const si=document.getElementById('si');
+  if(si) si.value=f.n;
+  state.query=f.n;
+  // Fai la ricerca completa e seleziona
+  const cr=searchCREA(f.n);
+  state.creaResults=cr;state.usdaResults=[];state.activeCat=null;
+  state.srcTab='crea';
+  // Seleziona direttamente
+  const src=f.custom?'custom':'crea';
+  state.selected={name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c,src};
+  state.grams=100;
+  render();
+  setTimeout(()=>document.getElementById('sarea')?.scrollTo({top:99999,behavior:'smooth'}),80);
+}
+function onQueryKey(e){
+  if(e.key==='Enter'){
+    const box=document.getElementById('suggestions');
+    if(box) box.innerHTML='';
+    doSearch();
+  }
+}
 
 function doSearch(){
   const q=state.query.trim();
   if(!q)return;
+  const box=document.getElementById('suggestions');
+  if(box) box.innerHTML='';
   const cr=searchCREA(q);
   state.creaResults=cr;state.usdaResults=[];state.selected=null;state.activeCat=null;
   state.srcTab=cr.length>0?'crea':'usda';
