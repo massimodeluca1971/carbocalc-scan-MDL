@@ -5,6 +5,9 @@
 
 const icoBook=`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="16" y2="7"/><line x1="9" y1="11" x2="14" y2="11"/></svg>`;
 
+// Numeri con la virgola italiana (solo visualizzazione)
+function fmtIt(v,d=1){return fmt(v,d).replace('.',',');}
+
 function fmtGiorno(k){
   const d=parseDayKey(k);
   if(!d) return k;
@@ -19,9 +22,7 @@ function chipsTipo(sel,azione){
 
 // ── Pulsante nella schermata Pasto ──
 function renderPulsanteRegistra(){
-  return `<div style="margin:0 16px 14px">
-    <button class="btn-save" onclick="apriRegistra()">📓 Registra nel diario</button>
-  </div>`;
+  return `<button class="btn-primary" onclick="apriRegistra()">${icoBook} Registra nel diario</button>`;
 }
 
 // ── Scheda Diario ──
@@ -37,22 +38,20 @@ function renderDiarioTab(){
     <button class="dg-arrow" onclick="cambiaGiorno(1)" aria-label="Giorno successivo"${k>=oggi?' disabled':''}>›</button>
   </div>`;
   h+=`<div class="dg-tot">
-    <div><div class="dg-tot-val">${fmt(t.cho,0)}<span> g</span></div><div class="dg-tot-lbl">CHO netti</div></div>
-    <div><div class="dg-tot-val">${t.conSugg?fmt(t.doseStd,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">dose suggerita</div></div>
-    <div><div class="dg-tot-val">${t.conDose?fmt(t.doseInserita,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">dose inserita${t.n&&t.conDose<t.n?` (${t.conDose}/${t.n})`:''}</div></div>
+    <div><div class="dg-tot-val">${fmtIt(t.cho,0)}<span> g</span></div><div class="dg-tot-lbl">CHO netti</div></div>
+    <div><div class="dg-tot-val">${t.conSugg?fmtIt(t.doseStd,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">dose suggerita</div></div>
+    <div><div class="dg-tot-val">${t.conDose?fmtIt(t.doseInserita,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">dose inserita${t.n&&t.conDose<t.n?` (${t.conDose}/${t.n})`:''}</div></div>
   </div>`;
   if(!voci.length){
-    h+=`<div class="empty-meal" style="padding:36px 30px"><div style="font-size:40px">📓</div>
+    h+=`<div class="empty-meal" style="padding:36px 20px">
       <div class="empty-title">Nessun pasto registrato</div>
       <div class="empty-sub">Componi il pasto e tocca <strong>Registra nel diario</strong> dalla schermata Pasto.</div></div>`;
   } else {
     voci.forEach(v=>{ h+=renderVoce(v); });
   }
   h+=`<div class="section-lbl">Report per l'ambulatorio</div>
-    <div style="margin:0 16px 10px">
-      <button class="btn-save" style="background:var(--card);color:var(--lav-deep);border:1.5px solid var(--lav-border)" onclick="apriReport()">📄 Esporta PDF o CSV</button>
-    </div>
-    <div class="dv-warn" style="margin:0 16px 20px">⚗️ Le dosi suggerite sono sperimentali e non sostituiscono le indicazioni del medico.</div>`;
+    <button class="btn-ghost" onclick="apriReport()">Esporta PDF o CSV</button>
+    <div class="dv-warn">Le dosi suggerite sono sperimentali e non sostituiscono le indicazioni del medico.</div>`;
   return h;
 }
 
@@ -60,27 +59,27 @@ function renderVoce(v){
   const alimenti=v.alimenti.map(a=>`${escH(a.name)} <span class="dv-g">${a.grams} g</span>`).join(' · ');
   let dosi;
   if(v.doseStd!=null){
-    dosi=`<div class="dv-dose"><span>Suggerita <strong>${fmt(v.doseStd,1)}</strong></span>`
-      +(v.doseIG!=null&&v.giMult!==1?`<span>con IG <strong>${fmt(v.doseIG,1)}</strong></span>`:'')
+    dosi=`<div class="dv-dose"><span>Suggerita <strong>${fmtIt(v.doseStd,1)}</strong></span>`
+      +(v.doseIG!=null&&v.giMult!==1?`<span>con IG <strong>${fmtIt(v.doseIG,1)}</strong></span>`:'')
       +`<span class="dv-exp">sperimentale</span></div>`;
   } else {
     dosi=`<div class="dv-dose"><span class="dv-muted">Nessuna dose suggerita (profilo insulinico non salvato)</span></div>`;
   }
   const ins=v.doseInserita!=null
-    ?`<div class="dv-ins">Inserita in Omnipod 5: <strong>${fmt(v.doseInserita,1)} UI</strong></div>`
+    ?`<div class="dv-ins">Inserita in Omnipod 5: <strong>${fmtIt(v.doseInserita,1)} UI</strong></div>`
     :`<button class="dv-ins dv-ins-todo" onclick="apriModifica('${v.id}')">Dose inserita: da completare ›</button>`;
   return `<div class="dv-card">
     <div class="dv-head">
       <div class="dv-title">${oraHM(v.ts)} · ${tipoLabel(v.tipo)}${v.modificato?' <span class="dv-mod">modificato</span>':''}</div>
-      <div class="dv-cho">${fmt(v.choNetti,1)}<span> g</span></div>
+      <div class="dv-cho">${fmtIt(v.choNetti,1)}<span> g</span></div>
     </div>
     <div class="dv-foods">${alimenti}</div>
-    ${v.igMedio!=null?`<div class="dv-muted">IG medio ${v.igMedio} · CG ${fmt(v.cg,1)}${v.igNoti<v.alimenti.length?` · IG noto per ${v.igNoti}/${v.alimenti.length}`:''}</div>`:''}
+    ${v.igMedio!=null?`<div class="dv-muted">IG medio ${v.igMedio} · CG ${fmtIt(v.cg,1)}${v.igNoti<v.alimenti.length?` · IG noto per ${v.igNoti}/${v.alimenti.length}`:''}</div>`:''}
     ${dosi}
     ${ins}
-    ${v.nota?`<div class="dv-nota">📝 ${escH(v.nota)}</div>`:''}
+    ${v.nota?`<div class="dv-nota">${escH(v.nota)}</div>`:''}
     <div class="dv-actions">
-      <button onclick="apriModifica('${v.id}')">${icons.edit.replace(/width="22" height="22"/,'width="15" height="15"')} Modifica</button>
+      <button onclick="apriModifica('${v.id}')">${icons.edit.replace(/width="22" height="22"/,'width="17" height="17"')} Modifica</button>
       <button class="dv-del" onclick="chiediElimina('${v.id}')">${icons.trash} Elimina</button>
     </div>
   </div>`;
@@ -95,7 +94,7 @@ function renderDiarioOverlays(){
     const a=analisiPasto(s.meal,s.profilo.icr,s.profilo.saved);
     h+=`<div class="confirm-overlay"><div class="confirm-box sheet-box">
       <div class="confirm-title">Registra nel diario</div>
-      <div class="sheet-sum">${s.meal.length} aliment${s.meal.length===1?'o':'i'} · <strong>${fmt(a.choTot,1)} g</strong> CHO netti${a.doseStd!=null?` · suggerita ${fmt(a.doseStd,1)} UI${a.giMult!==1?` (con IG ${fmt(a.doseGI,1)})`:''}`:''}</div>
+      <div class="sheet-sum">${s.meal.length} aliment${s.meal.length===1?'o':'i'} · <strong>${fmtIt(a.choTot,1)} g</strong> CHO netti${a.doseStd!=null?` · suggerita ${fmtIt(a.doseStd,1)} UI${a.giMult!==1?` (con IG ${fmtIt(a.doseGI,1)})`:''}`:''}</div>
       <label class="form-lbl">Data e ora</label>
       <input class="form-input" type="datetime-local" id="reg-ts" data-keep value="${r.ts}"/>
       <label class="form-lbl sheet-gap">Tipo di pasto</label>
@@ -151,7 +150,7 @@ function renderDiarioOverlays(){
       h+=`<div class="confirm-overlay" onclick="state.diarioElimina=null;render()">
         <div class="confirm-box" onclick="event.stopPropagation()">
           <div class="confirm-title">Eliminare il pasto?</div>
-          <div class="confirm-sub">${tipoLabel(v.tipo)} del ${escH(fmtGiorno(dayKey(new Date(v.ts))))} alle ${oraHM(v.ts)} · ${fmt(v.choNetti,1)} g CHO.<br>L'operazione non si può annullare.</div>
+          <div class="confirm-sub">${tipoLabel(v.tipo)} del ${escH(fmtGiorno(dayKey(new Date(v.ts))))} alle ${oraHM(v.ts)} · ${fmtIt(v.choNetti,1)} g CHO.<br>L'operazione non si può annullare.</div>
           <div class="confirm-btns">
             <button class="confirm-btn-cancel" onclick="state.diarioElimina=null;render()">Annulla</button>
             <button class="confirm-btn-ok" onclick="confermaElimina()">Elimina</button>
@@ -170,7 +169,7 @@ function renderDiarioOverlays(){
         <div class="form-field"><label class="form-lbl">Al</label><input class="form-input" type="date" id="rep-a" data-keep value="${r.a}"/></div>
       </div>
       ${r.errore?`<div class="form-error">${escH(r.errore)}</div>`:''}
-      ${r.pronto?`<button class="btn-save" style="margin-top:6px;background:var(--green)" onclick="condividiPDFPronto()">📤 Apri / condividi il PDF</button>
+      ${r.pronto?`<button class="btn-save" style="margin-top:6px;background:var(--green)" onclick="condividiPDFPronto()">Apri / condividi il PDF</button>
         <div class="sheet-hint" style="text-align:center">${escH(r.pronto.nome)}</div>`:''}
       <div class="confirm-btns" style="margin-top:10px">
         <button class="confirm-btn-cancel sheet-ok" onclick="esportaReport('pdf')">${r.busy?'Preparazione…':r.pronto?'Rifai PDF':'Crea PDF'}</button>
