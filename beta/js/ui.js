@@ -169,7 +169,7 @@ function cercaBodyHTML(){
   }
   h+=`<div class="section-lbl">Sfoglia per categoria</div><div class="cat-grid">`;
   CATS.forEach(cat=>{
-    h+=`<button class="cat-card" onclick="openCat('${cat.id}')">${escH(cat.label)}</button>`;
+    h+=`<button class="cat-card" onclick="openCat('${cat.id}')"><span class="cat-emoji" aria-hidden="true">${cat.emoji}</span><span class="cat-name">${escH(cat.label)}</span></button>`;
   });
   h+=`</div>`;
   return h;
@@ -441,23 +441,32 @@ function renderDosePasto(mealCHO){
   const {hasCG,cg,igMedio,countWithGI,doseStd,giMult,giMultLabel,doseGI}=analisiPasto(s.meal,icr,s.profilo.saved);
   const ins=getInsulinInfo(s.profilo.insulinType);
   const conIG=doseGI!==null&&giMult!==1;
-  let corpo=`<div class="dose-line"><span>Dose standard (CHO netti)</span><strong>${numG(doseStd)} UI</strong></div>
-    <div class="dose-desc">${numG(mealCHO)} g ÷ ${String(icr).replace('.',',')} g/UI · ${ins.label}</div>`;
-  if(conIG){
-    corpo+=`<div class="dose-line"><span>Con correzione IG</span><strong>${numG(doseGI)} UI</strong></div>
-      <div class="dose-desc">${numG(doseStd)} UI × ${giMult.toFixed(2).replace('.',',')} (${giMultLabel})</div>`;
-  }
+  const ui=v=>v==null?'—':v.toFixed(1).replace('.',',');
+  // Le due dosi sono sempre visibili; il "come si calcola" resta apribile sotto
+  let h=`<div class="dose-box">
+    <div class="dose-head"><span class="dose-title">Dose indicativa</span><span class="exp-badge">SPERIMENTALE</span></div>
+    <div class="dose-two">
+      <div class="dose-cell">
+        <div class="dose-cell-lbl">Dose standard</div>
+        <div class="dose-cell-val">${ui(doseStd)}<span> UI</span></div>
+        <div class="dose-cell-sub">${numG(mealCHO)} g ÷ ${String(icr).replace('.',',')} g/UI</div>
+      </div>
+      <div class="dose-cell dose-cell-exp">
+        <div class="dose-cell-lbl">Con correzione IG</div>
+        <div class="dose-cell-val">${conIG?ui(doseGI):ui(doseStd)}<span> UI</span></div>
+        <div class="dose-cell-sub">${conIG?`${giMultLabel} per IG ${giLabel(igMedio)}`:(hasCG?'nessuna correzione (IG basso)':'IG non noto: nessuna correzione')}</div>
+      </div>
+    </div>`;
+  let det=`<div class="dose-desc">Insulina: ${ins.label}. Dose standard = carboidrati netti del pasto diviso il tuo rapporto insulina/CHO.</div>`;
   if(hasCG){
-    corpo+=`<div class="dose-desc">IG medio del pasto ${igMedio} (${giLabel(igMedio)}) · carico glicemico ${numG(cg)}${countWithGI<s.meal.length?` · IG noto per ${countWithGI} alimenti su ${s.meal.length}`:''}${conIG?'':' · nessuna correzione IG'}</div>`;
-    corpo+=`<div class="dose-desc">${escH(doseTimingMsg(igMedio,s.profilo.insulinType).replace(/^⏱\s*/,''))}</div>`;
-  } else {
-    corpo+=`<div class="dose-desc">IG non noto per questi alimenti: nessuna correzione IG.</div>`;
+    det+=`<div class="dose-desc">IG medio del pasto ${igMedio} (${giLabel(igMedio)}) · carico glicemico ${numG(cg)}${countWithGI<s.meal.length?` · IG noto per ${countWithGI} alimenti su ${s.meal.length}`:''}.${conIG?` Correzione: ${ui(doseStd)} UI × ${giMult.toFixed(2).replace('.',',')}.`:''}</div>`;
+    det+=`<div class="dose-desc">${escH(doseTimingMsg(igMedio,s.profilo.insulinType).replace(/^⏱\s*/,''))}</div>`;
   }
-  corpo+=`<div class="dose-warn">Valori orientativi e sperimentali: non sostituiscono le indicazioni del medico.</div>`;
-  return `<details class="dose-box" ${s.doseAperta?'open':''} ontoggle="state.doseAperta=this.open">
-    <summary><span class="dose-title">Dose indicativa</span><span class="exp-badge">SPERIMENTALE</span><span class="dose-sum-val">${numG(conIG?doseGI:doseStd)} UI</span>${icons.chevron}</summary>
-    <div class="dose-body">${corpo}</div>
-  </details>`;
+  h+=`<details class="dose-more" ${s.doseAperta?'open':''} ontoggle="state.doseAperta=this.open">
+      <summary>Come è calcolata ${icons.chevron}</summary>${det}</details>
+    <div class="dose-warn">Valori orientativi e sperimentali: non sostituiscono le indicazioni del medico.</div>
+  </div>`;
+  return h;
 }
 
 // ── Profilo (profilo insulinico, alimenti personali, backup) ──
