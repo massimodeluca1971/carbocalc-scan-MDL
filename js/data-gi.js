@@ -1,0 +1,68 @@
+// CarbOCalc — indici glicemici (University of Sydney)
+const GI_DB={
+  // CEREALI E DERIVATI
+  "Pane bianco":75,"Pane integrale":71,"Pane di segale":58,
+  "Pane tipo rosetta / ciabatta":73,"Pane al malto":55,"Pane senza glutine":75,
+  "Grissini":73,"Crackers":65,"Crackers integrali":57,
+  "Fette biscottate":76,"Fette biscottate integrali":65,
+  "Pasta secca (cruda)":49,"Pasta integrale (cruda)":42,
+  "Pasta cotta":49,"Pasta integrale (cotta)":42,
+  "Spaghetti (cotti)":46,"Pennette / rigatoni (cotti)":47,
+  "Tagliatelle (crude)":50,"Tagliatelle (cotte)":50,
+  "Gnocchi di patate":68,"Tortellini (crudi)":50,"Tortellini (cotti)":50,
+  "Riso bianco (crudo)":72,"Riso bianco (cotto)":72,
+  "Riso integrale (crudo)":55,"Riso integrale (cotto)":55,
+  "Risotto (cotto, base)":69,"Farro (crudo)":45,"Farro (cotto)":45,
+  "Orzo perlato (crudo)":28,"Orzo perlato (cotto)":28,
+  "Polenta (cotta)":70,"Polenta istantanea (cotta)":90,
+  "Piadina romagnola":70,"Pizza margherita":60,"Pizza bianca":70,
+  "Focaccia":70,"Semola di grano duro":60,
+  "Cous cous (cotto)":65,"Fiocchi d'avena":55,
+  "Corn flakes":81,"Muesli":57,
+  // FRUTTA FRESCA
+  "Mela":36,"Pera":38,"Banana":51,"Arancia":43,
+  "Mandarino":47,"Clementine":47,
+  "Uva bianca":59,"Uva nera":59,
+  "Fragole":40,"Ciliegie":22,"Pesca":42,
+  "Nettarina / pesca noce":42,"Albicocca":57,
+  "Ananas":59,"Anguria / cocomero":76,"Melone":65,
+  "Kiwi":52,"Fico":61,"Susina / prugna":40,
+  "Mango":51,"Pompelmo":25,"Melagrana":53,
+  "Castagne":60,"Datteri":103,"Mirtilli":25,
+  "Lamponi":32,"More":25,"Avocado":10,
+  // VERDURA (solo quelle con CHO significativi)
+  "Patata (bollita)":78,"Patata (cruda)":65,"Patata dolce":63,
+  "Carota":39,"Piselli (freschi)":51,"Piselli (surgelati)":51,
+  "Mais (in chicchi)":52,"Barbabietola rossa":64,"Zucca gialla":75,
+  // LEGUMI
+  "Fagioli borlotti (secchi)":41,"Fagioli borlotti (cotti)":41,
+  "Fagioli cannellini (secchi)":31,"Fagioli cannellini (cotti)":31,
+  "Fagioli neri (secchi)":30,"Ceci (secchi)":28,"Ceci (cotti)":28,
+  "Lenticchie (secche)":32,"Lenticchie (cotte)":32,
+  "Fave (secche)":40,"Fave (cotte)":40,"Edamame":18,
+  // LATTICINI
+  "Latte intero":31,"Latte parzialmente scremato":30,"Latte scremato":32,
+  "Yogurt intero naturale":35,"Yogurt greco naturale":33,
+  "Yogurt magro":33,"Yogurt alla frutta":33,
+  // BEVANDE
+  "Succo d'arancia (100%)":50,"Succo di mela (100%)":44,
+  "Coca-Cola":63,"Aranciata":66,"Gassosa / bibite zuccherate":66,
+  "Birra (media gradazione)":66,
+  "Latte di soia":34,"Latte di avena":65,
+  "Latte di riso":86,"Latte di mandorla":25,
+  // DOLCI E SNACK
+  "Cioccolato fondente (>70%)":23,"Cioccolato fondente":49,
+  "Cioccolato al latte":43,"Miele":61,
+  "Zucchero bianco":65,"Zucchero di canna":65,
+  "Marmellata (media)":51,"Nutella":33,
+  "Gelato alla crema":51,"Gelato alla frutta":42,
+  "Cornetto / brioche":67,"Biscotti secchi":58,
+  "Biscotti frollini":55,"Cantucci":58,
+  "Pandoro":68,"Panettone":56,"Colomba pasquale":56,
+  "Patatine fritte (confezionate)":51,
+  "Popcorn (salati)":65,"Crackers al riso (gallette)":82,
+  // FRUTTA SECCA (generalmente basso IG)
+  "Arachidi":14,"Mandorle":0,"Noci":15,
+  "Nocciole":15,"Anacardi":25,"Pistacchi":15,
+};
+

@@ -69,14 +69,14 @@ function lsWrite(d){
   }
 }
 
-// Fotografia dei dati da salvare (stesso formato della v1)
+// Fotografia dei dati da salvare (stesso formato della v1).
+// Il profilo insulinico si salva solo dopo "Salva profilo": la v1 salvava sempre
+// anche i valori predefiniti (1 UI ogni 6 g, Fiasp), che alla riapertura
+// risultavano attivi senza che nessuno li avesse scelti.
 function storageSnapshot(){
-  return {
-    meal:state.meal,
-    favs:state.favs,
-    custom:state.custom,
-    profilo:{icr:state.profilo.icr,insulinType:state.profilo.insulinType},
-  };
+  const d={meal:state.meal,favs:state.favs,custom:state.custom};
+  if(state.profilo.saved) d.profilo={icr:state.profilo.icr,insulinType:state.profilo.insulinType};
+  return d;
 }
 
 // Applica i dati letti allo stato (stessa logica della v1)
