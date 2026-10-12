@@ -31,6 +31,12 @@ let state={
   copied:false,
   confirmClear:false,
   importPending:null,
+  diario:[],          // pasti registrati (vedi diario.js)
+  diarioGiorno:null,  // giorno mostrato nella scheda Diario (AAAA-MM-GG)
+  registra:null,      // foglio "Registra nel diario" aperto
+  diarioEdit:null,    // foglio "Modifica pasto" aperto
+  diarioElimina:null, // id del pasto da eliminare (in attesa di conferma)
+  report:null,        // foglio "Report per l'ambulatorio" aperto
 };
 
 function showToast(msg){
@@ -165,27 +171,7 @@ function render(){
     if(s.meal.length>0){
       const icr=s.profilo.icr;
       const insulinType=s.profilo.insulinType;
-      let totalCG=0, totalCHO_gi=0, countWithGI=0;
-      s.meal.forEach(function(item){
-        const cho=item.netcho!=null?item.netcho:item.cho;
-        const gi=getGI(item.name);
-        if(gi!==null&&cho>0){
-          totalCG+=gi*cho/100;
-          totalCHO_gi+=cho;
-          countWithGI++;
-        }
-      });
-      const hasCG=countWithGI>0;
-      const cg=hasCG?parseFloat(totalCG.toFixed(1)):null;
-      const igMedio=hasCG&&totalCHO_gi>0?Math.round(totalCG/totalCHO_gi*100):null;
-      const doseStd=s.profilo.saved&&mealCHO>0?calcDose(mealCHO,icr):null;
-      let giMult=1.00,giMultLabel='nessuna correzione';
-      if(igMedio!==null){
-        if(igMedio>=85){giMult=1.15;giMultLabel='+15%';}
-        else if(igMedio>=70){giMult=1.10;giMultLabel='+10%';}
-        else if(igMedio>=56){giMult=1.05;giMultLabel='+5%';}
-      }
-      const doseGI=doseStd!==null?parseFloat((doseStd*giMult).toFixed(1)):null;
+      const {hasCG,cg,igMedio,countWithGI,doseStd,giMult,giMultLabel,doseGI}=analisiPasto(s.meal,icr,s.profilo.saved);
       const delta=doseGI!==null?parseFloat((doseGI-doseStd).toFixed(1)):null;
       const deltaClass=delta!==null&&delta>0.05?'up':delta!==null&&delta<-0.05?'down':'eq';
       const deltaStr=delta!==null&&delta>0.05?'+'+delta+' UI':delta!==null&&delta<-0.05?delta+' UI':'= uguale';
@@ -222,6 +208,7 @@ function render(){
       pPanel+=`</div>`;
       html+=pPanel;
     }
+    if(s.meal.length>0) html+=renderPulsanteRegistra();
     if(s.meal.length===0){
       html+=`<div class="empty-meal"><div style="font-size:44px">🍽️</div>
         <div class="empty-title">Pasto vuoto</div>
@@ -363,7 +350,7 @@ function render(){
     const ultimo=fmtDataOra(storageMeta.ultimoBackup);
     html+=`<div class="profilo-card backup-card">
       <div class="profilo-title">💾 Backup dei dati</div>
-      <div class="profilo-subtitle">Salva in un file preferiti, alimenti personali e profilo insulinico, per non perderli (cambio telefono, cancellazione dati del browser) o per spostarli su un altro dispositivo.</div>
+      <div class="profilo-subtitle">Salva in un file preferiti, alimenti personali, profilo insulinico e diario, per non perderli (cambio telefono, cancellazione dati del browser) o per spostarli su un altro dispositivo.</div>
       <div class="backup-btns">
         <button class="btn-save" style="background:var(--lav-deep)" onclick="exportBackup()">Esporta backup</button>
         <label class="btn-save backup-import" for="import-file">Importa backup</label>
@@ -372,6 +359,9 @@ function render(){
     </div>`;
     html+=`<div style="height:20px"></div>`;
   }
+
+  // ── DIARIO ──
+  if(s.tab==='diario') html+=renderDiarioTab();
 
   html+=`</div>`; // end scroll-area
 
@@ -506,6 +496,9 @@ function render(){
     <button class="bnav-btn${s.tab==='pasto'?' active':''}" onclick="setTab('pasto')">
       <div class="bnav-icon">${icons.fork}${mc>0?`<span class="bnav-badge">${mc}</span>`:''}</div>PASTO
     </button>
+    <button class="bnav-btn${s.tab==='diario'?' active':''}" onclick="setTab('diario')">
+      <div class="bnav-icon">${icoBook}</div>DIARIO
+    </button>
     <button class="bnav-btn${s.tab==='preferiti'?' active':''}" onclick="setTab('preferiti')">
       <div class="bnav-icon">${icons.star}</div>PREFERITI
     </button>
@@ -538,7 +531,8 @@ function render(){
           ${quando?'Creato il '+quando+'<br>':''}
           ⭐ Preferiti: <strong>${p.favs.length}</strong><br>
           🥫 Alimenti personali: <strong>${p.custom.length}</strong><br>
-          💉 Profilo: <strong>${prof}</strong>
+          💉 Profilo: <strong>${prof}</strong><br>
+          📓 Pasti nel diario: <strong>${p.haDiario?p.diario.length:'non presente (backup vecchio)'}</strong>
           ${p.scartati>0?`<br>⚠️ ${p.scartati} voci non valide verranno ignorate`:''}
           <br><br><strong>Unisci</strong>: aggiunge solo ciò che manca, i tuoi dati attuali restano.<br>
           <strong>Sostituisci</strong>: i dati attuali vengono rimpiazzati da quelli del file.
@@ -552,13 +546,21 @@ function render(){
     </div>`;
   }
 
+  html+=renderDiarioOverlays();
+
   if(s.toast) html+=`<div class="toast">${s.toast}</div>`;
 
   // Salvo la posizione di scroll prima di riscrivere il DOM
   const sarea=document.getElementById('sarea');
   const savedScroll=sarea?sarea.scrollTop:0;
 
+  // Campi dei fogli (data-keep): conservo quanto scritto attraverso il ridisegno
+  const keep={};
+  root.querySelectorAll('[data-keep]').forEach(el=>{ if(el.id) keep[el.id]=el.value; });
+
   root.innerHTML=html;
+
+  Object.keys(keep).forEach(id=>{ const el=document.getElementById(id); if(el) el.value=keep[id]; });
 
   // Popola i campi non-controllati dopo il render (evita sovrascrittura durante digitazione)
   const newSarea=document.getElementById('sarea');

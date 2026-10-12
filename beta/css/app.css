@@ -368,3 +368,54 @@ html,body{height:100%;background:var(--bg);color:var(--text);
 .backup-btns{display:flex;flex-direction:column;gap:8px}
 .backup-import{display:block;text-align:center;box-sizing:border-box;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .backup-info{font-size:11px;color:var(--sub);margin-top:10px;line-height:1.5}
+
+/* DIARIO */
+.dg-nav{display:flex;align-items:center;gap:8px;margin:14px 16px 10px}
+.dg-arrow{width:40px;height:40px;border-radius:12px;border:1px solid var(--border);background:var(--card);
+  color:var(--lav-deep);font-size:24px;line-height:1;cursor:pointer;flex-shrink:0}
+.dg-arrow:disabled{opacity:.35;cursor:default}
+.dg-day{flex:1;text-align:center;font-size:15px;font-weight:700;color:var(--text);display:flex;
+  flex-direction:column;align-items:center;gap:4px}
+.dg-today{font-size:11px;font-weight:700;color:var(--lav-deep);background:var(--lav-light);
+  border:1px solid var(--lav-border);border-radius:8px;padding:2px 10px;cursor:pointer}
+.dg-tot{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 16px 14px;padding:12px 8px;
+  border-radius:16px;background:var(--lav-light);border:1px solid var(--lav-border);text-align:center}
+.dg-tot-val{font-size:20px;font-weight:700;color:var(--lav-deep);font-variant-numeric:tabular-nums}
+.dg-tot-val span{font-size:12px;font-weight:600}
+.dg-tot-lbl{font-size:11px;color:var(--sub);margin-top:2px}
+.dv-card{background:var(--card);margin:0 16px 10px;border-radius:14px;border:1px solid var(--border);padding:12px 14px}
+.dv-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.dv-title{font-size:14px;font-weight:700;color:var(--text)}
+.dv-cho{font-size:20px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dv-cho span{font-size:12px}
+.dv-mod{font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-light);border-radius:6px;padding:1px 6px;margin-left:4px}
+.dv-foods{font-size:13px;color:var(--text);margin:4px 0;line-height:1.5}
+.dv-g{color:var(--sub);font-size:12px}
+.dv-muted{font-size:12px;color:var(--sub)}
+.dv-dose{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:13px;color:var(--text);margin-top:6px}
+.dv-exp{font-size:10px;font-weight:700;color:var(--amber);background:var(--amber-light);border-radius:6px;padding:2px 6px}
+.dv-ins{display:block;font-size:13px;color:var(--text);margin-top:6px;text-align:left}
+.dv-ins-todo{width:100%;border:1px dashed var(--amber);background:var(--amber-light);color:var(--amber);
+  border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer}
+.dv-nota{font-size:12px;color:var(--sub);margin-top:6px;font-style:italic}
+.dv-actions{display:flex;gap:8px;margin-top:10px}
+.dv-actions button{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;
+  border-radius:10px;border:1px solid var(--border);background:var(--lav-light);color:var(--lav-deep);
+  font-size:13px;font-weight:700;cursor:pointer}
+.dv-actions .dv-del{color:var(--red)}
+.dv-warn{font-size:11px;color:var(--sub);line-height:1.5}
+.sheet-box{text-align:left;max-height:calc(100vh - 150px - var(--safe-bot));max-height:calc(100dvh - 150px - var(--safe-bot));overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet-box .confirm-title{text-align:center}
+.sheet-sum{font-size:13px;color:var(--sub);margin-bottom:14px;line-height:1.5;text-align:center}
+.sheet-gap{display:block;margin-top:12px}
+.sheet-box .form-lbl{display:block;margin-bottom:5px}
+.sheet-hint{font-size:11px;color:var(--sub);margin-top:5px;line-height:1.5}
+.sheet-ok{background:var(--lav-deep)!important;color:#fff!important;border:none!important}
+.ed-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.ed-name{flex:1;font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
+.ed-off .ed-name{text-decoration:line-through;color:var(--sub)}
+.ed-g{width:74px!important;flex-shrink:0}
+.ed-u{font-size:12px;color:var(--sub)}
+.ed-btn{border:1px solid var(--border);background:var(--lav-light);color:var(--lav-deep);border-radius:9px;
+  padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0}
+.ed-x{color:var(--red);padding:7px 9px}

@@ -1,8 +1,9 @@
 // CarbOCalc — backup dei dati (esporta / importa)
-// Il file contiene preferiti, alimenti personali e profilo insulinico.
+// Il file contiene preferiti, alimenti personali, profilo insulinico e diario.
 // Il pasto in corso non viene salvato nel backup.
+// Formato 2 = formato 1 + diario. I file in formato 1 si importano ancora.
 
-const BACKUP_FORMATO=1;
+const BACKUP_FORMATO=2;
 
 function backupFileName(){
   const d=new Date();
@@ -19,6 +20,7 @@ function buildBackup(){
       favs:state.favs,
       custom:state.custom,
       profilo:state.profilo.saved?{icr:state.profilo.icr,insulinType:state.profilo.insulinType}:null,
+      diario:state.diario,
     },
   };
 }
@@ -85,8 +87,11 @@ function parseBackup(text){
     const okType=INSULIN_TYPES.some(t=>t.id===d.profilo.insulinType);
     if(icr>=1&&icr<=30&&okType) profilo={icr,insulinType:d.profilo.insulinType};
   }
-  const scartati=(Array.isArray(d.favs)?d.favs.length:0)-favs.length+(Array.isArray(d.custom)?d.custom.length:0)-custom.length;
-  return {favs,custom,profilo,esportato:o.esportato||null,scartati};
+  const haDiario=Array.isArray(d.diario);
+  const diario=haDiario?d.diario.filter(validVoceDiario):[];
+  const scartati=(Array.isArray(d.favs)?d.favs.length:0)-favs.length+(Array.isArray(d.custom)?d.custom.length:0)-custom.length
+    +(haDiario?d.diario.length-diario.length:0);
+  return {favs,custom,profilo,diario,haDiario,esportato:o.esportato||null,scartati};
 }
 
 function onImportFile(e){
@@ -118,6 +123,8 @@ function applyImport(mode){
       state.profilo={...p.profilo,saved:true};
       state.profiloForm={icr:String(p.profilo.icr),insulinType:p.profilo.insulinType};
     }
+    // un backup senza diario (formato 1) non cancella il diario esistente
+    if(p.haDiario) state.diario=p.diario.slice();
   } else {
     const favNames=new Set(state.favs.map(f=>f.n));
     p.favs.forEach(f=>{ if(!favNames.has(f.n)){ state.favs.push(f); favNames.add(f.n); } });
@@ -127,7 +134,10 @@ function applyImport(mode){
       state.profilo={...p.profilo,saved:true};
       state.profiloForm={icr:String(p.profilo.icr),insulinType:p.profilo.insulinType};
     }
+    const ids=new Set(state.diario.map(v=>v.id));
+    p.diario.forEach(v=>{ if(!ids.has(v.id)){ state.diario.push(v); ids.add(v.id); } });
   }
+  diarioOrdina();
   saveToStorage();
   state.importPending=null;
   // il campo ICR non è controllato: va aggiornato a mano

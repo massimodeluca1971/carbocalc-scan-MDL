@@ -26,7 +26,7 @@ function saveProfilo(){
 }
 
 // ── HANDLERS ──
-function setTab(t){state.tab=t;render();}
+function setTab(t){state.tab=t;if(t==='diario') apriDiario();render();}
 function goHome(){
   state.query='';state.creaResults=[];state.usdaResults=[];
   state.selected=null;state.activeCat=null;state.srcTab='crea';
