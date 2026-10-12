@@ -123,3 +123,33 @@ function fmt(v,d=1){
   return n%1===0?String(n):n.toFixed(d);
 }
 function calcFor(v100,g){if(v100==null)return null;return v100*g/100;}
+
+// Analisi del pasto: CG, IG medio ponderato, dose standard e dose con correzione IG.
+// Usata sia dalla schermata Pasto sia dal diario, così i numeri coincidono sempre.
+// Se un alimento ha già "gi" (salvato nel diario) si usa quello, altrimenti si cerca.
+// Dosi SPERIMENTALI: solo come guida da discutere con il medico.
+function analisiPasto(items,icr,profiloSalvato){
+  const choTot=items.reduce((a,i)=>a+((i.netcho??i.cho)||0),0);
+  let totalCG=0,totalCHO_gi=0,countWithGI=0;
+  items.forEach(function(item){
+    const cho=item.netcho!=null?item.netcho:item.cho;
+    const gi=item.gi!==undefined?item.gi:getGI(item.name);
+    if(gi!==null&&cho>0){
+      totalCG+=gi*cho/100;
+      totalCHO_gi+=cho;
+      countWithGI++;
+    }
+  });
+  const hasCG=countWithGI>0;
+  const cg=hasCG?parseFloat(totalCG.toFixed(1)):null;
+  const igMedio=hasCG&&totalCHO_gi>0?Math.round(totalCG/totalCHO_gi*100):null;
+  const doseStd=profiloSalvato&&choTot>0?calcDose(choTot,icr):null;
+  let giMult=1.00,giMultLabel='nessuna correzione';
+  if(igMedio!==null){
+    if(igMedio>=85){giMult=1.15;giMultLabel='+15%';}
+    else if(igMedio>=70){giMult=1.10;giMultLabel='+10%';}
+    else if(igMedio>=56){giMult=1.05;giMultLabel='+5%';}
+  }
+  const doseGI=doseStd!==null?parseFloat((doseStd*giMult).toFixed(1)):null;
+  return {choTot,hasCG,cg,igMedio,countWithGI,doseStd,giMult,giMultLabel,doseGI};
+}
