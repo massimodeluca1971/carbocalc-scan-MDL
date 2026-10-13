@@ -3,15 +3,17 @@ function getGI(name){
   // Prima controlla se è un alimento personalizzato con IG salvato
   const customFood=state.custom.find(f=>f.n===name);
   if(customFood&&customFood.gi!=null) return customFood.gi;
-  // Poi cerca nel database CREA
+  // Poi l'archivio (solo nome esatto: con 800 alimenti l'abbinamento "per somiglianza"
+  // della 2.3 dava IG sbagliati, es. "Melanzane" prendeva l'IG di "Mela")
   if(GI_DB[name]!==undefined) return GI_DB[name];
-  // Fuzzy: cerca il nome più simile nel database
-  const nl=name.toLowerCase();
-  for(const[k,v] of Object.entries(GI_DB)){
-    const kl=k.toLowerCase();
-    if(nl===kl||nl.includes(kl)||kl.includes(nl)) return v;
-  }
   return null;
+}
+
+// Provenienza dell'IG: {t:'m'|'s'|'n'|'r'|'u', ...} (vedi data-gi.js); null se sconosciuta
+function giInfo(name){
+  const c=state.custom.find(f=>f.n===name);
+  if(c) return c.gi!=null?{t:'u'}:{t:'n'};
+  return (typeof GI_INFO!=='undefined'&&GI_INFO[name])||null;
 }
 
 function giClass(gi){
@@ -93,28 +95,37 @@ const CATS=[
   {id:'bevande',label:'Bevande',emoji:'🥤',keywords:['Bevande']},
   {id:'fruttasecca',label:'Frutta secca',emoji:'🥜',keywords:['Frutta secca']},
   {id:'condimenti',label:'Condimenti',emoji:'🫙',keywords:['Condimenti']},
+  {id:'pronti',label:'Piatti pronti & altro',emoji:'🍲',keywords:['Piatti pronti']},
 ];
 
 
 function searchCREA(q){
-  const t=q.trim().toLowerCase();
+  const t=normTesto(q.trim());
   if(!t)return[];
-  const words=t.split(/\s+/);
-  const matchFn=f=>{const name=f.n.toLowerCase();return words.every(w=>name.includes(w));};
-  const sort=(a,b)=>{
-    const aC=!!a.custom,bC=!!b.custom;
-    if(aC&&!bC)return-1;if(bC&&!aC)return 1;
-    const ai=a.n.toLowerCase().indexOf(t),bi=b.n.toLowerCase().indexOf(t);
-    if(ai===0&&bi!==0)return-1;if(bi===0&&ai!==0)return 1;
-    return a.n.localeCompare(b.n,'it');
+  // Ogni parola deve comparire nel nome dell'app o nel nome CREA.
+  // Parole lunghe: si tollera la desinenza (pomodoro/pomodori, arancia/arance, patata/patate).
+  const words=t.split(/\s+/).map(w=>w.length>=6?w.slice(0,-2):w.length===5?w.slice(0,-1):w);
+  const testo=f=>normTesto(f.n+(f.nc?' | '+f.nc:''));
+  const matchFn=f=>{const s=testo(f);return words.every(w=>s.includes(w));};
+  const punti=f=>{
+    const n=normTesto(f.n);
+    let p=0;
+    if(f.custom) p+=1000;
+    if(n===t) p+=500;
+    else if(n.startsWith(t)) p+=200;
+    else if(n.startsWith(words[0])) p+=100;
+    if(f.a) p+=50;   // nomi "comuni" dell'app (a=1) prima dei nomi tecnici CREA
+    return p;
   };
   const creaMapped=CREA.filter(matchFn);
   const customMapped=state.custom.filter(matchFn).map(f=>({...f,custom:true}));
-  return[...customMapped,...creaMapped].sort(sort);
+  return[...customMapped,...creaMapped].sort((a,b)=>(punti(b)-punti(a))||a.n.localeCompare(b.n,'it'));
 }
+// minuscole e senza accenti (caffè = caffe)
+function normTesto(s){return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
 
 function catFoods(cat){
-  return CREA.filter(f=>cat.keywords.includes(f.c));
+  return CREA.filter(f=>cat.keywords.includes(f.c)).sort((a,b)=>a.n.localeCompare(b.n,'it'));
 }
 
 function fmt(v,d=1){

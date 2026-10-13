@@ -319,3 +319,19 @@ button:disabled{cursor:default}
 .dose-more[open] summary svg{transform:rotate(90deg)}
 .dose-more .dose-desc{margin:0 0 8px}
 .dose-box .dose-warn{margin:6px 16px 16px}
+
+/* ── 2.4: provenienza dati, porzioni, fonti ── */
+.sh-meta.sh-prov,.sh-meta.sh-src{display:block;font-size:14px;line-height:1.45;margin-top:4px}
+.sh-meta.sh-src strong{color:var(--text,inherit)}
+.porz-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.qbtn.porz-btn{height:auto;min-height:44px;padding:8px 12px;font-size:15px;text-align:left;flex:1 1 auto}
+.avv-list{margin:10px 0 10px 18px;padding:0}
+.avv-list li{margin:4px 0}
+.fonti{margin:18px 4px 8px;font-size:14px;line-height:1.5;color:var(--sub)}
+.fonti-title{font-size:15px;font-weight:700;color:var(--text,inherit);margin-bottom:6px}
+.fonti p{margin:0 0 8px}
+.sh-meta.sh-gi{display:block;line-height:1.45}
+.sh-meta.sh-gi .gi-dot{display:inline-block;vertical-align:middle;margin:0 6px 2px 0}
+.btn-barcode{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;font-size:16px;color:var(--text)}
+.btn-barcode svg{flex-shrink:0;color:var(--accent)}
+.cb-input{width:100%;font-size:24px;letter-spacing:1px;margin-top:14px;min-height:56px}

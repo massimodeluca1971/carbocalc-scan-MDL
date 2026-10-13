@@ -138,6 +138,8 @@ function applyImport(mode){
     p.diario.forEach(v=>{ if(!ids.has(v.id)){ state.diario.push(v); ids.add(v.id); } });
   }
   diarioOrdina();
+  // alimenti personali da backup creati prima della 2.4: fibra non più sottratta due volte
+  correggiEtichette();
   saveToStorage();
   state.importPending=null;
   // il campo ICR non è controllato: va aggiornato a mano
