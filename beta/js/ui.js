@@ -21,8 +21,9 @@ let state={
   tab:'cerca',
   query:'',
   creaResults:[],
-  usdaResults:[],
-  usdaCercato:false,  // la ricerca online (USDA) è stata fatta per la query attuale
+  offResults:[],      // prodotti confezionati da Open Food Facts (ricerca online)
+  offCercato:false,   // la ricerca online è stata fatta per la query attuale
+  offErrore:null,     // messaggio se Open Food Facts non ha risposto
   srcTab:'crea',
   searching:false,
   selected:null,      // alimento aperto nel foglio "scheda alimento"
@@ -44,6 +45,7 @@ let state={
   diarioEdit:null,    // foglio "Modifica pasto" aperto
   diarioElimina:null, // id del pasto da eliminare (in attesa di conferma)
   report:null,        // foglio "Report per l'ambulatorio" aperto
+  avvisoEtichette:null, // alimenti personali corretti (fibra sottratta due volte), da mostrare una volta
 };
 
 // Liste mostrate a schermo: i tocchi le richiamano per posizione
@@ -63,9 +65,31 @@ function netto100(f){
   if(f.cho==null) return null;
   return f.fib!=null?Math.max(0,f.cho-f.fib):f.cho;
 }
-function giRiga(gi){
+function giRiga(gi,info){
+  const t=info?info.t:null;
+  if(t==='r') return `<span class="gi-line">Pochi carboidrati</span>`;
   if(gi===null) return `<span class="gi-line">IG non noto</span>`;
+  if(t==='s') return `<span class="gi-line"><span class="gi-dot ${giClass(gi)}"></span>IG ${giLabel(gi)} (~${gi}) · stimato</span>`;
   return `<span class="gi-line"><span class="gi-dot ${giClass(gi)}"></span>IG ${giLabel(gi)} (${gi})</span>`;
+}
+// Testo sulla provenienza dell'IG, per la scheda alimento
+function giProvenienza(info,gi){
+  if(!info) return '';
+  const intervallo=info.n>1?` (da ${info.a} a ${info.b})`:'';
+  const su=info.come&&info.come!==undefined?` su «${escH(info.come)}»`:'';
+  if(info.t==='m'){
+    const quante=info.n===1?'1 sola misura':`mediana di ${info.n} misure${intervallo}`;
+    return `IG misurato${su}: ${quante} · Glycemic Index Database, Università di Sydney`;
+  }
+  if(info.t==='s'){
+    const da=info.da?`da «${escH(info.da)}»`:(info.m?`da ${escH(info.m)}`:'da un alimento simile');
+    const motivo=info.da&&info.m?` (${escH(info.m)})`:'';
+    return `IG stimato ${da}${motivo} · da validare con il medico`;
+  }
+  if(info.t==='r') return 'Contiene pochi carboidrati: l’IG non è rilevante e non entra nella correzione.';
+  if(info.t==='u') return 'IG inserito da te';
+  if(info.t==='n') return 'IG non noto: per questo alimento la correzione IG non si applica.';
+  return '';
 }
 function numG(v,d=1){return v==null?'—':fmt(v,d).replace('.',',');}
 
@@ -85,15 +109,15 @@ function recentiDalDiario(max=5){
 }
 
 // Valori per 100 g di un alimento noto per nome (personali, poi CREA);
-// se non si trova (es. USDA) si ricavano dai valori salvati nella voce del diario.
+// se non si trova (es. prodotti online) si ricavano dai valori salvati nella voce del diario.
 function alimentoDaNome(name,voce){
   const c=state.custom.find(f=>f.n===name);
   if(c) return {name:c.n,cho100:c.cho,sug100:c.sug,fib100:c.fib,cat:c.c,src:'custom'};
   const k=CREA.find(f=>f.n===name);
-  if(k) return {name:k.n,cho100:k.cho,sug100:k.sug,fib100:k.fib,cat:k.c,src:'crea'};
+  if(k) return daLista({...k,src:'crea'});
   if(voce&&voce.grams>0){
     const p=x=>x==null?null:x*100/voce.grams;
-    return {name,cho100:p(voce.cho),sug100:p(voce.sug),fib100:p(voce.fib),cat:'',src:voce.src||'usda'};
+    return {name,cho100:p(voce.cho),sug100:p(voce.sug),fib100:p(voce.fib),cat:'',src:voce.src||'online'};
   }
   return null;
 }
@@ -106,30 +130,37 @@ function cercaBodyHTML(){
 
   if(q.length>0){
     // Risultati
-    const loc=q.length>=1?searchCREA(q).slice(0,40):[];
+    const codice=/^\d{8,14}$/.test(q);
+    const loc=codice?[]:searchCREA(q).slice(0,60);
     const lista=loc.map(f=>({...f,src:f.custom?'custom':'crea'}));
-    const usda=s.usdaResults.map(f=>({...f,src:'usda'}));
-    listeUI.ris=[...lista,...usda];
+    const off=s.offResults.map(f=>({...f,src:'off'}));
+    listeUI.ris=[...lista,...off];
     if(lista.length){
       h+=`<div class="hint-line">Valori per 100 g · tocca un alimento per scegliere i grammi</div>`;
       h+=`<div class="rows">`;
       lista.forEach((f,i)=>{ h+=rigaRisultato(f,i); });
       h+=`</div>`;
-    } else {
+    } else if(!codice){
       h+=`<div class="no-results">Nessun alimento trovato per «${escH(q)}».</div>`;
     }
-    if(usda.length){
-      h+=`<div class="section-lbl">Online · database USA (in inglese)</div><div class="rows">`;
-      usda.forEach((f,j)=>{ h+=rigaRisultato(f,lista.length+j); });
+    if(off.length){
+      h+=`<div class="section-lbl">Prodotti confezionati · Open Food Facts</div>
+        <div class="hint-line">Valori inseriti da volontari: verifica sempre sull’etichetta.</div><div class="rows">`;
+      off.forEach((f,j)=>{ h+=rigaRisultato(f,lista.length+j); });
       h+=`</div>`;
     }
     if(s.searching){
       h+=`<div class="hint-line center">Ricerca online in corso…</div>`;
-    } else if(!s.usdaCercato&&q.length>=2){
-      h+=`<button class="btn-ghost" onclick="cercaOnline()">${icons.search} Cerca anche online (database USA)</button>`;
-    } else if(s.usdaCercato&&!usda.length){
-      h+=`<div class="hint-line center">Nessun risultato online.</div>`;
+    } else if(!s.offCercato&&(codice||q.length>=3)){
+      h+=codice
+        ?`<button class="btn-primary" onclick="cercaOnline()">${icons.search} Cerca codice a barre</button>`
+        :`<button class="btn-ghost" onclick="cercaOnline()">${icons.search} Cerca tra i prodotti confezionati (online)</button>`;
+    } else if(s.offCercato&&s.offErrore){
+      h+=`<div class="hint-line center">${escH(s.offErrore)}</div>`;
+    } else if(s.offCercato&&!off.length){
+      h+=`<div class="hint-line center">${codice?'Codice a barre non trovato in Open Food Facts.':'Nessun prodotto confezionato trovato.'}</div>`;
     }
+    if(!codice&&!s.offCercato&&!lista.length) h+=`<div class="hint-line center">Hai una confezione? Scrivi qui sopra le cifre del codice a barre.</div>`;
     h+=`<button class="btn-dashed" onclick="vaiInserisciEtichetta()">${icons.plus} Non c’è? Inseriscilo dall’etichetta</button>`;
     return h;
   }
@@ -176,12 +207,13 @@ function cercaBodyHTML(){
 }
 
 function rigaRisultato(f,i,modo){
-  const gi=f.src==='usda'?null:getGI(f.n);
+  const online=f.src==='off'||f.src==='usda';
+  const gi=online?null:getGI(f.n);
   const net=netto100(f);
   let sub;
   if(f.src==='custom') sub=`<span class="gi-line">Mio alimento${gi!==null?` · IG ${gi}`:''}</span>`;
-  else if(f.src==='usda') sub=`<span class="gi-line">Database USA · verifica i valori</span>`;
-  else sub=giRiga(gi);
+  else if(online) sub=`<span class="gi-line">${f.marca?escH(f.marca)+' · ':''}verifica sull’etichetta</span>`;
+  else sub=giRiga(gi,giInfo(f.n));
   return `<button class="row" onclick="${modo==='cat'?`apriDaCategoria(${i})`:`apriRisultato(${i})`}">
     <span class="row-main"><span class="row-name">${escH(f.n)}</span>${sub}</span>
     <span class="row-val"><span class="row-num">${net!=null?numG(net):'—'} g</span><span class="row-unit">CHO netti</span></span>
@@ -320,6 +352,22 @@ function render(){
 
   html+=renderDiarioOverlays();
 
+  if(s.avvisoEtichette){
+    const el=s.avvisoEtichette;
+    html+=`<div class="confirm-overlay">
+      <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="avv-et-t">
+        <div class="confirm-title" id="avv-et-t">Alimenti personali corretti</div>
+        <div class="confirm-sub" style="text-align:left">
+          Sulle etichette europee i «carboidrati» escludono già la fibra, ma le versioni precedenti la sottraevano di nuovo.
+          Ho corretto ${el.length===1?'questo alimento':'questi alimenti'} (CHO netti per 100 g):
+          <ul class="avv-list">${el.map(x=>`<li><strong>${escH(x.n)}</strong>: da ${numG(x.prima)} a ${numG(x.dopo)} g</li>`).join('')}</ul>
+          Controlla che i nuovi valori corrispondano ai «carboidrati» scritti sull’etichetta. I pasti già registrati nel diario non cambiano.
+        </div>
+        <div class="confirm-btns"><button class="confirm-btn-ok" onclick="chiudiAvvisoEtichette()">Ho capito</button></div>
+      </div>
+    </div>`;
+  }
+
   if(s.toast) html+=`<div class="toast" role="status">${s.toast}</div>`;
 
   // Salvo la posizione di scroll prima di riscrivere il DOM
@@ -355,15 +403,30 @@ function renderScheda(){
   const s=state;
   const f=s.selected;
   const isFav=s.favs.some(fv=>fv.n===f.name);
-  const gi=f.src==='usda'?null:getGI(f.name);
+  const online=f.src==='off'||f.src==='usda'||f.src==='online';
+  const gi=online?null:getGI(f.name);
+  const info=online?null:giInfo(f.name);
   let fonte='';
-  if(f.src==='custom') fonte='Mio alimento';
-  else if(f.src==='usda') fonte='Database USA (in inglese) · verifica i valori';
+  if(f.src==='custom') fonte='Mio alimento (dall’etichetta)';
+  else if(f.src==='off') fonte=`Prodotto confezionato · Open Food Facts${f.codice?' · codice '+escH(f.codice):''}<br><strong>Valori da verificare sull’etichetta</strong>`;
+  else if(f.src==='usda') fonte='Database USA · verifica i valori sull’etichetta';
+  else if(f.src==='online') fonte='Prodotto trovato online · verifica i valori sull’etichetta';
+  else if(f.vecchio) fonte='Valore indicativo delle versioni precedenti (non presente nelle tabelle CREA)';
+  else fonte=`Tabelle CREA 2019${f.nomeCrea?` · «${escH(f.nomeCrea)}»`:''}`;
+  if(!online&&f.cat==='Cereali'&&/cott/i.test(f.name+' '+(f.nomeCrea||''))) fonte+=`<br><strong>Da cotto il peso cambia con la cottura</strong> (acqua assorbita): per pasta, riso e cereali è più preciso pesarli da crudi.`;
+  if(f.edibile) fonte+=`<br>Valori per la parte che si mangia (${f.edibile}% del peso: pesa senza buccia, noccioli, ossa o scarti)`;
   let giTxt='';
-  if(gi!==null){
+  const stim=info&&info.t==='s';
+  if(info&&info.t==='r'&&gi===null) giTxt='Pochi carboidrati';
+  else if(gi!==null){
     const effetto=gi>=70?'sale rapidamente':gi>=56?'sale moderatamente':'sale gradualmente';
-    giTxt=`<span class="gi-dot ${giClass(gi)}"></span>IG ${giLabel(gi)} (${gi}) · ${effetto}`;
+    giTxt=`<span class="gi-dot ${giClass(gi)}"></span>IG ${giLabel(gi)} (${stim?'~':''}${gi}) · ${effetto}`;
   } else giTxt='IG non noto';
+  const prov=giProvenienza(info,gi);
+  // Quantità rapide: porzione a parole e porzione standard CREA, poi le solite
+  const rapide=[];
+  if(f.porzDescr&&f.porzG) rapide.push({g:f.porzG,t:`${escH(f.porzDescr)} ≈ ${numG(f.porzG,0)} g`});
+  if(f.porzCrea&&!rapide.some(r=>r.g===f.porzCrea)) rapide.push({g:f.porzCrea,t:`Porzione standard ${numG(f.porzCrea,0)} ${f.porzU==='ml'?'ml':'g'}`});
   return `<div class="sheet-overlay" onclick="chiudiScheda()">
     <div class="sheet" role="dialog" aria-modal="true" aria-label="${escH(f.name)}" onclick="event.stopPropagation()">
       <div class="sheet-handle"></div>
@@ -371,8 +434,9 @@ function renderScheda(){
         <div class="sh-head">
           <div class="sh-title-wrap">
             <h2 class="sh-title">${escH(f.name)}</h2>
-            <div class="sh-meta">${giTxt}</div>
-            ${fonte?`<div class="sh-meta">${fonte}</div>`:''}
+            <div class="sh-meta sh-gi">${giTxt}</div>
+            ${prov?`<div class="sh-meta sh-prov">${prov}</div>`:''}
+            ${fonte?`<div class="sh-meta sh-src">${fonte}</div>`:''}
           </div>
           <button class="btn-icon" onclick="toggleFav()" aria-label="${isFav?'Togli dai preferiti':'Aggiungi ai preferiti'}" aria-pressed="${isFav}">${isFav?icons.star_fill:icons.star}</button>
           <button class="btn-icon" onclick="chiudiScheda()" aria-label="Chiudi">${icons.close}</button>
@@ -388,6 +452,7 @@ function renderScheda(){
           </label>
           <button class="gbtn" onclick="passoGrammi(10)" aria-label="Più 10 grammi">+</button>
         </div>
+        ${rapide.length?`<div class="porz-row">${rapide.map(r=>`<button class="qbtn porz-btn" data-g="${r.g}" onclick="setGrams(${r.g})">${r.t}</button>`).join('')}</div>`:''}
         <div class="quick-grid">
           ${QUICK_SCHEDA.map(g=>`<button class="qbtn" data-g="${g}" onclick="setGrams(${g})">${g} g</button>`).join('')}
         </div>
@@ -422,7 +487,9 @@ function aggiornaScheda(){
   if(el('sh-net')) el('sh-net').textContent=valido?numG(net):'—';
   if(el('sh-det')){
     el('sh-det').textContent=!valido?'Scrivi i grammi (da 1 a 2000)'
-      :`Totali ${numG(cho)} g`+(fib!=null&&fib>0?` − fibre ${numG(fib)} g`:'')+(sug!=null?` · zuccheri ${numG(sug)} g`:'');
+      :(f.src==='usda'
+        ?`Totali ${numG(cho)} g`+(fib!=null&&fib>0?` − fibre ${numG(fib)} g`:'')+(sug!=null?` · zuccheri ${numG(sug)} g`:'')
+        :[fib!=null?`fibre ${numG(fib)} g (già escluse)`:null,sug!=null?`zuccheri ${numG(sug)} g`:null].filter(Boolean).join(' · ').replace(/^f/,'F').replace(/^z/,'Z'));
   }
   if(el('sh-add')) el('sh-add').disabled=!valido;
   if(el('sh-add-lbl')) el('sh-add-lbl').textContent=valido?`Aggiungi al pasto · ${numG(net)} g`:'Aggiungi al pasto';
@@ -460,6 +527,8 @@ function renderDosePasto(mealCHO){
   let det=`<div class="dose-desc">Insulina: ${ins.label}. Dose standard = carboidrati netti del pasto diviso il tuo rapporto insulina/CHO.</div>`;
   if(hasCG){
     det+=`<div class="dose-desc">IG medio del pasto ${igMedio} (${giLabel(igMedio)}) · carico glicemico ${numG(cg)}${countWithGI<s.meal.length?` · IG noto per ${countWithGI} alimenti su ${s.meal.length}`:''}.${conIG?` Correzione: ${ui(doseStd)} UI × ${giMult.toFixed(2).replace('.',',')}.`:''}</div>`;
+    const stimati=s.meal.filter(it=>{const inf=giInfo(it.name);return inf&&inf.t==='s'&&getGI(it.name)!==null;}).length;
+    if(stimati) det+=`<div class="dose-desc">${stimati===1?'Un alimento ha':stimati+' alimenti hanno'} l’IG <strong>stimato</strong> (~), da validare con il medico.</div>`;
     det+=`<div class="dose-desc">${escH(doseTimingMsg(igMedio,s.profilo.insulinType).replace(/^⏱\s*/,''))}</div>`;
   }
   h+=`<details class="dose-more" ${s.doseAperta?'open':''} ontoggle="state.doseAperta=this.open">
@@ -499,7 +568,7 @@ function renderProfilo(){
 
   html+=`<div class="add-form" id="form-etichetta">
     <div class="add-form-title">Nuovo alimento dall’etichetta</div>
-    <div class="profilo-subtitle" style="margin-bottom:12px">Copia i valori «per 100 g» dalla tabella nutrizionale della confezione.</div>
+    <div class="profilo-subtitle" style="margin-bottom:12px">Copia i valori «per 100 g» dalla tabella nutrizionale della confezione. I «carboidrati» dell’etichetta sono già i carboidrati netti: la fibra non viene sottratta.</div>
     <div class="form-field" style="margin-bottom:12px">
       <label class="form-lbl" for="cf-name">Nome alimento</label>
       <input class="form-input" type="text" placeholder="Es. Pasta senatore Cappelli" autocorrect="off"
@@ -552,7 +621,7 @@ function renderProfilo(){
       html+=`<div class="custom-item">
         <div class="ci-info">
           <div class="row-name">${escH(f.n)}</div>
-          <div class="row-sub">${escH(f.c)} · CHO ${numG(f.cho)} g · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)</div>
+          <div class="row-sub">${escH(f.c)} · carboidrati ${numG(netto100(f))} g · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)</div>
         </div>
         <button class="mi-del" onclick="removeCustomFood(${i})" aria-label="Elimina ${escH(f.n)}">${icons.trash}</button>
       </div>`;
@@ -569,6 +638,13 @@ function renderProfilo(){
       <label class="btn-save btn-save-alt backup-import" for="import-file">Importa backup</label>
     </div>
     <div class="backup-info">${ultimo?'Ultimo backup: '+ultimo:'Nessun backup esportato finora.'}${storageMode==='ls'?'<br>Archivio avanzato non disponibile su questo browser: dati salvati in modalità semplice.':''}</div>
+  </div>`;
+  html+=`<div class="fonti">
+    <div class="fonti-title">Fonti dei dati</div>
+    <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
+    <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
+    <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
+    <p>CarbOCalc 2.4 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
   </div>`;
   html+=`</div>`;
   return html;

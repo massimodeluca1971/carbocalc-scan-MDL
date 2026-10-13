@@ -1,28 +1,68 @@
 // CarbOCalc — azioni dell'utente (pulsanti, ricerca, pasto, preferiti, alimenti personali)
-async function fetchUSDA(q){
-  state.searching=true;aggiornaCercaBody();
+// ── PRODOTTI CONFEZIONATI: Open Food Facts (solo online) ──
+// Sulle etichette UE i "carboidrati" escludono già la fibra: salvo cho = carboidrati + fibra,
+// così i CHO netti calcolati dall'app (cho − fibra) coincidono con i carboidrati dell'etichetta.
+const OFF_CAMPI='code,product_name,product_name_it,brands,quantity,nutriments';
+function daOFF(p){
+  const n=p&&p.nutriments||{};
+  const num=v=>{const x=typeof v==='string'?parseFloat(v.replace(',','.')):v;return typeof x==='number'&&isFinite(x)?x:null;};
+  const carb=num(n.carbohydrates_100g);
+  if(carb==null||carb<0||carb>100) return null;
+  const fib=num(n.fiber_100g), sug=num(n.sugars_100g);
+  const nome=String(p.product_name_it||p.product_name||'').trim();
+  if(!nome) return null;
+  const marca=String(p.brands||'').split(',')[0].trim();
+  const r1=v=>v==null?null:Math.round(v*10)/10;
+  return {n:marca&&!nome.toLowerCase().includes(marca.toLowerCase())?`${nome} · ${marca}`:nome,
+    c:'',cho:r1(carb+(fib||0)),sug:r1(sug),fib:r1(fib),src:'off',marca,codice:p.code||''};
+}
+async function fetchConLimite(url,ms){
+  const ctrl=typeof AbortController!=='undefined'?new AbortController():null;
+  const timer=setTimeout(()=>{if(ctrl) ctrl.abort();},ms);
+  try{ return await fetch(url,ctrl?{signal:ctrl.signal}:{}); }
+  finally{ clearTimeout(timer); }
+}
+async function fetchOFF(q){
+  state.searching=true;state.offErrore=null;aggiornaCercaBody();
+  let risultati=[],errore=null;
   try{
-    const eng=translateToEng(q);
-    const u=await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(eng)}&api_key=DEMO_KEY&dataType=Foundation,SR%20Legacy&pageSize=10`);
-    const ud=await u.json();
-    state.usdaResults=(ud.foods||[]).map(f=>{
-      function nn(ids){for(const id of ids){const x=(f.foodNutrients||[]).find(n=>n.nutrientId===id||n.nutrientNumber===String(id));if(x&&x.value!=null)return parseFloat(x.value)||0;}return null;}
-      return{n:f.description,c:f.foodCategory||"",cho:nn([1005]),sug:nn([2000,269]),fib:nn([1079]),src:"usda"};
-    }).filter(f=>f.cho!=null);
+    if(/^\d{8,14}$/.test(q)){
+      const r=await fetchConLimite(`https://world.openfoodfacts.org/api/v2/product/${q}.json?fields=${OFF_CAMPI}`,12000);
+      if(r.status===404) risultati=[];
+      else{
+        if(!r.ok) throw new Error('http '+r.status);
+        const d=await r.json();
+        const x=d&&d.status===1?daOFF(d.product):null;
+        risultati=x?[x]:[];
+        if(d&&d.status===1&&!x) errore='Prodotto trovato, ma senza i carboidrati per 100 g: usa i valori dell’etichetta.';
+      }
+    } else {
+      const url='https://world.openfoodfacts.org/cgi/search.pl?action=process&json=1&search_simple=1&page_size=20'
+        +'&tagtype_0=countries&tag_contains_0=contains&tag_0=italy'
+        +`&search_terms=${encodeURIComponent(q)}&fields=${OFF_CAMPI}`;
+      const r=await fetchConLimite(url,15000);
+      if(!r.ok) throw new Error('http '+r.status);
+      const d=await r.json();
+      risultati=(d.products||[]).map(daOFF).filter(Boolean);
+    }
   }catch(e){
-    state.usdaResults=[];
+    risultati=[];
+    errore=/^\d{8,14}$/.test(q)
+      ?'Open Food Facts non risponde. Riprova tra poco o inserisci i valori dall’etichetta.'
+      :'La ricerca per nome di Open Food Facts non risponde (succede spesso). Prova con il codice a barre o inserisci i valori dall’etichetta.';
   }
   state.searching=false;
   // Se nel frattempo la ricerca è cambiata, i risultati non servono più
-  if(state.query.trim()!==q){state.usdaResults=[];state.usdaCercato=false;}
-  else state.usdaCercato=true;
+  if(state.query.trim()!==q){state.offResults=[];state.offCercato=false;state.offErrore=null;}
+  else{state.offResults=risultati;state.offCercato=true;state.offErrore=errore;}
   aggiornaCercaBody();
 }
 function cercaOnline(){
   const q=state.query.trim();
-  if(q.length<2||state.searching) return;
+  if(state.searching) return;
+  if(!/^\d{8,14}$/.test(q)&&q.length<3) return;
   const si=document.getElementById('si');if(si) si.blur();
-  fetchUSDA(q);
+  fetchOFF(q);
 }
 
 function saveProfilo(){
@@ -42,7 +82,7 @@ function setTab(t){
   const sa=document.getElementById('sarea');if(sa) sa.scrollTop=0;
 }
 function goHome(){
-  state.query='';state.creaResults=[];state.usdaResults=[];state.usdaCercato=false;
+  state.query='';state.creaResults=[];state.offResults=[];state.offCercato=false;state.offErrore=null;
   state.selected=null;state.activeCat=null;
   const si=document.getElementById('si');
   if(si) si.value='';
@@ -63,7 +103,7 @@ function onQueryInput(e){
   const prima=state.query.trim();
   state.query=e.target.value;
   state.activeCat=null;
-  if(state.query.trim()!==prima){state.usdaResults=[];state.usdaCercato=false;}
+  if(state.query.trim()!==prima){state.offResults=[];state.offCercato=false;state.offErrore=null;}
   aggiornaCercaBody();
   const sa=document.getElementById('sarea');if(sa) sa.scrollTop=0;
 }
@@ -79,14 +119,24 @@ function apriAlimento(sel,grams){
   render();
 }
 function daLista(f){
-  return {name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c,src:f.src||(f.custom?'custom':'crea')};
+  const sel={name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c,src:f.src||(f.custom?'custom':'crea')};
+  if(f.o) sel.vecchio=true;
+  if(f.nc) sel.nomeCrea=f.nc;
+  if(f.e) sel.edibile=f.e;
+  if(f.pd&&f.pg){sel.porzDescr=f.pd;sel.porzG=f.pg;}
+  if(f.p){sel.porzCrea=f.p;sel.porzU=f.pu||'g';}
+  if(f.codice) sel.codice=f.codice;
+  return sel;
 }
 function apriRisultato(i){const f=listeUI.ris[i];if(f) apriAlimento(daLista(f));}
 function apriDaCategoria(i){const f=listeUI.cat[i];if(f) apriAlimento(daLista(f));}
 function selectFav(i){
   const f=state.favs[i];if(!f) return;
   state.tab='cerca';
-  apriAlimento({name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c||'',src:f.src||'crea'});
+  // Valori aggiornati dall'archivio o dagli alimenti personali, se il nome c'è ancora;
+  // altrimenti (es. prodotti online) quelli salvati nel preferito.
+  const attuale=alimentoDaNome(f.n);
+  apriAlimento(attuale||{name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c||'',src:f.src||'crea'});
 }
 function apriRecente(i){
   const r=listeUI.rec[i];if(!r) return;
@@ -136,7 +186,7 @@ function addToMeal(){
   const nome=f.name;
   state.meal.push({name:nome,grams:state.grams,cho,sug,fib,netcho:net,src:f.src});
   saveToStorage();
-  state.query='';state.creaResults=[];state.usdaResults=[];state.usdaCercato=false;
+  state.query='';state.creaResults=[];state.offResults=[];state.offCercato=false;state.offErrore=null;
   state.selected=null;state.grams=100;state.activeCat=null;
   const si=document.getElementById('si');if(si) si.value='';
   showToast(escH(nome)+' aggiunto al pasto');
@@ -194,7 +244,9 @@ function saveCustomFood(){
   const gi=giRaw===''?null:parseFloat(giRaw);
   if(giRaw!==''&&(isNaN(gi)||gi<0||gi>120)) return mostraErroreForm("Indice glicemico non valido (da 0 a 120, o lascia vuoto).");
   if(state.custom.some(c=>c.n.toLowerCase()===name.toLowerCase())) return mostraErroreForm("Hai già un alimento con questo nome.");
-  state.custom.unshift({n:name,c:state.addForm.cat||'Cereali',cho,sug,fib,...(gi!==null&&{gi})});
+  // Etichetta UE: i carboidrati escludono già la fibra. Salvo cho = carboidrati + fibra
+  // così i CHO netti (cho − fibra) coincidono con i carboidrati dell'etichetta. et=1: già nel formato giusto.
+  state.custom.unshift({n:name,c:state.addForm.cat||'Cereali',cho:Math.round((cho+fib)*10)/10,sug,fib,...(gi!==null&&{gi}),et:1});
   saveToStorage();
   // Reset del modulo: mantiene la categoria scelta per comodità
   const catMemory=state.addForm.cat||'Cereali';
@@ -210,3 +262,29 @@ function removeCustomFood(i){
   const nome=state.custom[i].n;
   state.custom.splice(i,1);saveToStorage();showToast(escH(nome)+' eliminato');
 }
+
+// ── CORREZIONE ALIMENTI PERSONALI (2.4) ──
+// Fino alla 2.3.1 il modulo etichetta sottraeva la fibra ai "carboidrati" dell'etichetta UE,
+// che la escludono già: i CHO netti risultavano più bassi della fibra. Si corregge una volta
+// sola ogni alimento (contrassegno et=1), anche quelli che arrivano da un backup vecchio.
+// Il diario non si tocca: i pasti registrati conservano i valori del momento.
+function correggiEtichette(){
+  const corretti=[];let cambiato=false;
+  state.custom.forEach(f=>{
+    if(f.et) return;
+    const fib=typeof f.fib==='number'&&isFinite(f.fib)?f.fib:0;
+    if(fib>0){
+      const prima=Math.max(0,f.cho-fib);
+      f.cho=Math.round((f.cho+fib)*10)/10;
+      corretti.push({n:f.n,prima,dopo:Math.max(0,f.cho-fib)});
+    }
+    f.et=1;cambiato=true;
+  });
+  if(cambiato) saveToStorage();
+  if(corretti.length){
+    state.avvisoEtichette=(state.avvisoEtichette||[]).concat(corretti);
+    setStorageMeta({correzioneEtichette:{quando:new Date().toISOString(),alimenti:corretti}});
+  }
+  return corretti;
+}
+function chiudiAvvisoEtichette(){state.avvisoEtichette=null;render();}
