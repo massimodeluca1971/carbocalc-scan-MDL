@@ -153,13 +153,13 @@ const isIOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform==='MacIntel' &&
 // Da Safari 26 il numero di iOS nello user agent è bloccato (18.x): la versione vera è quella di Safari
 const iosUA = (UA.match(/OS (\d+)[._](\d+)/)||[]).slice(1,3).join('.');
 const safariVer = (UA.match(/Version\/(\d+)(?:\.(\d+))?/)||[]).slice(1,3).filter(Boolean).join('.');
-const iosVer = (safariVer && parseInt(safariVer,10) >= 26) ? safariVer : (/CriOS|FxiOS|EdgiOS/.test(UA) ? '' : (iosUA || ''));
+const iosVer = (safariVer && parseInt(safariVer,10) >= 26) ? safariVer : ((/CriOS|FxiOS|EdgiOS/.test(UA) && /^18\.[67]$/.test(iosUA)) ? '' : (iosUA || ''));
 const standalone = !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
 const browser = /CriOS/.test(UA)?'Chrome (iPhone)':/FxiOS/.test(UA)?'Firefox (iPhone)':/EdgiOS/.test(UA)?'Edge (iPhone)':
   /Android/.test(UA)&&/Chrome/.test(UA)?'Chrome (Android)':/Edg\//.test(UA)?'Edge':/Chrome/.test(UA)?'Chrome':/Safari/.test(UA)?'Safari':'altro';
 const contesto = standalone ? 'App dalla Home' : browser;
 const diag = {
-  versionePagina: '2', contesto, browser, standalone, ios: isIOS ? (iosVer ? iosVer + (iosVer!==iosUA&&iosUA?` (UA dice ${iosUA})`:'') : (/CriOS/.test(UA)?`non deducibile (UA dice ${iosUA})`:'sì')) : 'no',
+  versionePagina: '2.1', contesto, browser, standalone, ios: isIOS ? (iosVer ? iosVer + (iosVer!==iosUA&&iosUA?` (UA dice ${iosUA})`:'') : (/CriOS/.test(UA)?`non deducibile (UA dice ${iosUA})`:'sì')) : 'no',
   https: window.isSecureContext, fotocamera: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
   BarcodeDetector: 'BarcodeDetector' in window, WebAssembly: typeof WebAssembly==='object',
   motore: 'in caricamento', schermo: `${screen.width}×${screen.height} @${devicePixelRatio}`

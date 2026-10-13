@@ -23,7 +23,7 @@ async function fetchConLimite(url,ms){
   try{ return await fetch(url,ctrl?{signal:ctrl.signal}:{}); }
   finally{ clearTimeout(timer); }
 }
-async function fetchOFF(q){
+async function fetchOFF(q,opz){
   state.searching=true;state.offErrore=null;aggiornaCercaBody();
   let risultati=[],errore=null;
   try{
@@ -57,6 +57,11 @@ async function fetchOFF(q){
   if(state.query.trim()!==q){state.offResults=[];state.offCercato=false;state.offErrore=null;}
   else{state.offResults=risultati;state.offCercato=true;state.offErrore=errore;}
   aggiornaCercaBody();
+  // 2.7: dal foglio «Codice a barre» un prodotto trovato apre subito la scheda per i grammi
+  if(opz&&opz.apri&&state.query.trim()===q&&risultati.length===1&&!errore
+     &&state.tab==='cerca'&&!state.selected&&!state.codiceBarre&&!state.foglioAlimento){
+    apriAlimento(daLista(risultati[0]));
+  }
 }
 function cercaOnline(){
   const q=state.query.trim();
@@ -315,29 +320,51 @@ function correggiEtichette(){
 }
 function chiudiAvvisoEtichette(){state.avvisoEtichette=null;render();}
 
-// ── Foglio "Codice a barre" ──
+// ── Foglio "Codice a barre": fotocamera (2.7), foto, cifre ──
 function apriCodiceBarre(){
-  state.codiceBarre=true;state.selected=null;
+  state.codiceBarre=true;state.selected=null;state.cbMsg=null;
   const si=document.getElementById('si');if(si) si.blur();
   render();
-  setTimeout(()=>{const el=document.getElementById('cb-num');if(el) el.focus();},50);
 }
-function chiudiCodiceBarre(){state.codiceBarre=false;render();}
+function chiudiCodiceBarre(){state.codiceBarre=false;state.cbMsg=null;render();}
+// Messaggio nel foglio senza ridisegnare (il campo cifre e la tastiera restano come sono)
+function msgCodiceBarre(tipo,testo){
+  state.cbMsg=testo?{tipo,testo}:null;
+  const el=document.getElementById('cb-msg');
+  if(el){el.className='cb-msg '+(tipo==='err'?'cb-msg-err':'cb-msg-info');el.textContent=testo||'';el.style.display=testo?'':'none';}
+  else if(state.codiceBarre) render();
+}
+function inquadraCodice(){
+  state.cbMsg=null;
+  const el=document.getElementById('cb-msg');if(el) el.style.display='none';
+  Scanner.apri(codiceLetto,(motivo,msg)=>{if(msg) msgCodiceBarre('err',msg);});
+}
+function fotoCodice(){const f=document.getElementById('cb-foto');if(f){f.value='';f.click();}}
+async function onCbFoto(e){
+  const file=e.target.files&&e.target.files[0];e.target.value='';
+  if(!file) return;
+  msgCodiceBarre('info','Analisi della foto…');
+  let codice=null;
+  try{codice=await Scanner.daFoto(file);}
+  catch(_){msgCodiceBarre('err','Il lettore non si è scaricato: controlla la connessione e riprova, oppure scrivi le cifre.');return;}
+  if(codice) codiceLetto(codice);
+  else msgCodiceBarre('err','Nessun codice trovato nella foto. Rifalla a 20–25 cm, nitida e con buona luce, oppure scrivi le cifre.');
+}
 function cercaCodiceBarre(){
   const el=document.getElementById('cb-num');
   const code=String(el?el.value:'').replace(/\D/g,'');
-  if(code.length<8||code.length>14){
-    const e=document.getElementById('cb-err');
-    if(e){e.textContent='Servono da 8 a 14 cifre.';e.style.display='';}
-    return;
-  }
+  if(code.length<8||code.length>14){msgCodiceBarre('err','Servono da 8 a 14 cifre.');return;}
   if(el) el.value='';
-  state.codiceBarre=false;
-  state.tab='cerca';state.activeCat=null;
+  codiceLetto(code);
+}
+// Codice letto (fotocamera o foto) o scritto: cerca in Open Food Facts; se trovato apre la scheda
+function codiceLetto(code){
+  state.codiceBarre=false;state.cbMsg=null;
+  state.tab='cerca';state.activeCat=null;state.selected=null;
   state.query=code;state.offResults=[];state.offCercato=false;state.offErrore=null;
   render();
   const si=document.getElementById('si');if(si){si.value=code;si.blur();}
-  fetchOFF(code);
+  fetchOFF(code,{apri:true});
 }
 
 // ── Modifica di un alimento personale: riempie il modulo con i valori dell'etichetta ──

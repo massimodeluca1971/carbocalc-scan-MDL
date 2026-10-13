@@ -13,6 +13,8 @@ const icons={
   plus:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
   back:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>`,
   chevron:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>`,
+  camera:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>`,
+  photo:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>`,
   close:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
   barcode:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5v14M6 5v14M10 5v14M13 5v14M17 5v14M21 5v14M8 5v14M19 5v14" stroke-width="1.4"/></svg>`,
   user:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>`,
@@ -49,6 +51,7 @@ let state={
   report:null,        // foglio "Report per l'ambulatorio" aperto
   avvisoEtichette:null, // alimenti personali corretti (fibra sottratta due volte), da mostrare una volta
   codiceBarre:false,  // foglio "Codice a barre" aperto
+  cbMsg:null,         // 2.7: messaggio nel foglio (errore fotocamera/foto/cifre)
   foglioAlimento:null, // foglio "Nuovo alimento dall'etichetta" aperto: {origine:'cerca'|'profilo'}
   attivita:[],        // attività fisiche registrate (vedi attivita.js)
   diarioVista:'pasti',// Diario: 'pasti' oppure sottopagina 'attivita'
@@ -386,18 +389,22 @@ function render(){
   if(s.foglioAlimento) html+=renderFoglioAlimento();
 
   if(s.codiceBarre){
+    const m=s.cbMsg;
     html+=`<div class="sheet-overlay" onclick="chiudiCodiceBarre()">
       <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cb-t" onclick="event.stopPropagation()">
         <div class="sheet-handle"></div>
         <div class="sheet-scroll">
           <div class="sh-head"><div class="sh-title-wrap"><h2 class="sh-title" id="cb-t">Codice a barre</h2>
-            <div class="sh-meta sh-src">Scrivi le cifre stampate sotto le barre della confezione (di solito 13, a volte 8). Il prodotto si cerca in Open Food Facts: serve la connessione.</div></div>
+            <div class="sh-meta sh-src">Il prodotto si cerca in Open Food Facts: serve la connessione.</div></div>
             <button class="btn-icon" onclick="chiudiCodiceBarre()" aria-label="Chiudi">${icons.close}</button></div>
+          <button class="btn-primary cb-inquadra" onclick="inquadraCodice()">${icons.camera} Inquadra il codice</button>
+          <button class="btn-ghost" onclick="fotoCodice()">${icons.photo} Foto</button>
+          <div class="cb-msg ${m&&m.tipo==='err'?'cb-msg-err':'cb-msg-info'}" id="cb-msg" role="status"${m?'':' style="display:none"'}>${m?escH(m.testo):''}</div>
+          <div class="cb-oppure">oppure scrivi le cifre sotto le barre (di solito 13)</div>
           <input class="form-input cb-input" id="cb-num" data-keep type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
             placeholder="es. 8076800195057" aria-label="Cifre del codice a barre" onkeydown="if(event.key==='Enter'){event.preventDefault();cercaCodiceBarre();}"/>
-          <div class="form-error" id="cb-err" style="display:none"></div>
+          <button class="btn-ghost" onclick="cercaCodiceBarre()">${icons.search} Cerca il prodotto</button>
         </div>
-        <div class="sheet-foot"><button class="btn-primary" onclick="cercaCodiceBarre()">${icons.search} Cerca il prodotto</button></div>
       </div>
     </div>`;
   }
