@@ -9,12 +9,13 @@ function daOFF(p){
   const carb=num(n.carbohydrates_100g);
   if(carb==null||carb<0||carb>100) return null;
   const fib=num(n.fiber_100g), sug=num(n.sugars_100g);
+  let pol=num(n.polyols_100g); if(pol!=null&&(pol<=0||pol>carb)) pol=null;
   const nome=String(p.product_name_it||p.product_name||'').trim();
   if(!nome) return null;
   const marca=String(p.brands||'').split(',')[0].trim();
   const r1=v=>v==null?null:Math.round(v*10)/10;
   return {n:marca&&!nome.toLowerCase().includes(marca.toLowerCase())?`${nome} · ${marca}`:nome,
-    c:'',cho:r1(carb+(fib||0)),sug:r1(sug),fib:r1(fib),src:'off',marca,codice:p.code||''};
+    c:'',cho:r1(carb+(fib||0)-(pol||0)/2),sug:r1(sug),fib:r1(fib),src:'off',marca,codice:p.code||'',...(pol?{pol:r1(pol)}:{})};
 }
 async function fetchConLimite(url,ms){
   const ctrl=typeof AbortController!=='undefined'?new AbortController():null;
@@ -126,6 +127,7 @@ function daLista(f){
   if(f.pd&&f.pg){sel.porzDescr=f.pd;sel.porzG=f.pg;}
   if(f.p){sel.porzCrea=f.p;sel.porzU=f.pu||'g';}
   if(f.codice) sel.codice=f.codice;
+  if(f.pol) sel.pol100=f.pol;
   return sel;
 }
 function apriRisultato(i){const f=listeUI.ris[i];if(f) apriAlimento(daLista(f));}
@@ -240,25 +242,37 @@ function saveCustomFood(){
   if(isNaN(cho)||cho<0||cho>100) return mostraErroreForm("Carboidrati non validi (da 0 a 100 g).");
   const sug=parseFloat(String(f.sug).replace(',','.'))||0;
   const fib=parseFloat(String(f.fib).replace(',','.'))||0;
-  const giRaw=(f.gi||'').trim();
+  const pol=parseFloat(String(f.pol||'').replace(',','.'))||0;
+  if(pol<0||pol>cho) return mostraErroreForm("Polioli non validi: non possono superare i carboidrati.");
+  const giRaw=String(f.gi??'').trim();
   const gi=giRaw===''?null:parseFloat(giRaw);
   if(giRaw!==''&&(isNaN(gi)||gi<0||gi>120)) return mostraErroreForm("Indice glicemico non valido (da 0 a 120, o lascia vuoto).");
-  if(state.custom.some(c=>c.n.toLowerCase()===name.toLowerCase())) return mostraErroreForm("Hai già un alimento con questo nome.");
-  // Etichetta UE: i carboidrati escludono già la fibra. Salvo cho = carboidrati + fibra
-  // così i CHO netti (cho − fibra) coincidono con i carboidrati dell'etichetta. et=1: già nel formato giusto.
-  state.custom.unshift({n:name,c:state.addForm.cat||'Cereali',cho:Math.round((cho+fib)*10)/10,sug,fib,...(gi!==null&&{gi}),et:1});
+  const ed=state.editCustom;
+  if(state.custom.some((c,i)=>i!==ed&&c.n.toLowerCase()===name.toLowerCase())) return mostraErroreForm("Hai già un alimento con questo nome.");
+  // Etichetta UE: i carboidrati escludono già la fibra e includono i polioli.
+  // Salvo cho = carboidrati + fibra − metà polioli, così i CHO netti (cho − fibra, formula invariata)
+  // = carboidrati dell'etichetta − metà polioli. cl = carboidrati come scritti in etichetta. et=1: formato 2.4.
+  const voce={n:name,c:state.addForm.cat||'Cereali',cho:Math.round((cho+fib-pol/2)*10)/10,sug,fib,...(pol?{pol}:{}),cl:cho,...(gi!==null&&{gi}),et:1};
+  if(ed!=null&&state.custom[ed]){
+    const vecchioNome=state.custom[ed].n;
+    state.custom[ed]=voce;
+    // i preferiti richiamano per nome: se il nome cambia li aggiorno
+    if(vecchioNome!==name) state.favs.forEach(fv=>{ if(fv.n===vecchioNome&&fv.src==='custom') fv.n=name; });
+  } else state.custom.unshift(voce);
+  state.editCustom=null;
   saveToStorage();
   // Reset del modulo: mantiene la categoria scelta per comodità
   const catMemory=state.addForm.cat||'Cereali';
-  state.addForm={name:"",cho:"",sug:"",fib:"",gi:"",cat:catMemory,error:""};
-  ['cf-name','cf-cho','cf-sug','cf-fib','cf-gi'].forEach(id=>{
+  state.addForm={name:"",cho:"",sug:"",fib:"",pol:"",gi:"",cat:catMemory,error:""};
+  ['cf-name','cf-cho','cf-sug','cf-fib','cf-pol','cf-gi'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.value='';
   });
-  showToast(escH(name)+" salvato"+(gi!==null?` · IG ${gi}`:''));
+  showToast(escH(name)+(ed!=null?" modificato":" salvato")+(gi!==null?` · IG ${gi}`:''));
 }
 
 function removeCustomFood(i){
+  if(state.editCustom!=null) annullaModificaCustom();
   const nome=state.custom[i].n;
   state.custom.splice(i,1);saveToStorage();showToast(escH(nome)+' eliminato');
 }
@@ -312,4 +326,25 @@ function cercaCodiceBarre(){
   render();
   const si=document.getElementById('si');if(si){si.value=code;si.blur();}
   fetchOFF(code);
+}
+
+// ── Modifica di un alimento personale: riempie il modulo con i valori dell'etichetta ──
+function modificaCustom(i){
+  const c=state.custom[i];if(!c) return;
+  const fib=typeof c.fib==='number'?c.fib:0, pol=typeof c.pol==='number'?c.pol:0;
+  // carboidrati come in etichetta: salvati (cl) oppure ricavati dai valori salvati
+  const carb=typeof c.cl==='number'?c.cl:Math.round((c.cho-fib+pol/2)*10)/10;
+  const s=v=>v==null?'':String(v);
+  state.editCustom=i;
+  state.addForm={name:c.n,cho:s(carb),sug:s(c.sug),fib:s(c.fib),pol:pol?s(pol):'',gi:c.gi!=null?s(c.gi):'',cat:c.c||'Cereali',error:''};
+  render();
+  const val={'cf-name':c.n,'cf-cho':s(carb),'cf-sug':s(c.sug),'cf-fib':s(c.fib),'cf-pol':pol?s(pol):'','cf-gi':c.gi!=null?s(c.gi):''};
+  Object.keys(val).forEach(id=>{const el=document.getElementById(id);if(el) el.value=val[id];});
+  const box=document.getElementById('form-etichetta');if(box) box.scrollIntoView({block:'start'});
+}
+function annullaModificaCustom(){
+  state.editCustom=null;
+  state.addForm={name:"",cho:"",sug:"",fib:"",pol:"",gi:"",cat:state.addForm.cat||'Cereali',error:""};
+  render();
+  ['cf-name','cf-cho','cf-sug','cf-fib','cf-pol','cf-gi'].forEach(id=>{const el=document.getElementById(id);if(el) el.value='';});
 }

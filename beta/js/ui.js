@@ -33,7 +33,8 @@ let state={
   meal:[],
   favs:[],
   custom:[],
-  addForm:{name:'',cho:'',sug:'',fib:'',gi:'',cat:'Cereali',error:''},
+  addForm:{name:'',cho:'',sug:'',fib:'',pol:'',gi:'',cat:'Cereali',error:''},
+  editCustom:null,    // indice dell'alimento personale in modifica (null = nuovo)
   profilo:{icr:6,insulinType:'fiasp',saved:false},
   profiloForm:{icr:'6',insulinType:'fiasp'},
   toast:null,
@@ -114,7 +115,7 @@ function recentiDalDiario(max=5){
 // se non si trova (es. prodotti online) si ricavano dai valori salvati nella voce del diario.
 function alimentoDaNome(name,voce){
   const c=state.custom.find(f=>f.n===name);
-  if(c) return {name:c.n,cho100:c.cho,sug100:c.sug,fib100:c.fib,cat:c.c,src:'custom'};
+  if(c) return {name:c.n,cho100:c.cho,sug100:c.sug,fib100:c.fib,cat:c.c,src:'custom',...(c.pol?{pol100:c.pol}:{})};
   const k=CREA.find(f=>f.n===name);
   if(k) return daLista({...k,src:'crea'});
   if(voce&&voce.grams>0){
@@ -510,7 +511,7 @@ function aggiornaScheda(){
     el('sh-det').textContent=!valido?'Scrivi i grammi (da 1 a 2000)'
       :(f.src==='usda'
         ?`Totali ${numG(cho)} g`+(fib!=null&&fib>0?` − fibre ${numG(fib)} g`:'')+(sug!=null?` · zuccheri ${numG(sug)} g`:'')
-        :[fib!=null?`fibre ${numG(fib)} g (già escluse)`:null,sug!=null?`zuccheri ${numG(sug)} g`:null].filter(Boolean).join(' · ').replace(/^f/,'F').replace(/^z/,'Z'));
+        :[fib!=null?`fibre ${numG(fib)} g (già escluse)`:null,sug!=null?`zuccheri ${numG(sug)} g`:null,f.pol100?`polioli ${numG(calcFor(f.pol100,g))} g (metà contata)`:null].filter(Boolean).join(' · ').replace(/^f/,'F').replace(/^z/,'Z'));
   }
   if(el('sh-add')) el('sh-add').disabled=!valido;
   if(el('sh-add-lbl')) el('sh-add-lbl').textContent=valido?`Aggiungi al pasto · ${numG(net)} g`:'Aggiungi al pasto';
@@ -588,8 +589,8 @@ function renderProfilo(){
   </div>`;
 
   html+=`<div class="add-form" id="form-etichetta">
-    <div class="add-form-title">Nuovo alimento dall’etichetta</div>
-    <div class="profilo-subtitle" style="margin-bottom:12px">Copia i valori «per 100 g» dalla tabella nutrizionale della confezione. I «carboidrati» dell’etichetta sono già i carboidrati netti: la fibra non viene sottratta.</div>
+    <div class="add-form-title">${s.editCustom!=null?'Modifica alimento':'Nuovo alimento dall’etichetta'}</div>
+    <div class="profilo-subtitle" style="margin-bottom:12px">Copia i valori «per 100 g» dalla tabella nutrizionale della confezione. La fibra non si sottrae (i «carboidrati» UE la escludono già). Se l’etichetta indica «di cui polioli», scrivili: se ne conta metà <strong>(regola sperimentale, da confermare con il medico)</strong>.</div>
     <div class="form-field" style="margin-bottom:12px">
       <label class="form-lbl" for="cf-name">Nome alimento</label>
       <input class="form-input" type="text" placeholder="Es. Pasta senatore Cappelli" autocorrect="off"
@@ -616,7 +617,13 @@ function renderProfilo(){
       </div>
     </div>
     <div class="form-row">
-      <div class="form-field" style="max-width:120px">
+      <div class="form-field">
+        <label class="form-lbl" for="cf-pol">di cui polioli</label>
+        <input class="form-num" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="0"
+          id="cf-pol" data-keep oninput="onFormInput('pol',event)"/>
+        <div class="form-hint">g (se indicati)</div>
+      </div>
+      <div class="form-field">
         <label class="form-lbl" for="cf-gi">IG (se noto)</label>
         <input class="form-num" type="number" inputmode="numeric" min="0" max="120" step="1" placeholder="—"
           id="cf-gi" data-keep oninput="onFormInput('gi',event)"/>
@@ -632,7 +639,8 @@ function renderProfilo(){
     }).join('')+
     `</div>
     ${s.addForm.error?`<div class="form-error" id="cf-error">${s.addForm.error}</div>`:`<div class="form-error" id="cf-error" style="display:none"></div>`}
-    <button class="btn-save" onclick="saveCustomFood()">Salva alimento</button>
+    <button class="btn-save" onclick="saveCustomFood()">${s.editCustom!=null?'Salva modifiche':'Salva alimento'}</button>
+    ${s.editCustom!=null?`<button class="btn-link" onclick="annullaModificaCustom()">Annulla modifica</button>`:''}
   </div>`;
 
   if(s.custom.length>0){
@@ -642,8 +650,9 @@ function renderProfilo(){
       html+=`<div class="custom-item">
         <div class="ci-info">
           <div class="row-name">${escH(f.n)}</div>
-          <div class="row-sub">${escH(f.c)} · carboidrati ${numG(netto100(f))} g · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)</div>
+          <div class="row-sub">${escH(f.c)} · CHO netti ${numG(netto100(f))} g${f.pol?` (polioli ${numG(f.pol)} g, metà contata)`:''} · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)</div>
         </div>
+        <button class="mi-del" onclick="modificaCustom(${i})" aria-label="Modifica ${escH(f.n)}">${icons.edit}</button>
         <button class="mi-del" onclick="removeCustomFood(${i})" aria-label="Elimina ${escH(f.n)}">${icons.trash}</button>
       </div>`;
     });
@@ -665,7 +674,7 @@ function renderProfilo(){
     <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
     <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
     <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
-    <p>CarbOCalc 2.4.1 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
+    <p>CarbOCalc 2.4.2 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
   </div>`;
   html+=`</div>`;
   return html;
