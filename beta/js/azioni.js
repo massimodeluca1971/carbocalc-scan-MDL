@@ -288,3 +288,28 @@ function correggiEtichette(){
   return corretti;
 }
 function chiudiAvvisoEtichette(){state.avvisoEtichette=null;render();}
+
+// ── Foglio "Codice a barre" ──
+function apriCodiceBarre(){
+  state.codiceBarre=true;state.selected=null;
+  const si=document.getElementById('si');if(si) si.blur();
+  render();
+  setTimeout(()=>{const el=document.getElementById('cb-num');if(el) el.focus();},50);
+}
+function chiudiCodiceBarre(){state.codiceBarre=false;render();}
+function cercaCodiceBarre(){
+  const el=document.getElementById('cb-num');
+  const code=String(el?el.value:'').replace(/\D/g,'');
+  if(code.length<8||code.length>14){
+    const e=document.getElementById('cb-err');
+    if(e){e.textContent='Servono da 8 a 14 cifre.';e.style.display='';}
+    return;
+  }
+  if(el) el.value='';
+  state.codiceBarre=false;
+  state.tab='cerca';state.activeCat=null;
+  state.query=code;state.offResults=[];state.offCercato=false;state.offErrore=null;
+  render();
+  const si=document.getElementById('si');if(si){si.value=code;si.blur();}
+  fetchOFF(code);
+}

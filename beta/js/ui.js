@@ -14,6 +14,7 @@ const icons={
   back:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>`,
   chevron:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"/></svg>`,
   close:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>`,
+  barcode:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 5v14M6 5v14M10 5v14M13 5v14M17 5v14M21 5v14M8 5v14M19 5v14" stroke-width="1.4"/></svg>`,
   user:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>`,
 };
 
@@ -46,6 +47,7 @@ let state={
   diarioElimina:null, // id del pasto da eliminare (in attesa di conferma)
   report:null,        // foglio "Report per l'ambulatorio" aperto
   avvisoEtichette:null, // alimenti personali corretti (fibra sottratta due volte), da mostrare una volta
+  codiceBarre:false,  // foglio "Codice a barre" aperto
 };
 
 // Liste mostrate a schermo: i tocchi le richiamano per posizione
@@ -161,6 +163,7 @@ function cercaBodyHTML(){
       h+=`<div class="hint-line center">${codice?'Codice a barre non trovato in Open Food Facts.':'Nessun prodotto confezionato trovato.'}</div>`;
     }
     if(!codice&&!s.offCercato&&!lista.length) h+=`<div class="hint-line center">Hai una confezione? Scrivi qui sopra le cifre del codice a barre.</div>`;
+    if(!codice) h+=`<button class="btn-ghost btn-barcode" onclick="apriCodiceBarre()">${icons.barcode}<span>Cerca con il <strong>codice a barre</strong></span></button>`;
     h+=`<button class="btn-dashed" onclick="vaiInserisciEtichetta()">${icons.plus} Non c’è? Inseriscilo dall’etichetta</button>`;
     return h;
   }
@@ -177,7 +180,8 @@ function cercaBodyHTML(){
     return h;
   }
 
-  // Home: recenti, preferiti, categorie
+  // Home: codice a barre, recenti, preferiti, categorie
+  h+=`<button class="btn-ghost btn-barcode" onclick="apriCodiceBarre()">${icons.barcode}<span>Prodotto confezionato? <strong>Codice a barre</strong></span></button>`;
   const rec=recentiDalDiario(5);
   listeUI.rec=rec;
   if(rec.length){
@@ -351,6 +355,23 @@ function render(){
   }
 
   html+=renderDiarioOverlays();
+
+  if(s.codiceBarre){
+    html+=`<div class="sheet-overlay" onclick="chiudiCodiceBarre()">
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cb-t" onclick="event.stopPropagation()">
+        <div class="sheet-handle"></div>
+        <div class="sheet-scroll">
+          <div class="sh-head"><div class="sh-title-wrap"><h2 class="sh-title" id="cb-t">Codice a barre</h2>
+            <div class="sh-meta sh-src">Scrivi le cifre stampate sotto le barre della confezione (di solito 13, a volte 8). Il prodotto si cerca in Open Food Facts: serve la connessione.</div></div>
+            <button class="btn-icon" onclick="chiudiCodiceBarre()" aria-label="Chiudi">${icons.close}</button></div>
+          <input class="form-input cb-input" id="cb-num" data-keep type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off"
+            placeholder="es. 8076800195057" aria-label="Cifre del codice a barre" onkeydown="if(event.key==='Enter'){event.preventDefault();cercaCodiceBarre();}"/>
+          <div class="form-error" id="cb-err" style="display:none"></div>
+        </div>
+        <div class="sheet-foot"><button class="btn-primary" onclick="cercaCodiceBarre()">${icons.search} Cerca il prodotto</button></div>
+      </div>
+    </div>`;
+  }
 
   if(s.avvisoEtichette){
     const el=s.avvisoEtichette;
@@ -644,7 +665,7 @@ function renderProfilo(){
     <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
     <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
     <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
-    <p>CarbOCalc 2.4 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
+    <p>CarbOCalc 2.4.1 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
   </div>`;
   html+=`</div>`;
   return html;
