@@ -268,6 +268,12 @@ function saveCustomFood(){
   // Salvo cho = carboidrati + fibra − metà polioli, così i CHO netti (cho − fibra, formula invariata)
   // = carboidrati dell'etichetta − metà polioli. cl = carboidrati come scritti in etichetta. et=1: formato 2.4.
   const voce={n:name,c:state.addForm.cat||'Cereali',cho:Math.round((cho+fib-pol/2)*10)/10,sug,fib,...(pol?{pol}:{}),cl:cho,...(gi!==null&&{gi}),et:1};
+  // 2.7.1: codice a barre (da «Correggi con l'etichetta»); in modifica si conserva quello già salvato
+  const codiceCb=(state.foglioAlimento&&state.foglioAlimento.codice)||(ed!=null&&state.custom[ed]&&state.custom[ed].codice)||'';
+  if(codiceCb){
+    if(state.custom.some((c,i)=>i!==ed&&c.codice===codiceCb)) return mostraErroreForm("Hai già un alimento con questo codice a barre: modificalo da Profilo → I tuoi alimenti.");
+    voce.codice=codiceCb;
+  }
   if(ed!=null&&state.custom[ed]){
     const vecchioNome=state.custom[ed].n;
     state.custom[ed]=voce;
@@ -283,6 +289,7 @@ function saveCustomFood(){
   showToast(escH(name)+(ed!=null?" modificato":" salvato")+(gi!==null?` · IG ${gi}`:''));
   // Da Cerca: apro subito la scheda del nuovo alimento per scegliere i grammi
   if(origine==='cerca'&&ed==null){
+    if(voce.codice){state.offResults=[];state.offCercato=false;state.offErrore=null;}
     state.tab='cerca';state.activeCat=null;
     apriAlimento(daLista({...voce,custom:true,src:'custom'}));
   }
@@ -357,14 +364,37 @@ function cercaCodiceBarre(){
   if(el) el.value='';
   codiceLetto(code);
 }
-// Codice letto (fotocamera o foto) o scritto: cerca in Open Food Facts; se trovato apre la scheda
+// Codice letto (fotocamera o foto) o scritto: prima i tuoi alimenti (2.7.1), poi Open Food Facts; se trovato apre la scheda
+function alimentoDaCodice(code){return state.custom.find(c=>c.codice&&c.codice===code)||null;}
 function codiceLetto(code){
   state.codiceBarre=false;state.cbMsg=null;
   state.tab='cerca';state.activeCat=null;state.selected=null;
   state.query=code;state.offResults=[];state.offCercato=false;state.offErrore=null;
   render();
   const si=document.getElementById('si');if(si){si.value=code;si.blur();}
+  const mio=alimentoDaCodice(code);
+  if(mio){apriAlimento(daLista({...mio,custom:true,src:'custom'}));return;}
   fetchOFF(code,{apri:true});
+}
+// 2.7.1: «Correggi con l'etichetta» dalla scheda di un prodotto Open Food Facts.
+// Apre il foglio etichetta con i valori trovati (carboidrati come in etichetta) e il codice a barre.
+function correggiDaOFF(){
+  const f=state.selected;if(!f||f.src!=='off') return;
+  if(f.codice){
+    const i=state.custom.findIndex(c=>c.codice===f.codice);
+    if(i>=0){state.selected=null;modificaCustom(i);return;}
+  }
+  const fib=typeof f.fib100==='number'?f.fib100:0, pol=typeof f.pol100==='number'?f.pol100:0;
+  const carb=Math.round((f.cho100-fib+pol/2)*10)/10;
+  const s=v=>v==null?'':String(v);
+  const nome=f.name, cat=(state.addForm&&state.addForm.cat)||'Dolci';
+  state.editCustom=null;
+  state.addForm={name:nome,cho:s(carb),sug:s(f.sug100),fib:s(f.fib100),pol:pol?s(pol):'',gi:'',cat,error:''};
+  state.foglioAlimento={origine:'cerca',codice:f.codice||''};
+  state.selected=null;state.codiceBarre=false;
+  render();
+  const val={'cf-name':nome,'cf-cho':s(carb),'cf-sug':s(f.sug100),'cf-fib':s(f.fib100),'cf-pol':pol?s(pol):'','cf-gi':''};
+  Object.keys(val).forEach(id=>{const el=document.getElementById(id);if(el) el.value=val[id];});
 }
 
 // ── Modifica di un alimento personale: riempie il modulo con i valori dell'etichetta ──

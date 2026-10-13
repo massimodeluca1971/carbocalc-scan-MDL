@@ -156,7 +156,8 @@ function cercaBodyHTML(){
   if(q.length>0){
     // Risultati
     const codice=/^\d{8,14}$/.test(q);
-    const loc=codice?[]:searchCREA(q).slice(0,60);
+    // 2.7.1: con un codice a barre compaiono prima i tuoi alimenti corretti dall'etichetta
+    const loc=codice?s.custom.filter(f=>f.codice===q).map(f=>({...f,custom:true})):searchCREA(q).slice(0,60);
     const lista=loc.map(f=>({...f,src:f.custom?'custom':'crea'}));
     const off=s.offResults.map(f=>({...f,src:'off'}));
     listeUI.ris=[...lista,...off];
@@ -464,7 +465,7 @@ function renderScheda(){
   const gi=online?null:getGI(f.name);
   const info=online?null:giInfo(f.name);
   let fonte='';
-  if(f.src==='custom') fonte='Mio alimento (dall’etichetta)';
+  if(f.src==='custom') fonte='Mio alimento (dall’etichetta)'+(f.codice?' · codice '+escH(f.codice):'');
   else if(f.src==='off') fonte=`Prodotto confezionato · Open Food Facts${f.codice?' · codice '+escH(f.codice):''}<br><strong>Valori da verificare sull’etichetta</strong>`;
   else if(f.src==='usda') fonte='Database USA · verifica i valori sull’etichetta';
   else if(f.src==='online') fonte='Prodotto trovato online · verifica i valori sull’etichetta';
@@ -519,6 +520,7 @@ function renderScheda(){
           <div class="net-val"><span id="sh-net">—</span><span class="net-unit"> g</span></div>
           <div class="net-det" id="sh-det"></div>
         </div>
+        ${f.src==='off'?`<button class="btn-link" onclick="correggiDaOFF()">Valori diversi dall’etichetta? <u>Correggi e salva tra i tuoi</u></button>`:''}
       </div>
       <div class="sheet-foot">
         <button class="btn-primary" id="sh-add" onclick="addToMeal()">${icons.plus} <span id="sh-add-lbl">Aggiungi al pasto</span></button>
@@ -658,7 +660,7 @@ function renderProfilo(){
     <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
     <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
     <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
-    <p>CarbOCalc 2.6 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
+    <p>CarbOCalc 2.7.1 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
   </div>`;
   html+=`</div>`;
   return html;
@@ -671,8 +673,9 @@ function renderFoglioAlimento(){
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fa-t">
       <div class="sheet-handle"></div>
       <div class="sheet-scroll" id="form-etichetta">
-        <div class="sh-head"><div class="sh-title-wrap"><h2 class="sh-title" id="fa-t">${s.editCustom!=null?'Modifica alimento':'Nuovo alimento dall’etichetta'}</h2></div>
+        <div class="sh-head"><div class="sh-title-wrap"><h2 class="sh-title" id="fa-t">${s.editCustom!=null?'Modifica alimento':(s.foglioAlimento&&s.foglioAlimento.codice?'Correggi con l’etichetta':'Nuovo alimento dall’etichetta')}</h2></div>
           <button class="btn-icon" onclick="chiudiFoglioAlimento()" aria-label="Chiudi">${icons.close}</button></div>
+    ${s.foglioAlimento&&s.foglioAlimento.codice?`<div class="profilo-subtitle" style="margin-bottom:12px"><strong>Valori di Open Food Facts già scritti: correggi quelli diversi dalla tua confezione.</strong> Il prodotto diventa un tuo alimento con il codice ${escH(s.foglioAlimento.codice)}: le prossime volte che lo leggi si apre la tua versione.</div>`:''}
     <div class="profilo-subtitle" style="margin-bottom:12px">Copia i valori «per 100 g» dalla tabella nutrizionale della confezione. La fibra non si sottrae (i «carboidrati» UE la escludono già). Se l’etichetta indica «di cui polioli», scrivili: se ne conta metà <strong>(regola sperimentale, da confermare con il medico)</strong>.</div>
     <div class="form-field" style="margin-bottom:12px">
       <label class="form-lbl" for="cf-name">Nome alimento</label>
