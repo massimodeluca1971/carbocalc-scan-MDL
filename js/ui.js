@@ -49,6 +49,11 @@ let state={
   report:null,        // foglio "Report per l'ambulatorio" aperto
   avvisoEtichette:null, // alimenti personali corretti (fibra sottratta due volte), da mostrare una volta
   codiceBarre:false,  // foglio "Codice a barre" aperto
+  foglioAlimento:null, // foglio "Nuovo alimento dall'etichetta" aperto: {origine:'cerca'|'profilo'}
+  attivita:[],        // attività fisiche registrate (vedi attivita.js)
+  diarioVista:'pasti',// Diario: 'pasti' oppure sottopagina 'attivita'
+  attForm:null,       // foglio "Nuova / Modifica attività" aperto
+  attElimina:null,    // id dell'attività da eliminare (in attesa di conferma)
 };
 
 // Liste mostrate a schermo: i tocchi le richiamano per posizione
@@ -96,15 +101,26 @@ function giProvenienza(info,gi){
 }
 function numG(v,d=1){return v==null?'—':fmt(v,d).replace('.',',');}
 
-// Usati di recente: ricavati dal diario (nessun dato nuovo salvato)
+// Usati di recente: ricavati dal diario (nessun dato nuovo salvato).
+// "Svuota" e la × non toccano il diario: si ricorda solo da quando (o quale alimento)
+// non mostrare. Un alimento nascosto ricompare se lo registri di nuovo.
+function recentiImpost(){
+  const r=storageMeta.recenti;
+  return {dal:r&&r.dal||null,nascosti:(r&&r.nascosti&&typeof r.nascosti==='object')?r.nascosti:{}};
+}
 function recentiDalDiario(max=5){
   const out=[],visti=new Set();
+  const imp=recentiImpost();
   for(let i=state.diario.length-1;i>=0&&out.length<max;i--){
     const v=state.diario[i];
+    const quando=v.creato||v.ts;
+    if(imp.dal&&quando<=imp.dal) continue;
     for(const a of v.alimenti){
       if(out.length>=max) break;
       if(visti.has(a.name)) continue;
       visti.add(a.name);
+      const nasc=imp.nascosti[a.name];
+      if(nasc&&quando<=nasc) continue;
       out.push({name:a.name,grams:a.grams,src:a.src||null,a});
     }
   }
@@ -182,14 +198,18 @@ function cercaBodyHTML(){
   }
 
   // Home: codice a barre, recenti, preferiti, categorie
-  h+=`<button class="btn-ghost btn-barcode" onclick="apriCodiceBarre()">${icons.barcode}<span>Prodotto confezionato? <strong>Codice a barre</strong></span></button>`;
+  h+=`<div class="home-azioni">
+    <button class="btn-ghost home-az" onclick="apriCodiceBarre()">${icons.barcode}<span>Codice a barre</span></button>
+    <button class="btn-ghost home-az" onclick="apriFoglioAlimento('cerca','')">${icons.plus}<span>Nuovo da etichetta</span></button>
+  </div>`;
   const rec=recentiDalDiario(5);
   listeUI.rec=rec;
   if(rec.length){
-    h+=`<div class="section-lbl">Usati di recente</div><div class="rows rows-joined">`;
+    h+=`<div class="section-row"><div class="section-lbl">Usati di recente</div><button class="section-link" onclick="svuotaRecenti()">Svuota</button></div><div class="rows rows-joined">`;
     rec.forEach((r,i)=>{
       h+=`<div class="row-rec">
         <button class="row-rec-main" onclick="apriRecente(${i})"><span class="row-name">${escH(r.name)}</span><span class="row-sub">${numG(r.grams,0)} g</span></button>
+        <button class="btn-round-x" onclick="nascondiRecente(${i})" aria-label="Togli ${escH(r.name)} dai recenti">${icons.close}</button>
         <button class="btn-round-add" onclick="aggiungiRecente(${i})" aria-label="Aggiungi di nuovo ${escH(r.name)}, ${numG(r.grams,0)} grammi">${icons.plus}</button>
       </div>`;
     });
@@ -246,7 +266,7 @@ function render(){
       </div>
     </div>`;
   } else {
-    const titoli={pasto:'Pasto',diario:'Diario',profilo:'Profilo'};
+    const titoli={pasto:'Pasto',diario:s.diarioVista==='attivita'?'Attività':'Diario',profilo:'Profilo'};
     html+=`<div class="topbar"><div class="brand">CarbOCalc</div><h1 class="page-title">${titoli[s.tab]||''}</h1></div>`;
   }
 
@@ -294,7 +314,7 @@ function render(){
   if(s.tab==='profilo') html+=renderProfilo();
 
   // ── DIARIO ──
-  if(s.tab==='diario') html+=`<div class="pad">${renderDiarioTab()}</div>`;
+  if(s.tab==='diario') html+=`<div class="pad">${s.diarioVista==='attivita'?renderAttivitaVista():renderDiarioTab()}</div>`;
 
   html+=`</div>`; // fine scroll-area
 
@@ -341,7 +361,8 @@ function render(){
           Preferiti: <strong>${p.favs.length}</strong><br>
           Alimenti personali: <strong>${p.custom.length}</strong><br>
           Profilo: <strong>${prof}</strong><br>
-          Pasti nel diario: <strong>${p.haDiario?p.diario.length:'non presente (backup vecchio)'}</strong>
+          Pasti nel diario: <strong>${p.haDiario?p.diario.length:'non presente (backup vecchio)'}</strong><br>
+          Attività fisiche: <strong>${p.haAttivita?p.attivita.length:'non presenti (backup precedente alla 2.5)'}</strong>
           ${p.scartati>0?`<br>Attenzione: ${p.scartati} voci non valide verranno ignorate`:''}
           <br><br><strong>Unisci</strong>: aggiunge solo ciò che manca, i tuoi dati attuali restano.<br>
           <strong>Sostituisci</strong>: i dati attuali vengono rimpiazzati da quelli del file.
@@ -356,6 +377,8 @@ function render(){
   }
 
   html+=renderDiarioOverlays();
+  html+=renderAttivitaOverlays();
+  if(s.foglioAlimento) html+=renderFoglioAlimento();
 
   if(s.codiceBarre){
     html+=`<div class="sheet-overlay" onclick="chiudiCodiceBarre()">
@@ -588,8 +611,54 @@ function renderProfilo(){
     ${s.profilo.saved?`<div class="profilo-saved">Attivo: 1 UI ogni ${String(s.profilo.icr).replace('.',',')} g di CHO · ${getInsulinInfo(s.profilo.insulinType).label}</div>`:''}
   </div>`;
 
-  html+=`<div class="add-form" id="form-etichetta">
-    <div class="add-form-title">${s.editCustom!=null?'Modifica alimento':'Nuovo alimento dall’etichetta'}</div>
+  html+=`<div class="section-lbl">I tuoi alimenti${s.custom.length?` (${s.custom.length})`:''}</div>`;
+  html+=`<button class="btn-dashed" onclick="apriFoglioAlimento('profilo','')">${icons.plus} Nuovo alimento dall’etichetta</button>`;
+  if(s.custom.length>0){
+    html+=`<div class="rows rows-joined" style="margin-top:10px">`;
+    s.custom.forEach((f,i)=>{
+      const fgi=f.gi!=null?f.gi:null;
+      html+=`<div class="custom-item">
+        <div class="ci-info">
+          <div class="row-name">${escH(f.n)}</div>
+          <div class="row-sub">${escH(f.c)} · CHO netti ${numG(netto100(f))} g${f.pol?` (polioli ${numG(f.pol)} g, metà contata)`:''} · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)</div>
+        </div>
+        <button class="mi-del" onclick="modificaCustom(${i})" aria-label="Modifica ${escH(f.n)}">${icons.edit}</button>
+        <button class="mi-del" onclick="removeCustomFood(${i})" aria-label="Elimina ${escH(f.n)}">${icons.trash}</button>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  const ultimo=fmtDataOra(storageMeta.ultimoBackup);
+  html+=`<div class="profilo-card backup-card">
+    <div class="profilo-title">Backup dei dati</div>
+    <div class="profilo-subtitle">Salva in un file preferiti, alimenti personali, profilo insulinico, diario e attività: ti serve se cambi telefono, se si cancellano i dati del browser o per spostarli su un altro dispositivo.</div>
+    <div class="backup-btns">
+      <button class="btn-save" onclick="exportBackup()">Esporta backup</button>
+      <label class="btn-save btn-save-alt backup-import" for="import-file">Importa backup</label>
+    </div>
+    <div class="backup-info">${ultimo?'Ultimo backup: '+ultimo:'Nessun backup esportato finora.'}${storageMode==='ls'?'<br>Archivio avanzato non disponibile su questo browser: dati salvati in modalità semplice.':''}</div>
+  </div>`;
+  html+=`<div class="fonti">
+    <div class="fonti-title">Fonti dei dati</div>
+    <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
+    <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
+    <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
+    <p>CarbOCalc 2.5 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
+  </div>`;
+  html+=`</div>`;
+  return html;
+}
+
+// ── Foglio "Nuovo alimento dall'etichetta" (da Cerca o da Profilo) ──
+function renderFoglioAlimento(){
+  const s=state;
+  let html=`<div class="sheet-overlay">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fa-t">
+      <div class="sheet-handle"></div>
+      <div class="sheet-scroll" id="form-etichetta">
+        <div class="sh-head"><div class="sh-title-wrap"><h2 class="sh-title" id="fa-t">${s.editCustom!=null?'Modifica alimento':'Nuovo alimento dall’etichetta'}</h2></div>
+          <button class="btn-icon" onclick="chiudiFoglioAlimento()" aria-label="Chiudi">${icons.close}</button></div>
     <div class="profilo-subtitle" style="margin-bottom:12px">Copia i valori «per 100 g» dalla tabella nutrizionale della confezione. La fibra non si sottrae (i «carboidrati» UE la escludono già). Se l’etichetta indica «di cui polioli», scrivili: se ne conta metà <strong>(regola sperimentale, da confermare con il medico)</strong>.</div>
     <div class="form-field" style="margin-bottom:12px">
       <label class="form-lbl" for="cf-name">Nome alimento</label>
@@ -639,44 +708,12 @@ function renderProfilo(){
     }).join('')+
     `</div>
     ${s.addForm.error?`<div class="form-error" id="cf-error">${s.addForm.error}</div>`:`<div class="form-error" id="cf-error" style="display:none"></div>`}
-    <button class="btn-save" onclick="saveCustomFood()">${s.editCustom!=null?'Salva modifiche':'Salva alimento'}</button>
-    ${s.editCustom!=null?`<button class="btn-link" onclick="annullaModificaCustom()">Annulla modifica</button>`:''}
-  </div>`;
-
-  if(s.custom.length>0){
-    html+=`<div class="section-lbl">I tuoi alimenti (${s.custom.length})</div><div class="rows rows-joined">`;
-    s.custom.forEach((f,i)=>{
-      const fgi=f.gi!=null?f.gi:null;
-      html+=`<div class="custom-item">
-        <div class="ci-info">
-          <div class="row-name">${escH(f.n)}</div>
-          <div class="row-sub">${escH(f.c)} · CHO netti ${numG(netto100(f))} g${f.pol?` (polioli ${numG(f.pol)} g, metà contata)`:''} · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)</div>
-        </div>
-        <button class="mi-del" onclick="modificaCustom(${i})" aria-label="Modifica ${escH(f.n)}">${icons.edit}</button>
-        <button class="mi-del" onclick="removeCustomFood(${i})" aria-label="Elimina ${escH(f.n)}">${icons.trash}</button>
-      </div>`;
-    });
-    html+=`</div>`;
-  }
-
-  const ultimo=fmtDataOra(storageMeta.ultimoBackup);
-  html+=`<div class="profilo-card backup-card">
-    <div class="profilo-title">Backup dei dati</div>
-    <div class="profilo-subtitle">Salva in un file preferiti, alimenti personali, profilo insulinico e diario: ti serve se cambi telefono, se si cancellano i dati del browser o per spostarli su un altro dispositivo.</div>
-    <div class="backup-btns">
-      <button class="btn-save" onclick="exportBackup()">Esporta backup</button>
-      <label class="btn-save btn-save-alt backup-import" for="import-file">Importa backup</label>
+      </div>
+      <div class="sheet-foot">
+        <button class="btn-primary" onclick="saveCustomFood()">${s.editCustom!=null?'Salva modifiche':(s.foglioAlimento&&s.foglioAlimento.origine==='cerca'?'Salva e scegli i grammi':'Salva alimento')}</button>
+      </div>
     </div>
-    <div class="backup-info">${ultimo?'Ultimo backup: '+ultimo:'Nessun backup esportato finora.'}${storageMode==='ls'?'<br>Archivio avanzato non disponibile su questo browser: dati salvati in modalità semplice.':''}</div>
   </div>`;
-  html+=`<div class="fonti">
-    <div class="fonti-title">Fonti dei dati</div>
-    <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
-    <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
-    <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
-    <p>CarbOCalc 2.4.2 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
-  </div>`;
-  html+=`</div>`;
   return html;
 }
 

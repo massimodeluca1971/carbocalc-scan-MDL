@@ -25,6 +25,16 @@ function renderPulsanteRegistra(){
   return `<button class="btn-primary" onclick="apriRegistra()">${icoBook} Registra nel diario</button>`;
 }
 
+// Navigazione tra i giorni (Diario e sottopagina Attività)
+function navGiornoHTML(k){
+  const oggi=dayKey(new Date());
+  return `<div class="dg-nav">
+    <button class="dg-arrow" onclick="cambiaGiorno(-1)" aria-label="Giorno precedente">‹</button>
+    <div class="dg-day">${escH(fmtGiorno(k))}${k!==oggi?`<button class="dg-today" onclick="vaiOggi()">Oggi</button>`:''}</div>
+    <button class="dg-arrow" onclick="cambiaGiorno(1)" aria-label="Giorno successivo"${k>=oggi?' disabled':''}>›</button>
+  </div>`;
+}
+
 // ── Scheda Diario ──
 function renderDiarioTab(){
   const s=state;
@@ -32,16 +42,13 @@ function renderDiarioTab(){
   const k=s.diarioGiorno||oggi;
   const voci=vociDelGiorno(k);
   const t=totaliGiorno(voci);
-  let h=`<div class="dg-nav">
-    <button class="dg-arrow" onclick="cambiaGiorno(-1)" aria-label="Giorno precedente">‹</button>
-    <div class="dg-day">${escH(fmtGiorno(k))}${k!==oggi?`<button class="dg-today" onclick="vaiOggi()">Oggi</button>`:''}</div>
-    <button class="dg-arrow" onclick="cambiaGiorno(1)" aria-label="Giorno successivo"${k>=oggi?' disabled':''}>›</button>
-  </div>`;
+  let h=navGiornoHTML(k);
   h+=`<div class="dg-tot">
     <div><div class="dg-tot-val">${fmtIt(t.cho,0)}<span> g</span></div><div class="dg-tot-lbl">CHO netti</div></div>
     <div><div class="dg-tot-val">${t.conSugg?fmtIt(t.doseStd,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">dose suggerita</div></div>
     <div><div class="dg-tot-val">${t.conDose?fmtIt(t.doseInserita,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">dose inserita${t.n&&t.conDose<t.n?` (${t.conDose}/${t.n})`:''}</div></div>
   </div>`;
+  h+=renderRigaAttivita(k);
   if(!voci.length){
     h+=`<div class="empty-meal" style="padding:36px 20px">
       <div class="empty-title">Nessun pasto registrato</div>
@@ -161,19 +168,25 @@ function renderDiarioOverlays(){
   }
   if(s.report){
     const r=s.report;
+    const periodi=[[7,'7 giorni'],[14,'14 giorni'],[30,'30 giorni'],[0,'Date a scelta']];
     h+=`<div class="confirm-overlay"><div class="confirm-box sheet-box">
       <div class="confirm-title">Report per l'ambulatorio</div>
-      <div class="sheet-sum">Scegli il periodo. Il PDF è pensato per la stampa o per il medico; il CSV si apre con Excel.</div>
-      <div class="form-row">
-        <div class="form-field"><label class="form-lbl">Dal</label><input class="form-input" type="date" id="rep-da" data-keep value="${r.da}"/></div>
-        <div class="form-field"><label class="form-lbl">Al</label><input class="form-input" type="date" id="rep-a" data-keep value="${r.a}"/></div>
+      <div class="sheet-sum">Un unico PDF per tutto il periodo: riepilogo in prima pagina, poi pasti e attività giorno per giorno.</div>
+      <div class="form-lbl">Periodo (fino a oggi)</div>
+      <div class="rep-periodi">${periodi.map(([n,l])=>`<button class="insulin-chip${r.periodo===n?' active':''}" onclick="setPeriodoReport(${n})">${l}</button>`).join('')}</div>
+      <div class="form-row"${r.periodo?' style="display:none"':''}>
+        <div class="form-field"><label class="form-lbl" for="rep-da">Dal</label><input class="form-input" type="date" id="rep-da" data-keep value="${r.da}" onchange="aggiornaDateReport()"/></div>
+        <div class="form-field"><label class="form-lbl" for="rep-a">Al</label><input class="form-input" type="date" id="rep-a" data-keep value="${r.a}" onchange="aggiornaDateReport()"/></div>
       </div>
+      <div class="sheet-hint" style="text-align:center;margin-bottom:6px">Dal ${escH(dataIt(r.da))} al ${escH(dataIt(r.a))}</div>
       ${r.errore?`<div class="form-error">${escH(r.errore)}</div>`:''}
       ${r.pronto?`<button class="btn-save" style="margin-top:6px;background:var(--green)" onclick="condividiPDFPronto()">Apri / condividi il PDF</button>
         <div class="sheet-hint" style="text-align:center">${escH(r.pronto.nome)}</div>`:''}
-      <div class="confirm-btns" style="margin-top:10px">
-        <button class="confirm-btn-cancel sheet-ok" onclick="esportaReport('pdf')">${r.busy?'Preparazione…':r.pronto?'Rifai PDF':'Crea PDF'}</button>
-        <button class="confirm-btn-cancel sheet-ok" onclick="esportaReport('csv')">Esporta CSV</button>
+      <button class="btn-save" style="margin-top:10px" onclick="esportaReport('pdf')">${r.busy?'Preparazione…':r.pronto?'Rifai il PDF':'Crea il PDF'}</button>
+      <div class="sheet-hint" style="text-align:center">Per Excel (file CSV):</div>
+      <div class="confirm-btns" style="margin-top:6px">
+        <button class="confirm-btn-cancel" onclick="esportaReport('csv')">CSV pasti</button>
+        <button class="confirm-btn-cancel" onclick="esportaReport('csv-att')">CSV attività</button>
       </div>
       <button class="confirm-btn-cancel" style="width:100%;margin-top:10px" onclick="state.report=null;render()">Chiudi</button>
     </div></div>`;
@@ -182,7 +195,7 @@ function renderDiarioOverlays(){
 }
 
 // ── Azioni ──
-function apriDiario(){ if(!state.diarioGiorno) state.diarioGiorno=dayKey(new Date()); }
+function apriDiario(){ if(!state.diarioGiorno) state.diarioGiorno=dayKey(new Date()); state.diarioVista='pasti'; }
 function cambiaGiorno(delta){
   const oggi=dayKey(new Date());
   const k=shiftDay(state.diarioGiorno||oggi,delta);
@@ -257,8 +270,27 @@ function confermaElimina(){
   else render();
 }
 
+// Il report finisce oggi: 7, 14 o 30 giorni, oppure date a scelta (periodo 0)
 function apriReport(){
-  const a=state.diarioGiorno||dayKey(new Date());
-  state.report={da:shiftDay(a,-13),a,errore:'',busy:false};
+  const a=dayKey(new Date());
+  state.report={da:shiftDay(a,-13),a,periodo:14,errore:'',busy:false};
+  render();
+}
+function aggiornaDateReport(){
+  const r=state.report;if(!r) return;
+  const da=valoreCampo('rep-da'),a=valoreCampo('rep-a');
+  if(parseDayKey(da)) r.da=da;
+  if(parseDayKey(a)) r.a=a;
+  r.pronto=null;
+  render();
+}
+function setPeriodoReport(n){
+  const r=state.report;if(!r) return;
+  r.periodo=n;r.errore='';r.pronto=null;
+  if(n){ r.a=dayKey(new Date()); r.da=shiftDay(r.a,-(n-1)); }
+  else { r.da=valoreCampo('rep-da')||r.da; r.a=valoreCampo('rep-a')||r.a; }
+  // i campi data hanno data-keep: li aggiorno prima del ridisegno
+  const da=document.getElementById('rep-da'),a=document.getElementById('rep-a');
+  if(da) da.value=r.da; if(a) a.value=r.a;
   render();
 }

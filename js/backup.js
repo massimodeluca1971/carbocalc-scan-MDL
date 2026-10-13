@@ -1,9 +1,10 @@
 // CarbOCalc — backup dei dati (esporta / importa)
-// Il file contiene preferiti, alimenti personali, profilo insulinico e diario.
+// Il file contiene preferiti, alimenti personali, profilo insulinico, diario e attività.
 // Il pasto in corso non viene salvato nel backup.
-// Formato 2 = formato 1 + diario. I file in formato 1 si importano ancora.
+// Formato 2 = formato 1 + diario. Formato 3 (2.5) = formato 2 + attività fisiche.
+// I file in formato 1 e 2 si importano ancora e non cancellano diario e attività.
 
-const BACKUP_FORMATO=2;
+const BACKUP_FORMATO=3;
 
 function backupFileName(){
   const d=new Date();
@@ -21,6 +22,7 @@ function buildBackup(){
       custom:state.custom,
       profilo:state.profilo.saved?{icr:state.profilo.icr,insulinType:state.profilo.insulinType}:null,
       diario:state.diario,
+      attivita:state.attivita,
     },
   };
 }
@@ -89,9 +91,11 @@ function parseBackup(text){
   }
   const haDiario=Array.isArray(d.diario);
   const diario=haDiario?d.diario.filter(validVoceDiario):[];
+  const haAttivita=Array.isArray(d.attivita);
+  const attivita=haAttivita?d.attivita.filter(validAttivita):[];
   const scartati=(Array.isArray(d.favs)?d.favs.length:0)-favs.length+(Array.isArray(d.custom)?d.custom.length:0)-custom.length
-    +(haDiario?d.diario.length-diario.length:0);
-  return {favs,custom,profilo,diario,haDiario,esportato:o.esportato||null,scartati};
+    +(haDiario?d.diario.length-diario.length:0)+(haAttivita?d.attivita.length-attivita.length:0);
+  return {favs,custom,profilo,diario,haDiario,attivita,haAttivita,esportato:o.esportato||null,scartati};
 }
 
 function onImportFile(e){
@@ -125,6 +129,8 @@ function applyImport(mode){
     }
     // un backup senza diario (formato 1) non cancella il diario esistente
     if(p.haDiario) state.diario=p.diario.slice();
+    // idem per le attività: un backup precedente alla 2.5 non le cancella
+    if(p.haAttivita) state.attivita=p.attivita.slice();
   } else {
     const favNames=new Set(state.favs.map(f=>f.n));
     p.favs.forEach(f=>{ if(!favNames.has(f.n)){ state.favs.push(f); favNames.add(f.n); } });
@@ -136,8 +142,11 @@ function applyImport(mode){
     }
     const ids=new Set(state.diario.map(v=>v.id));
     p.diario.forEach(v=>{ if(!ids.has(v.id)){ state.diario.push(v); ids.add(v.id); } });
+    const aids=new Set(state.attivita.map(a=>a.id));
+    p.attivita.forEach(a=>{ if(!aids.has(a.id)){ state.attivita.push(a); aids.add(a.id); } });
   }
   diarioOrdina();
+  attivitaOrdina();
   // alimenti personali da backup creati prima della 2.4: fibra non più sottratta due volte
   correggiEtichette();
   saveToStorage();

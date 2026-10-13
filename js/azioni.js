@@ -208,21 +208,31 @@ function toggleFav(){
 }
 function removeFav(e,i){e.stopPropagation();state.favs.splice(i,1);saveToStorage();render();}
 
-// "Non c'è? Inseriscilo dall'etichetta": porta al modulo in Profilo con il nome già scritto
-function vaiInserisciEtichetta(){
-  const nome=state.query.trim();
-  if(nome){
-    state.addForm.name=nome.charAt(0).toUpperCase()+nome.slice(1);
-    const nm=document.getElementById('cf-name');if(nm) nm.value='';
-  }
-  state.tab='profilo';state.selected=null;
+// ── Foglio "Nuovo alimento dall'etichetta" ──
+// Si apre sopra la schermata in cui sei (Cerca o Profilo). Da Cerca, dopo il salvataggio
+// l'alimento si apre subito nella scheda per scegliere i grammi.
+function moduloVuoto(cat){return {name:'',cho:'',sug:'',fib:'',pol:'',gi:'',cat:cat||state.addForm.cat||'Cereali',error:''};}
+function apriFoglioAlimento(origine,nome){
+  state.editCustom=null;
+  state.addForm=moduloVuoto();
+  if(nome) state.addForm.name=nome.charAt(0).toUpperCase()+nome.slice(1);
+  state.foglioAlimento={origine};
+  state.selected=null;state.codiceBarre=false;
+  const si=document.getElementById('si');if(si) si.blur();
   render();
-  setTimeout(()=>{
-    const nm=document.getElementById('cf-name');
-    if(nm&&state.addForm.name) nm.value=state.addForm.name;
-    const box=document.getElementById('form-etichetta');
-    if(box) box.scrollIntoView({block:'start'});
-  },30);
+  // campi non controllati: si scrivono dopo il disegno
+  ['cf-name','cf-cho','cf-sug','cf-fib','cf-pol','cf-gi'].forEach(id=>{const el=document.getElementById(id);if(el) el.value='';});
+  const nm=document.getElementById('cf-name');if(nm&&state.addForm.name) nm.value=state.addForm.name;
+}
+function chiudiFoglioAlimento(){
+  state.foglioAlimento=null;state.editCustom=null;
+  state.addForm=moduloVuoto();
+  render();
+}
+// "Non c'è? Inseriscilo dall'etichetta": il nome cercato è già scritto (non se hai cercato un codice a barre)
+function vaiInserisciEtichetta(){
+  const q=state.query.trim();
+  apriFoglioAlimento('cerca',/^\d+$/.test(q)?'':q);
 }
 
 function onFormInput(field,e){state.addForm[field]=e.target.value;state.addForm.error='';}
@@ -261,14 +271,16 @@ function saveCustomFood(){
   } else state.custom.unshift(voce);
   state.editCustom=null;
   saveToStorage();
+  const origine=state.foglioAlimento?state.foglioAlimento.origine:'profilo';
   // Reset del modulo: mantiene la categoria scelta per comodità
-  const catMemory=state.addForm.cat||'Cereali';
-  state.addForm={name:"",cho:"",sug:"",fib:"",pol:"",gi:"",cat:catMemory,error:""};
-  ['cf-name','cf-cho','cf-sug','cf-fib','cf-pol','cf-gi'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.value='';
-  });
+  state.addForm=moduloVuoto(state.addForm.cat);
+  state.foglioAlimento=null;
   showToast(escH(name)+(ed!=null?" modificato":" salvato")+(gi!==null?` · IG ${gi}`:''));
+  // Da Cerca: apro subito la scheda del nuovo alimento per scegliere i grammi
+  if(origine==='cerca'&&ed==null){
+    state.tab='cerca';state.activeCat=null;
+    apriAlimento(daLista({...voce,custom:true,src:'custom'}));
+  }
 }
 
 function removeCustomFood(i){
@@ -336,15 +348,23 @@ function modificaCustom(i){
   const carb=typeof c.cl==='number'?c.cl:Math.round((c.cho-fib+pol/2)*10)/10;
   const s=v=>v==null?'':String(v);
   state.editCustom=i;
+  state.foglioAlimento={origine:'profilo'};
   state.addForm={name:c.n,cho:s(carb),sug:s(c.sug),fib:s(c.fib),pol:pol?s(pol):'',gi:c.gi!=null?s(c.gi):'',cat:c.c||'Cereali',error:''};
   render();
   const val={'cf-name':c.n,'cf-cho':s(carb),'cf-sug':s(c.sug),'cf-fib':s(c.fib),'cf-pol':pol?s(pol):'','cf-gi':c.gi!=null?s(c.gi):''};
   Object.keys(val).forEach(id=>{const el=document.getElementById(id);if(el) el.value=val[id];});
-  const box=document.getElementById('form-etichetta');if(box) box.scrollIntoView({block:'start'});
 }
-function annullaModificaCustom(){
-  state.editCustom=null;
-  state.addForm={name:"",cho:"",sug:"",fib:"",pol:"",gi:"",cat:state.addForm.cat||'Cereali',error:""};
-  render();
-  ['cf-name','cf-cho','cf-sug','cf-fib','cf-pol','cf-gi'].forEach(id=>{const el=document.getElementById(id);if(el) el.value='';});
+function annullaModificaCustom(){chiudiFoglioAlimento();}
+
+// ── Usati di recente: × su un alimento e "Svuota" (il diario non cambia) ──
+function nascondiRecente(i){
+  const r=listeUI.rec[i];if(!r) return;
+  const imp=recentiImpost();
+  const nascosti={...imp.nascosti,[r.name]:new Date().toISOString()};
+  setStorageMeta({recenti:{dal:imp.dal,nascosti}});
+  showToast(escH(r.name)+' tolto dai recenti');
+}
+function svuotaRecenti(){
+  setStorageMeta({recenti:{dal:new Date().toISOString(),nascosti:{}}});
+  showToast('Recenti svuotati (il diario non cambia)');
 }
