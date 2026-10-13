@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Prova codice"/>
+<meta name="theme-color" content="#F6F3FB"/>
+<meta name="color-scheme" content="light"/>
+<meta name="robots" content="noindex"/>
+<title>Prova codice a barre — CarbOCalc</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#F6F3FB; --card:#FFFFFF; --line:#EEE9F7; --border:#E4DDF3; --border-strong:#CFC4EA;
+  --text:#1E1A2E; --sub:#5E5577; --accent:#4A2F8A; --accent-2:#6B4FA8; --accent-soft:#F2EEFA;
+  --green:#0D7A54; --green-soft:#E9F7F1; --amber:#9A5A06; --amber-soft:#FEF3E2; --red:#B3261E; --red-soft:#FDECEA;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%}
+body{padding:calc(env(safe-area-inset-top) + 12px) 16px calc(env(safe-area-inset-bottom) + 32px)}
+button,input{font:inherit;touch-action:manipulation}
+main{max-width:560px;margin:0 auto}
+h1{font-size:22px;margin:4px 0 2px}
+h2{font-size:18px;margin:0 0 8px}
+.sub{color:var(--sub);font-size:15px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin:0 0 14px}
+.badge{display:inline-block;font-size:13px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin:0 6px 6px 0}
+.badge.ok{background:var(--green-soft);color:var(--green)}
+.badge.ko{background:var(--red-soft);color:var(--red)}
+.badge.warn{background:var(--amber-soft);color:var(--amber)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;padding:10px 14px;border-radius:12px;
+  border:1px solid var(--border-strong);background:var(--card);color:var(--accent);font-weight:600;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:disabled{opacity:.5}
+.row{display:flex;gap:10px}
+.row>.btn{flex:1}
+.mt{margin-top:10px}
+#cam-wrap{position:relative;width:100%;aspect-ratio:3/4;max-height:62vh;background:#111;border-radius:12px;overflow:hidden;display:none}
+#cam-wrap.on{display:block}
+#video{width:100%;height:100%;object-fit:cover;display:block}
+#mira{position:absolute;left:50%;top:50%;width:min(76%,340px);aspect-ratio:1/1;transform:translate(-50%,-50%);
+  border:3px solid rgba(255,255,255,.9);border-radius:14px;box-shadow:0 0 0 2000px rgba(0,0,0,.28);pointer-events:none}
+#mira::after{content:"";position:absolute;left:8%;right:8%;top:50%;height:2px;background:#E5484D;opacity:.85}
+#cam-status{position:absolute;left:0;right:0;bottom:0;padding:8px 12px;background:rgba(0,0,0,.55);color:#fff;font-size:14px;text-align:center}
+#cam-tools{display:none;gap:8px;flex-wrap:wrap;margin-top:10px}
+#cam-tools.on{display:flex}
+#cam-tools .btn{width:auto;flex:1;min-width:90px}
+.result{border-radius:12px;padding:12px 14px;margin-top:12px;display:none}
+.result.on{display:block}
+.result.ok{background:var(--green-soft);border:1px solid #BFE6D5}
+.result.ko{background:var(--red-soft);border:1px solid #F3C7C3}
+.result.info{background:var(--accent-soft);border:1px solid var(--border)}
+.code{font:600 22px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:1px}
+.small{font-size:14px;color:var(--sub)}
+input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--border-strong);border-radius:12px;background:#fff;font-size:20px;letter-spacing:1px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td{padding:5px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+td:first-child{color:var(--sub);width:44%}
+#log{font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;max-height:220px;overflow:auto;background:#FBFAFE;border:1px solid var(--line);border-radius:10px;padding:8px}
+#crop{display:none;max-width:160px;border:1px solid var(--border);border-radius:8px;margin-top:8px}
+#crop.on{display:block}
+details summary{cursor:pointer;font-weight:600;color:var(--accent);min-height:32px}
+.off-box{margin-top:10px;font-size:15px}
+.off-box table{margin-top:6px}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>Prova codice a barre</h1>
+  <p class="sub">Pagina di prova di CarbOCalc. Non fa parte dell'app, non legge e non salva i tuoi dati, non calcola dosi.</p>
+
+  <!-- DIAGNOSI -->
+  <section class="card" id="diag-card">
+    <h2>Dove stai provando</h2>
+    <div id="diag-badges"></div>
+    <details class="mt"><summary>Dettagli tecnici</summary><table id="diag-table"></table></details>
+  </section>
+
+  <!-- 1. LIVE -->
+  <section class="card">
+    <h2>1 · Inquadra con la fotocamera</h2>
+    <p class="small" style="margin-top:0">Tieni la confezione a 15–20 cm, con il codice dentro il riquadro. Se è sfocato, allontanala un po'.</p>
+    <div id="cam-wrap">
+      <video id="video" playsinline muted autoplay></video>
+      <div id="mira"></div>
+      <div id="cam-status">Avvio…</div>
+    </div>
+    <div id="cam-tools">
+      <button class="btn hide" id="btn-torch" type="button">🔦 Torcia</button>
+      <button class="btn hide" id="btn-zoom" type="button">🔍 Zoom 1×</button>
+      <button class="btn" id="btn-stop" type="button">Ferma</button>
+    </div>
+    <button class="btn primary mt" id="btn-start" type="button">📷 Avvia fotocamera</button>
+    <div class="result" id="live-res"></div>
+  </section>
+
+  <!-- 2. FOTO -->
+  <section class="card">
+    <h2>2 · Oppure fai una foto</h2>
+    <p class="small" style="margin-top:0">Foto nitida del solo codice, a 15–20 cm, con buona luce.</p>
+    <div class="row">
+      <label class="btn primary" for="in-scatta">📸 Scatta foto</label>
+      <label class="btn" for="in-galleria">🖼 Dalla galleria</label>
+    </div>
+    <input id="in-scatta" type="file" accept="image/*" capture="environment" class="hide"/>
+    <input id="in-galleria" type="file" accept="image/*" class="hide"/>
+    <div class="result" id="foto-res"></div>
+  </section>
+
+  <!-- 3. MANUALE -->
+  <section class="card">
+    <h2>3 · Oppure scrivi le cifre</h2>
+    <input type="text" id="in-cifre" inputmode="numeric" autocomplete="off" placeholder="es. 8076800195057" aria-label="Cifre del codice a barre"/>
+    <button class="btn mt" id="btn-cifre" type="button">Verifica le cifre</button>
+    <div class="result" id="man-res"></div>
+  </section>
+
+  <!-- RISULTATI -->
+  <section class="card">
+    <h2>Risultati della prova</h2>
+    <p class="small" style="margin-top:0">Quando hai finito, copia i risultati e incollali nella chat con Claude.</p>
+    <table id="tab-esiti"><tr><td colspan="2" class="small">Nessuna lettura ancora.</td></tr></table>
+    <button class="btn primary mt" id="btn-copia" type="button">📋 Copia risultati della prova</button>
+    <details class="mt"><summary>Registro</summary><div id="log"></div><canvas id="crop"></canvas></details>
+  </section>
+  <p class="small">Motore di lettura: zxing-wasm 3.1.5 (MIT), basato su zxing-cpp. Prodotti: Open Food Facts (ODbL), dati da verificare sull'etichetta.</p>
+</main>
+
+<script src="js/lib/zxing/zxing-reader.js?v=1"></script>
+<script>
+"use strict";
+/* Pagina di prova isolata: nessun accesso a IndexedDB/localStorage dell'app. */
+const T0 = performance.now();
+const $ = id => document.getElementById(id);
+const esiti = [];   // {modo, codice, ms, tentativi, nota}
+const righeLog = [];
+function log(msg){
+  const t = ((performance.now()-T0)/1000).toFixed(1).padStart(6);
+  righeLog.push(`${t}s  ${msg}`);
+  const el = $('log'); el.textContent = righeLog.join('\n'); el.scrollTop = el.scrollHeight;
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ── Diagnosi ── */
+const UA = navigator.userAgent;
+const isIOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+const iosVer = (UA.match(/OS (\d+)[._](\d+)/)||[]).slice(1,3).join('.') || '';
+const standalone = !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
+const browser = /CriOS/.test(UA)?'Chrome (iPhone)':/FxiOS/.test(UA)?'Firefox (iPhone)':/EdgiOS/.test(UA)?'Edge (iPhone)':
+  /Android/.test(UA)&&/Chrome/.test(UA)?'Chrome (Android)':/Edg\//.test(UA)?'Edge':/Chrome/.test(UA)?'Chrome':/Safari/.test(UA)?'Safari':'altro';
+const contesto = standalone ? 'App dalla Home' : browser;
+const diag = {
+  contesto, browser, standalone, ios: isIOS ? (iosVer||'sì') : 'no',
+  https: window.isSecureContext, fotocamera: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+  BarcodeDetector: 'BarcodeDetector' in window, WebAssembly: typeof WebAssembly==='object',
+  motore: 'in caricamento', schermo: `${screen.width}×${screen.height} @${devicePixelRatio}`
+};
+function disegnaDiag(){
+  const b = [];
+  b.push(`<span class="badge">${esc(contesto)}</span>`);
+  if(isIOS) b.push(`<span class="badge">iOS ${esc(iosVer||'?')}</span>`);
+  b.push(`<span class="badge ${diag.fotocamera?'ok':'ko'}">Fotocamera ${diag.fotocamera?'disponibile':'non disponibile'}</span>`);
+  const m = diag.motore;
+  b.push(`<span class="badge ${m.startsWith('pronto')?'ok':m==='in caricamento'?'warn':'ko'}">Lettore ${esc(m)}</span>`);
+  $('diag-badges').innerHTML = b.join('');
+  $('diag-table').innerHTML = Object.entries(diag).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${esc(typeof v==='boolean'?(v?'sì':'no'):v)}</td></tr>`).join('')
+    + `<tr><td>user agent</td><td style="word-break:break-all">${esc(UA)}</td></tr>`;
+}
+disegnaDiag();
+log(`Pagina aperta: ${contesto}${isIOS?' · iOS '+iosVer:''}`);
+
+/* ── Motore zxing-wasm (file ospitati qui, nessun CDN) ── */
+const OPZ = { formats:['EAN13','EAN8','UPCA','UPCE'], tryHarder:true, tryRotate:true, tryInvert:false, tryDownscale:true, maxNumberOfSymbols:1 };
+let motorePronto = null;
+function caricaMotore(){
+  if(motorePronto) return motorePronto;
+  const t = performance.now();
+  if(!window.ZXingWASM){ diag.motore='non caricato (script)'; disegnaDiag(); return motorePronto = Promise.reject(new Error('script zxing assente')); }
+  const wasmUrl = new URL('js/lib/zxing/zxing_reader.wasm?v=1', location.href).href;
+  ZXingWASM.prepareZXingModule({ overrides:{ locateFile:(p,prefix)=> p.endsWith('.wasm') ? wasmUrl : prefix+p }, fireImmediately:true });
+  // Lettura di prova su un'immagine vuota: obbliga il caricamento del wasm
+  motorePronto = ZXingWASM.readBarcodes(new ImageData(8,8), OPZ).then(()=>{
+    const ms = Math.round(performance.now()-t);
+    diag.motore = `pronto (${ms} ms)`; disegnaDiag(); log(`Lettore pronto in ${ms} ms`);
+  }).catch(e=>{
+    diag.motore = 'errore'; disegnaDiag(); log('Errore lettore: '+(e&&e.message||e)); motorePronto=null; throw e;
+  });
+  return motorePronto;
+}
+caricaMotore().catch(()=>{});
+
+/* ── Cifra di controllo EAN/UPC ── */
+function verificaCifre(s){
+  if(!/^\d+$/.test(s)) return {ok:false, msg:'Solo cifre, senza spazi.'};
+  if(![8,12,13].includes(s.length)) return {ok:false, msg:`Le cifre sono ${s.length}: un codice a barre di alimenti ne ha 13 (o 8, o 12).`};
+  const d = s.split('').map(Number), last = d.pop();
+  let sum = 0; d.reverse().forEach((n,i)=>{ sum += n*(i%2===0?3:1); });
+  const atteso = (10 - sum%10) % 10;
+  return atteso===last ? {ok:true} : {ok:false, msg:`L'ultima cifra dovrebbe essere ${atteso}, non ${last}: probabile errore di battitura.`};
+}
+
+/* ── Esiti e Open Food Facts (sola lettura) ── */
+function registra(modo, codice, ms, tentativi, nota){
+  esiti.push({modo, codice, ms, tentativi, nota:nota||''});
+  $('tab-esiti').innerHTML = esiti.map((e,i)=>`<tr><td>${i+1}. ${esc(e.modo)}</td><td>${e.codice?`<strong>${esc(e.codice)}</strong>`:'—'}${e.ms!=null?` · ${(e.ms/1000).toFixed(1)} s`:''}${e.tentativi?` · ${e.tentativi} tentativi`:''}${e.nota?`<br><span class="small">${esc(e.nota)}</span>`:''}</td></tr>`).join('');
+}
+function boxCodice(elId, codice, extra){
+  const v = verificaCifre(codice);
+  const el = $(elId);
+  el.className = 'result on ' + (v.ok?'ok':'ko');
+  el.innerHTML = `<div class="code">${esc(codice)}</div>
+    <div class="small">${v.ok?'✓ Cifra di controllo corretta':'✗ '+esc(v.msg)}${extra?' · '+esc(extra):''}</div>
+    ${v.ok?`<button class="btn mt" type="button" data-off="${esc(codice)}">Cerca in Open Food Facts</button><div class="off-box"></div>`:''}`;
+}
+document.addEventListener('click', async ev=>{
+  const b = ev.target.closest('[data-off]'); if(!b) return;
+  const codice = b.dataset.off, box = b.nextElementSibling;
+  b.disabled = true; box.textContent = 'Ricerca…';
+  const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 12000);
+  try{
+    const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${codice}.json?fields=product_name,product_name_it,brands,nutriments`, {signal:ctrl.signal});
+    const d = await r.json();
+    if(d.status!==1 || !d.product){ box.innerHTML = 'Prodotto non presente in Open Food Facts. Nell\'app potrai inserirlo dall\'etichetta.'; log(`OFF ${codice}: non trovato`); return; }
+    const p = d.product, n = p.nutriments||{};
+    const v = k => n[k]!=null && n[k]!=='' ? String(Math.round(parseFloat(n[k])*10)/10).replace('.',',')+' g' : '—';
+    box.innerHTML = `<strong>${esc(p.product_name_it||p.product_name||'Senza nome')}</strong>${p.brands?' · '+esc(p.brands):''}
+      <table><tr><td>Carboidrati / 100 g</td><td>${v('carbohydrates_100g')}</td></tr>
+      <tr><td>di cui zuccheri</td><td>${v('sugars_100g')}</td></tr>
+      <tr><td>di cui polioli</td><td>${v('polyols_100g')}</td></tr>
+      <tr><td>Fibre</td><td>${v('fiber_100g')}</td></tr></table>
+      <div class="small">Solo verifica: niente viene salvato. Controlla sempre sull'etichetta.</div>`;
+    log(`OFF ${codice}: trovato`);
+  }catch(e){ box.textContent = 'Open Food Facts non risponde ora. Riprova più tardi.'; log(`OFF ${codice}: errore ${e.name}`); }
+  finally{ clearTimeout(to); b.disabled = false; }
+});
+
+/* ── 1. Live ── */
+const video = $('video');
+let stream = null, track = null, attivo = false, tentativi = 0, tAvvio = 0, zoomVal = 1, torciaOn = false, timer = null;
+const tela = document.createElement('canvas');
+const ctx = tela.getContext('2d', {willReadFrequently:true});
+function stato(t){ $('cam-status').textContent = t; }
+
+async function avvia(){
+  $('live-res').className = 'result';
+  if(!diag.fotocamera){ mostraErrLive('Questo browser non dà accesso alla fotocamera. Usa la foto o le cifre.'); return; }
+  $('btn-start').disabled = true;
+  $('cam-wrap').classList.add('on'); $('cam-tools').classList.add('on'); stato('Richiesta della fotocamera…');
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({audio:false, video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}}});
+  }catch(e){
+    log(`getUserMedia errore: ${e.name} ${e.message||''}`);
+    ferma();
+    mostraErrLive(e.name==='NotAllowedError' ? 'Permesso fotocamera negato. Su iPhone: Impostazioni → Safari (o Chrome) → Fotocamera → Chiedi/Consenti, poi riprova.' :
+      e.name==='NotFoundError' ? 'Nessuna fotocamera trovata.' : 'La fotocamera non si avvia ('+e.name+'). Usa la foto o le cifre.');
+    registra('Live', null, null, 0, 'fotocamera non avviata: '+e.name);
+    return;
+  }
+  track = stream.getVideoTracks()[0];
+  video.srcObject = stream;
+  try{ await video.play(); }catch(e){ log('video.play: '+e.name); }
+  await new Promise(r=>{ if(video.videoWidth) r(); else video.addEventListener('loadedmetadata', r, {once:true}); setTimeout(r,2000); });
+  const st = track.getSettings ? track.getSettings() : {};
+  const cap = track.getCapabilities ? track.getCapabilities() : {};
+  diag.video = `${video.videoWidth}×${video.videoHeight}` + (st.frameRate?` @${Math.round(st.frameRate)}fps`:'');
+  diag.torcia = !!cap.torch; diag.zoom = cap.zoom ? `${cap.zoom.min}–${cap.zoom.max}` : 'no';
+  diag.messaAFuoco = (cap.focusMode||[]).join(', ') || 'non indicata';
+  disegnaDiag();
+  log(`Fotocamera avviata: ${diag.video}, torcia ${diag.torcia?'sì':'no'}, zoom ${diag.zoom}`);
+  if((cap.focusMode||[]).includes('continuous')) track.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
+  $('btn-torch').classList.toggle('hide', !cap.torch);
+  $('btn-zoom').classList.toggle('hide', !(cap.zoom && cap.zoom.max>=1.5));
+  try{ await caricaMotore(); }catch(e){ ferma(); mostraErrLive('Il lettore non si è caricato. Controlla la connessione e ricarica la pagina.'); return; }
+  attivo = true; tentativi = 0; tAvvio = performance.now();
+  stato('Inquadra il codice a barre');
+  ciclo();
+}
+
+/* Analizza alternativamente: quadrato centrale (veloce) e fotogramma intero ridotto.
+   Il quadrato copre il codice sia diritto sia ruotato di 90° (difetto noto delle web app sulla Home in iOS 26). */
+async function ciclo(){
+  if(!attivo) return;
+  const w = video.videoWidth, h = video.videoHeight;
+  if(!w || !h || video.readyState < 2){ timer = setTimeout(ciclo, 120); return; }
+  tentativi++;
+  let sx, sy, sw, sh, scala;
+  if(tentativi % 3 !== 0){
+    const lato = Math.round(Math.min(w,h) * 0.8);
+    sx = (w-lato)>>1; sy = (h-lato)>>1; sw = sh = lato; scala = Math.min(1, 1100/lato);
+  }else{
+    sx = 0; sy = 0; sw = w; sh = h; scala = Math.min(1, 1280/Math.max(w,h));
+  }
+  tela.width = Math.round(sw*scala); tela.height = Math.round(sh*scala);
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, tela.width, tela.height);
+  if(tentativi === 5) copiaAnteprima();
+  let ris = [];
+  try{ ris = await ZXingWASM.readBarcodes(ctx.getImageData(0,0,tela.width,tela.height), OPZ); }
+  catch(e){ log('lettura errore: '+(e&&e.message||e)); }
+  if(!attivo) return;
+  const buono = ris.find(r=>r.isValid && r.text);
+  if(buono){
+    const ms = Math.round(performance.now()-tAvvio);
+    log(`Live: ${buono.format} ${buono.text} in ${ms} ms, ${tentativi} tentativi, orientamento ${buono.orientation}°`);
+    if(navigator.vibrate) navigator.vibrate(80);
+    registra('Live · '+contesto, buono.text, ms, tentativi, buono.orientation?`codice ruotato di ${buono.orientation}°`:'');
+    ferma();
+    boxCodice('live-res', buono.text, `${(ms/1000).toFixed(1)} s`);
+    return;
+  }
+  if(tentativi % 20 === 0){
+    const sec = Math.round((performance.now()-tAvvio)/1000);
+    stato(sec>=10 ? 'Non lo trovo: allontana un po\', più luce, codice dritto' : 'Inquadra il codice a barre');
+  }
+  timer = setTimeout(ciclo, 60);
+}
+function copiaAnteprima(){
+  const c = $('crop'); c.width = Math.min(320, tela.width); c.height = Math.round(tela.height * c.width / tela.width);
+  c.getContext('2d').drawImage(tela, 0, 0, c.width, c.height); c.classList.add('on');
+}
+function ferma(motivo){
+  if(attivo && motivo){
+    const ms = Math.round(performance.now()-tAvvio);
+    log(`Live fermato (${motivo}) dopo ${ms} ms, ${tentativi} tentativi`);
+    if(motivo==='Ferma') registra('Live · '+contesto, null, ms, tentativi, 'fermato senza lettura');
+  }
+  attivo = false; clearTimeout(timer);
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream = null; track = null; }
+  video.srcObject = null; torciaOn = false; zoomVal = 1;
+  $('btn-torch').textContent = '🔦 Torcia'; $('btn-zoom').textContent = '🔍 Zoom 1×';
+  $('cam-wrap').classList.remove('on'); $('cam-tools').classList.remove('on');
+  $('btn-start').disabled = false; $('btn-start').textContent = '📷 Avvia fotocamera';
+}
+function mostraErrLive(t){ const el=$('live-res'); el.className='result on ko'; el.textContent=t; }
+$('btn-start').addEventListener('click', avvia);
+$('btn-stop').addEventListener('click', ()=>ferma('Ferma'));
+$('btn-torch').addEventListener('click', ()=>{
+  if(!track) return; torciaOn = !torciaOn;
+  track.applyConstraints({advanced:[{torch:torciaOn}]}).then(()=>{ $('btn-torch').textContent = torciaOn?'🔦 Spegni':'🔦 Torcia'; })
+    .catch(e=>{ log('torcia: '+e.name); torciaOn=false; });
+});
+$('btn-zoom').addEventListener('click', ()=>{
+  if(!track) return; const cap = track.getCapabilities();
+  zoomVal = zoomVal===1 ? Math.min(1.5,cap.zoom.max) : zoomVal===1.5 && cap.zoom.max>=2 ? 2 : 1;
+  track.applyConstraints({advanced:[{zoom:zoomVal}]}).then(()=>{ $('btn-zoom').textContent = `🔍 Zoom ${String(zoomVal).replace('.',',')}×`; log('zoom '+zoomVal); })
+    .catch(e=>log('zoom: '+e.name));
+});
+// Spegnere la fotocamera se si esce dalla pagina o si passa a un'altra app
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden && attivo) ferma('pagina nascosta'); });
+window.addEventListener('pagehide', ()=>ferma('uscita'));
+
+/* ── 2. Foto ── */
+async function leggiFoto(file, origine){
+  if(!file) return;
+  const el = $('foto-res'); el.className = 'result on info'; el.textContent = 'Analisi della foto…';
+  const t = performance.now();
+  log(`Foto (${origine}): ${file.type||'tipo ?'}, ${Math.round(file.size/1024)} KB`);
+  try{ await caricaMotore(); }catch(e){ el.className='result on ko'; el.textContent='Il lettore non si è caricato. Ricarica la pagina.'; return; }
+  let bmp = null, prove = 0, trovato = null, come = '';
+  try{
+    try{ bmp = await createImageBitmap(file, {imageOrientation:'from-image'}); }catch(_){ bmp = await createImageBitmap(file); }
+    log(`Foto: ${bmp.width}×${bmp.height}`);
+    // Più tentativi: intera a 1600, centro a piena risoluzione, intera a 2400, intera a 1000
+    const passi = [
+      {nome:'intera 1600', crop:1, max:1600},
+      {nome:'centro', crop:0.55, max:2000},
+      {nome:'intera 2400', crop:1, max:2400},
+      {nome:'intera 1000', crop:1, max:1000},
+    ];
+    const c = document.createElement('canvas'), cx = c.getContext('2d', {willReadFrequently:true});
+    for(const p of passi){
+      prove++;
+      const sw = Math.round(bmp.width*p.crop), sh = Math.round(bmp.height*p.crop);
+      const sx = (bmp.width-sw)>>1, sy = (bmp.height-sh)>>1;
+      const sc = Math.min(1, p.max/Math.max(sw,sh));
+      c.width = Math.round(sw*sc); c.height = Math.round(sh*sc);
+      cx.drawImage(bmp, sx, sy, sw, sh, 0, 0, c.width, c.height);
+      const r = await ZXingWASM.readBarcodes(cx.getImageData(0,0,c.width,c.height), OPZ);
+      trovato = r.find(x=>x.isValid && x.text);
+      if(trovato){ come = p.nome; break; }
+    }
+  }catch(e){ log('Foto errore: '+(e&&e.message||e)); }
+  finally{ if(bmp && bmp.close) bmp.close(); }
+  const ms = Math.round(performance.now()-t);
+  if(trovato){
+    log(`Foto: ${trovato.format} ${trovato.text} in ${ms} ms (${come})`);
+    registra('Foto · '+contesto, trovato.text, ms, prove, come);
+    boxCodice('foto-res', trovato.text, `${(ms/1000).toFixed(1)} s`);
+  }else{
+    log(`Foto: nessun codice dopo ${prove} tentativi, ${ms} ms`);
+    registra('Foto · '+contesto, null, ms, prove, 'nessun codice trovato');
+    el.className = 'result on ko';
+    el.textContent = 'Nessun codice trovato. Rifai la foto più vicino (ma nitida), con il codice dritto e buona luce, oppure scrivi le cifre.';
+  }
+}
+$('in-scatta').addEventListener('change', e=>{ leggiFoto(e.target.files[0], 'scatto'); e.target.value=''; });
+$('in-galleria').addEventListener('change', e=>{ leggiFoto(e.target.files[0], 'galleria'); e.target.value=''; });
+
+/* ── 3. Manuale ── */
+function manuale(){
+  const s = $('in-cifre').value.replace(/\s+/g,'');
+  if(!s) return;
+  const v = verificaCifre(s);
+  registra('Manuale', s, null, 0, v.ok?'cifra di controllo ok':'cifre non valide');
+  boxCodice('man-res', s);
+  $('in-cifre').blur();
+}
+$('btn-cifre').addEventListener('click', manuale);
+$('in-cifre').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); manuale(); } });
+
+/* ── Copia risultati ── */
+function testoRisultati(){
+  const l = ['Prova codice a barre CarbOCalc — ' + new Date().toLocaleString('it-IT'), '', 'DIAGNOSI'];
+  Object.entries(diag).forEach(([k,v])=>l.push(`- ${k}: ${typeof v==='boolean'?(v?'sì':'no'):v}`));
+  l.push(`- user agent: ${UA}`, '', 'ESITI');
+  if(!esiti.length) l.push('- nessuna lettura');
+  esiti.forEach((e,i)=>l.push(`${i+1}. ${e.modo}: ${e.codice||'—'}${e.ms!=null?' · '+(e.ms/1000).toFixed(1)+' s':''}${e.tentativi?' · '+e.tentativi+' tentativi':''}${e.nota?' · '+e.nota:''}`));
+  l.push('', 'REGISTRO', ...righeLog);
+  return l.join('\n');
+}
+$('btn-copia').addEventListener('click', async ()=>{
+  const t = testoRisultati(), b = $('btn-copia');
+  try{ await navigator.clipboard.writeText(t); }
+  catch(_){
+    const ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly','');
+    ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, t.length);
+    try{ document.execCommand('copy'); }catch(__){} ta.remove();
+  }
+  b.textContent = '✓ Copiati: incollali nella chat';
+  setTimeout(()=>{ b.textContent = '📋 Copia risultati della prova'; }, 2500);
+});
+</script>
+</body>
+</html>

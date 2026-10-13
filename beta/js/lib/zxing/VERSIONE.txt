@@ -1,0 +1,2 @@
+zxing-wasm 3.1.5 (MIT, Ze-Zheng Wu) — build IIFE reader + zxing_reader.wasm.
+Basato su zxing-cpp (Apache-2.0).
