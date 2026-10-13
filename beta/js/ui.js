@@ -54,6 +54,9 @@ let state={
   diarioVista:'pasti',// Diario: 'pasti' oppure sottopagina 'attivita'
   attForm:null,       // foglio "Nuova / Modifica attività" aperto
   attElimina:null,    // id dell'attività da eliminare (in attesa di conferma)
+  glicEsito:null,     // riepilogo dell'ultimo import di glicemie (2.6)
+  glicElimina:false,  // conferma "Elimina tutte le glicemie"
+  conf:null,          // confronto con / senza attività: {tipo, giorni}
 };
 
 // Liste mostrate a schermo: i tocchi le richiamano per posizione
@@ -266,7 +269,7 @@ function render(){
       </div>
     </div>`;
   } else {
-    const titoli={pasto:'Pasto',diario:s.diarioVista==='attivita'?'Attività':'Diario',profilo:'Profilo'};
+    const titoli={pasto:'Pasto',diario:s.diarioVista==='attivita'?'Attività':s.diarioVista==='confronto'?'Confronto':'Diario',profilo:'Profilo'};
     html+=`<div class="topbar"><div class="brand">CarbOCalc</div><h1 class="page-title">${titoli[s.tab]||''}</h1></div>`;
   }
 
@@ -314,7 +317,7 @@ function render(){
   if(s.tab==='profilo') html+=renderProfilo();
 
   // ── DIARIO ──
-  if(s.tab==='diario') html+=`<div class="pad">${s.diarioVista==='attivita'?renderAttivitaVista():renderDiarioTab()}</div>`;
+  if(s.tab==='diario') html+=`<div class="pad">${s.diarioVista==='attivita'?renderAttivitaVista():s.diarioVista==='confronto'?renderConfrontoVista():renderDiarioTab()}</div>`;
 
   html+=`</div>`; // fine scroll-area
 
@@ -362,10 +365,11 @@ function render(){
           Alimenti personali: <strong>${p.custom.length}</strong><br>
           Profilo: <strong>${prof}</strong><br>
           Pasti nel diario: <strong>${p.haDiario?p.diario.length:'non presente (backup vecchio)'}</strong><br>
-          Attività fisiche: <strong>${p.haAttivita?p.attivita.length:'non presenti (backup precedente alla 2.5)'}</strong>
+          Attività fisiche: <strong>${p.haAttivita?p.attivita.length:'non presenti (backup precedente alla 2.5)'}</strong><br>
+          Glicemie del sensore: <strong>${p.haGlicemie?(p.glicemie.letture.length?p.glicemie.letture.length.toLocaleString('it-IT'):'nessuna'):'non presenti (backup precedente alla 2.6)'}</strong>
           ${p.scartati>0?`<br>Attenzione: ${p.scartati} voci non valide verranno ignorate`:''}
           <br><br><strong>Unisci</strong>: aggiunge solo ciò che manca, i tuoi dati attuali restano.<br>
-          <strong>Sostituisci</strong>: i dati attuali vengono rimpiazzati da quelli del file.
+          <strong>Sostituisci</strong>: i dati attuali vengono rimpiazzati da quelli del file.${p.haGlicemie&&p.glicemie.letture.length?'':' Le glicemie già presenti restano.'}
         </div>
         <div class="confirm-btns" style="flex-wrap:wrap">
           <button class="confirm-btn-cancel" onclick="cancelImport()">Annulla</button>
@@ -378,6 +382,7 @@ function render(){
 
   html+=renderDiarioOverlays();
   html+=renderAttivitaOverlays();
+  html+=renderGlicOverlays();
   if(s.foglioAlimento) html+=renderFoglioAlimento();
 
   if(s.codiceBarre){
@@ -629,10 +634,12 @@ function renderProfilo(){
     html+=`</div>`;
   }
 
+  html+=renderProfiloGlicemie();
+
   const ultimo=fmtDataOra(storageMeta.ultimoBackup);
   html+=`<div class="profilo-card backup-card">
     <div class="profilo-title">Backup dei dati</div>
-    <div class="profilo-subtitle">Salva in un file preferiti, alimenti personali, profilo insulinico, diario e attività: ti serve se cambi telefono, se si cancellano i dati del browser o per spostarli su un altro dispositivo.</div>
+    <div class="profilo-subtitle">Salva in un file preferiti, alimenti personali, profilo insulinico, diario, attività e glicemie: ti serve se cambi telefono, se si cancellano i dati del browser o per spostarli su un altro dispositivo.</div>
     <div class="backup-btns">
       <button class="btn-save" onclick="exportBackup()">Esporta backup</button>
       <label class="btn-save btn-save-alt backup-import" for="import-file">Importa backup</label>
@@ -644,7 +651,7 @@ function renderProfilo(){
     <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
     <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
     <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
-    <p>CarbOCalc 2.5 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
+    <p>CarbOCalc 2.6 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
   </div>`;
   html+=`</div>`;
   return html;

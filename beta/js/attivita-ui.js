@@ -44,6 +44,7 @@ function renderCartaAttivita(a){
     </div>
     ${dett?`<div class="dv-muted">${escH(dett)}</div>`:''}
     <div class="dv-muted">Modalità Attività Omnipod 5: <strong>${a.omnipod?'sì':'no'}</strong></div>
+    ${rigaGlicAttivita(a)}
     ${a.nota?`<div class="dv-nota">${escH(a.nota)}</div>`:''}
     <div class="dv-actions">
       <button onclick="apriModificaAttivita('${a.id}')">${icons.edit.replace(/width="22" height="22"/,'width="17" height="17"')} Modifica</button>
