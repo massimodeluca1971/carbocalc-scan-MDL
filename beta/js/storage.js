@@ -6,7 +6,7 @@
 const DB_NAME='carbocalc';
 const DB_VERSION=1;
 const DB_STORE='dati';
-const LS_KEYS={meal:'cc_meal',favs:'cc_favs',custom:'cc_custom',profilo:'cc_profilo',diario:'cc_diario'};
+const LS_KEYS={meal:'cc_meal',favs:'cc_favs',custom:'cc_custom',profilo:'cc_profilo',diario:'cc_diario',attivita:'cc_attivita'};
 const DATA_KEYS=Object.keys(LS_KEYS);
 
 let _db=null;              // connessione IndexedDB (null = non disponibile)
@@ -81,7 +81,7 @@ function lsWrite(d){
 // anche i valori predefiniti (1 UI ogni 6 g, Fiasp), che alla riapertura
 // risultavano attivi senza che nessuno li avesse scelti.
 function storageSnapshot(){
-  const d={meal:state.meal,favs:state.favs,custom:state.custom,diario:state.diario};
+  const d={meal:state.meal,favs:state.favs,custom:state.custom,diario:state.diario,attivita:state.attivita};
   if(state.profilo.saved) d.profilo={icr:state.profilo.icr,insulinType:state.profilo.insulinType};
   return d;
 }
@@ -92,6 +92,7 @@ function applyLoaded(d){
   if(Array.isArray(d.favs)) state.favs=d.favs;
   if(Array.isArray(d.custom)) state.custom=d.custom;
   if(Array.isArray(d.diario)){ state.diario=d.diario; diarioOrdina(); }
+  if(Array.isArray(d.attivita)){ state.attivita=d.attivita.filter(validAttivita); attivitaOrdina(); }
   if(d.profilo){
     const prof=d.profilo;
     state.profilo={icr:prof.icr||6,insulinType:prof.insulinType||'fiasp',saved:true};
