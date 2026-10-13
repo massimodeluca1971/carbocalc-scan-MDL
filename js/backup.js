@@ -2,9 +2,10 @@
 // Il file contiene preferiti, alimenti personali, profilo insulinico, diario e attività.
 // Il pasto in corso non viene salvato nel backup.
 // Formato 2 = formato 1 + diario. Formato 3 (2.5) = formato 2 + attività fisiche.
-// I file in formato 1 e 2 si importano ancora e non cancellano diario e attività.
+// Formato 4 (2.6) = formato 3 + glicemie del sensore.
+// I file in formato 1, 2 e 3 si importano ancora e non cancellano diario, attività e glicemie.
 
-const BACKUP_FORMATO=3;
+const BACKUP_FORMATO=4;
 
 function backupFileName(){
   const d=new Date();
@@ -23,6 +24,7 @@ function buildBackup(){
       profilo:state.profilo.saved?{icr:state.profilo.icr,insulinType:state.profilo.insulinType}:null,
       diario:state.diario,
       attivita:state.attivita,
+      glicemie:glicPerBackup(),
     },
   };
 }
@@ -95,7 +97,11 @@ function parseBackup(text){
   const attivita=haAttivita?d.attivita.filter(validAttivita):[];
   const scartati=(Array.isArray(d.favs)?d.favs.length:0)-favs.length+(Array.isArray(d.custom)?d.custom.length:0)-custom.length
     +(haDiario?d.diario.length-diario.length:0)+(haAttivita?d.attivita.length-attivita.length:0);
-  return {favs,custom,profilo,diario,haDiario,attivita,haAttivita,esportato:o.esportato||null,scartati};
+  const haGlicemie=d.glicemie!=null;
+  const glicemie=haGlicemie?glicValidaBackup(d.glicemie):null;
+  if(haGlicemie&&!glicemie) throw new Error('Le glicemie nel backup non sono valide');
+  return {favs,custom,profilo,diario,haDiario,attivita,haAttivita,glicemie,haGlicemie,esportato:o.esportato||null,
+    scartati:scartati+(glicemie?glicemie.scartate:0)};
 }
 
 function onImportFile(e){
@@ -117,9 +123,22 @@ function onImportFile(e){
 }
 
 // mode: 'unisci' (aggiunge ciò che manca, non tocca l'esistente) oppure 'sostituisci'
-function applyImport(mode){
+async function applyImport(mode){
   const p=state.importPending;
   if(!p) return;
+  // Glicemie: archivio separato (solo IndexedDB). Si salvano prima del resto:
+  // se non riesce, l'import si ferma e i dati attuali restano com'erano.
+  // un backup senza letture (anche formato 4 vuoto) non cancella le glicemie presenti
+  if(p.haGlicemie&&p.glicemie.letture.length){
+    if(storageMode!=='idb'){ showToast('⚠️ Questo browser non può salvare le glicemie: import annullato'); return; }
+    const prima=glic;
+    if(mode==='sostituisci'){ glic={t:[],g:[],imp:[]}; }
+    else glic={t:glic.t.slice(),g:glic.g.slice(),imp:glic.imp.slice()};
+    unisciLetture(p.glicemie.letture);
+    if(mode==='sostituisci') glic.imp=p.glicemie.imp.slice();
+    try{ await salvaGlicemie(); }
+    catch(e){ glic=prima; showToast('⚠️ Salvataggio glicemie non riuscito: import annullato'); return; }
+  }
   if(mode==='sostituisci'){
     state.favs=p.favs.slice();
     state.custom=p.custom.slice();

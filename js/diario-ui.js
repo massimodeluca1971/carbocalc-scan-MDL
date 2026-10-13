@@ -48,7 +48,9 @@ function renderDiarioTab(){
     <div><div class="dg-tot-val">${t.conSugg?fmtIt(t.doseStd,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">dose suggerita</div></div>
     <div><div class="dg-tot-val">${t.conDose?fmtIt(t.doseInserita,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">dose inserita${t.n&&t.conDose<t.n?` (${t.conDose}/${t.n})`:''}</div></div>
   </div>`;
+  h+=renderCurvaGiorno(k);
   h+=renderRigaAttivita(k);
+  h+=renderRigaConfronto();
   if(!voci.length){
     h+=`<div class="empty-meal" style="padding:36px 20px">
       <div class="empty-title">Nessun pasto registrato</div>
@@ -82,6 +84,7 @@ function renderVoce(v){
     </div>
     <div class="dv-foods">${alimenti}</div>
     ${v.igMedio!=null?`<div class="dv-muted">IG medio ${v.igMedio} · CG ${fmtIt(v.cg,1)}${v.igNoti<v.alimenti.length?` · IG noto per ${v.igNoti}/${v.alimenti.length}`:''}</div>`:''}
+    ${rigaGlicPasto(v)}
     ${dosi}
     ${ins}
     ${v.nota?`<div class="dv-nota">${escH(v.nota)}</div>`:''}
@@ -171,7 +174,7 @@ function renderDiarioOverlays(){
     const periodi=[[7,'7 giorni'],[14,'14 giorni'],[30,'30 giorni'],[0,'Date a scelta']];
     h+=`<div class="confirm-overlay"><div class="confirm-box sheet-box">
       <div class="confirm-title">Report per l'ambulatorio</div>
-      <div class="sheet-sum">Un unico PDF per tutto il periodo: riepilogo in prima pagina, poi pasti e attività giorno per giorno.</div>
+      <div class="sheet-sum">Un unico PDF per tutto il periodo: riepilogo e glicemie del sensore in prima pagina, poi pasti e attività giorno per giorno.</div>
       <div class="form-lbl">Periodo (fino a oggi)</div>
       <div class="rep-periodi">${periodi.map(([n,l])=>`<button class="insulin-chip${r.periodo===n?' active':''}" onclick="setPeriodoReport(${n})">${l}</button>`).join('')}</div>
       <div class="form-row"${r.periodo?' style="display:none"':''}>
@@ -188,6 +191,7 @@ function renderDiarioOverlays(){
         <button class="confirm-btn-cancel" onclick="esportaReport('csv')">CSV pasti</button>
         <button class="confirm-btn-cancel" onclick="esportaReport('csv-att')">CSV attività</button>
       </div>
+      <button class="confirm-btn-cancel" style="width:100%;margin-top:8px" onclick="esportaReport('csv-glic')">CSV glicemie</button>
       <button class="confirm-btn-cancel" style="width:100%;margin-top:10px" onclick="state.report=null;render()">Chiudi</button>
     </div></div>`;
   }
