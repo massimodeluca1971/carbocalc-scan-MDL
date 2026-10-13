@@ -443,3 +443,28 @@ button:disabled{cursor:default}
 .conf-tab thead th{font-size:14px;color:var(--text);font-weight:700}
 .conf-tab thead th i{margin-right:5px;vertical-align:middle}
 .conf-tab tr:last-child th,.conf-tab tr:last-child td{border-bottom:none}
+
+/* 2.7 — Codice a barre con fotocamera (schermata fuori da #root) */
+.cb-inquadra{margin-top:16px}
+.cb-msg{border-radius:12px;padding:10px 12px;margin-top:12px;font-size:15px;line-height:1.4}
+.cb-msg-err{background:var(--red-soft);color:var(--red)}
+.cb-msg-info{background:var(--accent-soft);color:var(--accent)}
+.cb-oppure{margin-top:18px;font-size:15px;color:var(--sub);text-align:center}
+.cb-input{margin-top:8px}
+body.scan-aperto{overflow:hidden}
+.scan-overlay{position:fixed;inset:0;z-index:500;background:#000;touch-action:manipulation}
+.scan-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scan-mira{position:absolute;left:50%;top:50%;width:min(76vw,340px);aspect-ratio:1/1;transform:translate(-50%,-50%);
+  border:3px solid rgba(255,255,255,.95);border-radius:16px;box-shadow:0 0 0 200vmax rgba(0,0,0,.35);pointer-events:none}
+.scan-mira::after{content:"";position:absolute;left:8%;right:8%;top:50%;height:2px;background:#E5484D;opacity:.85}
+.scan-top{position:absolute;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top) + 16px) 20px 14px;text-align:center;color:#fff;
+  background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,0))}
+.scan-titolo{font-size:20px;font-weight:700}
+.scan-stato{font-size:15px;margin-top:6px;opacity:.95}
+.scan-bottom{position:absolute;left:0;right:0;bottom:0;padding:16px 20px calc(env(safe-area-inset-bottom) + 18px);
+  background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.65))}
+.scan-tools{display:flex;gap:10px;margin-bottom:10px}
+.scan-btn{flex:1;min-height:50px;border-radius:14px;background:rgba(255,255,255,.18);color:#fff;font-size:17px;font-weight:600;
+  border:1px solid rgba(255,255,255,.35);touch-action:manipulation}
+.scan-btn[hidden]{display:none}
+.scan-annulla{width:100%;background:#fff;color:var(--text);border-color:#fff}
