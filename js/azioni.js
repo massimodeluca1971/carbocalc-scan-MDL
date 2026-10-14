@@ -158,7 +158,7 @@ function aggiungiRecente(i){
   state.selected=sel;state.grams=r.grams;
   addToMeal();
 }
-function chiudiScheda(){state.selected=null;render();}
+function chiudiScheda(){state.selected=null;state.catFoglio=false;render();}
 
 // ── GRAMMI (aggiornano solo i numeri della scheda) ──
 function grammiValidi(){const g=state.grams;return typeof g==='number'&&isFinite(g)&&g>=1&&g<=2000;}
@@ -200,14 +200,28 @@ function addToMeal(){
   const sa=document.getElementById('sarea');if(sa) sa.scrollTop=0;
 }
 
-function removeMealItem(i){state.meal.splice(i,1);saveToStorage();render();}
+// 2.8: "Annulla" per 6 secondi invece di una finestra di conferma a ogni tocco
+function removeMealItem(i){
+  const item=state.meal[i];if(!item) return;
+  state.meal.splice(i,1);saveToStorage();
+  showToast(escH(item.name)+' tolto dal pasto',()=>{
+    state.meal.splice(Math.min(i,state.meal.length),0,item);saveToStorage();render();
+  });
+}
 function clearMeal(){state.confirmClear=true;render();}
 function doClearMeal(){state.meal=[];state.confirmClear=false;saveToStorage();showToast('Pasto svuotato');}
 
 function toggleFav(){
   const f=state.selected;if(!f)return;
   const idx=state.favs.findIndex(fv=>fv.n===f.name);
-  if(idx>=0){state.favs.splice(idx,1);showToast('Tolto dai preferiti');}
+  if(idx>=0){
+    const fav=state.favs[idx];state.favs.splice(idx,1);saveToStorage();
+    showToast('Tolto dai preferiti',()=>{
+      if(!state.favs.some(x=>x.n===fav.n)) state.favs.splice(Math.min(idx,state.favs.length),0,fav);
+      saveToStorage();render();
+    });
+    return;
+  }
   else{state.favs.push({n:f.name,c:f.cat||'',cho:f.cho100,sug:f.sug100,fib:f.fib100,src:f.src});showToast('Salvato nei preferiti');}
   saveToStorage();
 }
@@ -216,7 +230,7 @@ function removeFav(e,i){e.stopPropagation();state.favs.splice(i,1);saveToStorage
 // ── Foglio "Nuovo alimento dall'etichetta" ──
 // Si apre sopra la schermata in cui sei (Cerca o Profilo). Da Cerca, dopo il salvataggio
 // l'alimento si apre subito nella scheda per scegliere i grammi.
-function moduloVuoto(cat){return {name:'',cho:'',sug:'',fib:'',pol:'',gi:'',cat:cat||state.addForm.cat||'Cereali',error:''};}
+function moduloVuoto(cat){return {name:'',cho:'',sug:'',fib:'',pol:'',gi:'',cat:cat||state.addForm.cat||'Pasta',error:''};}
 function apriFoglioAlimento(origine,nome){
   state.editCustom=null;
   state.addForm=moduloVuoto();
@@ -267,7 +281,7 @@ function saveCustomFood(){
   // Etichetta UE: i carboidrati escludono già la fibra e includono i polioli.
   // Salvo cho = carboidrati + fibra − metà polioli, così i CHO netti (cho − fibra, formula invariata)
   // = carboidrati dell'etichetta − metà polioli. cl = carboidrati come scritti in etichetta. et=1: formato 2.4.
-  const voce={n:name,c:state.addForm.cat||'Cereali',cho:Math.round((cho+fib-pol/2)*10)/10,sug,fib,...(pol?{pol}:{}),cl:cho,...(gi!==null&&{gi}),et:1};
+  const voce={n:name,c:state.addForm.cat||'Pasta',cho:Math.round((cho+fib-pol/2)*10)/10,sug,fib,...(pol?{pol}:{}),cl:cho,...(gi!==null&&{gi}),et:1};
   // 2.7.1: codice a barre (da «Correggi con l'etichetta»); in modifica si conserva quello già salvato
   const codiceCb=(state.foglioAlimento&&state.foglioAlimento.codice)||(ed!=null&&state.custom[ed]&&state.custom[ed].codice)||'';
   if(codiceCb){
@@ -295,6 +309,13 @@ function saveCustomFood(){
   }
 }
 
+// 2.8: l'eliminazione chiede conferma (prima bastava un tocco sul cestino)
+function chiediEliminaCustom(i){if(!state.custom[i]) return;state.customElimina=i;render();}
+function confermaEliminaCustom(){
+  const i=state.customElimina;state.customElimina=null;
+  if(i==null||!state.custom[i]){render();return;}
+  removeCustomFood(i);
+}
 function removeCustomFood(i){
   if(state.editCustom!=null) annullaModificaCustom();
   const nome=state.custom[i].n;
@@ -406,7 +427,7 @@ function modificaCustom(i){
   const s=v=>v==null?'':String(v);
   state.editCustom=i;
   state.foglioAlimento={origine:'profilo'};
-  state.addForm={name:c.n,cho:s(carb),sug:s(c.sug),fib:s(c.fib),pol:pol?s(pol):'',gi:c.gi!=null?s(c.gi):'',cat:c.c||'Cereali',error:''};
+  state.addForm={name:c.n,cho:s(carb),sug:s(c.sug),fib:s(c.fib),pol:pol?s(pol):'',gi:c.gi!=null?s(c.gi):'',cat:c.c||'Pasta',error:''};
   render();
   const val={'cf-name':c.n,'cf-cho':s(carb),'cf-sug':s(c.sug),'cf-fib':s(c.fib),'cf-pol':pol?s(pol):'','cf-gi':c.gi!=null?s(c.gi):''};
   Object.keys(val).forEach(id=>{const el=document.getElementById(id);if(el) el.value=val[id];});
@@ -419,9 +440,59 @@ function nascondiRecente(i){
   const imp=recentiImpost();
   const nascosti={...imp.nascosti,[r.name]:new Date().toISOString()};
   setStorageMeta({recenti:{dal:imp.dal,nascosti}});
-  showToast(escH(r.name)+' tolto dai recenti');
+  showToast(escH(r.name)+' tolto dai recenti',()=>{
+    setStorageMeta({recenti:{dal:imp.dal,nascosti:imp.nascosti}});render();
+  });
 }
 function svuotaRecenti(){
+  state.recentiSvuota=false;
   setStorageMeta({recenti:{dal:new Date().toISOString(),nascosti:{}}});
   showToast('Recenti svuotati (il diario non cambia)');
+}
+
+// ── 2.8: categorie ──
+function apriFoglioCategoria(){if(!state.selected) return;state.catFoglio=true;render();}
+function chiudiFoglioCategoria(){state.catFoglio=false;render();}
+function spostaCategoria(k){
+  const f=state.selected;
+  if(!f||!catPerChiave(k)){chiudiFoglioCategoria();return;}
+  if(f.src==='custom'){
+    const c=state.custom.find(x=>x.n===f.name);
+    if(c){c.c=k;f.cat=k;}
+  } else if(f.src==='crea'){
+    const sposta={...state.catSposta};
+    if(k===f.cat) delete sposta[f.name]; else sposta[f.name]=k;
+    state.catSposta=sposta;
+  } else {chiudiFoglioCategoria();return;}
+  const fav=state.favs.find(x=>x.n===f.name);if(fav) fav.c=k;
+  saveToStorage();
+  state.catFoglio=false;
+  showToast('Spostato in '+escH(catLabel(k)));
+}
+
+// Categorie delle versioni ≤2.7.1 → 2.8. Ogni volta: le chiavi che non esistono
+// più (Cereali, Latticini, Snack…, anche da un'app più vecchia nello stesso browser)
+// si convertono. Una volta sola: le regole per nome valgono anche per le chiavi
+// rimaste (es. patate personali in Verdura → Patate).
+function migraCategorie(){
+  const primaVolta=!storageMeta.categorie28;
+  let cambiato=false;
+  const conv=f=>{
+    if(!f||typeof f.n!=='string') return;
+    if(!primaVolta&&CAT_CHIAVI.includes(f.c)) return;
+    const k=CREA.find(x=>x.n===f.n);
+    const nuova=(k&&f.src!=='custom'&&!state.custom.some(x=>x.n===f.n))?k.c:nuovaCategoria(f.n,f.c);
+    if(nuova!==f.c){f.c=nuova;cambiato=true;}
+  };
+  state.custom.forEach(f=>{ const k=nuovaCategoria(f.n,f.c); if(primaVolta||!CAT_CHIAVI.includes(f.c)){ if(k!==f.c){f.c=k;cambiato=true;} } });
+  state.favs.forEach(conv);
+  // preferenze non più valide (categoria inesistente o alimento non in archivio)
+  const sp={};let tolte=false;
+  Object.entries(state.catSposta||{}).forEach(([n,k])=>{
+    const a=CREA.find(x=>x.n===n);
+    if(a&&CAT_CHIAVI.includes(k)&&k!==a.c) sp[n]=k; else tolte=true;
+  });
+  if(tolte){state.catSposta=sp;cambiato=true;}
+  if(cambiato) saveToStorage();
+  if(primaVolta) setStorageMeta({categorie28:new Date().toISOString()});
 }

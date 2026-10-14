@@ -35,7 +35,7 @@ let state={
   meal:[],
   favs:[],
   custom:[],
-  addForm:{name:'',cho:'',sug:'',fib:'',pol:'',gi:'',cat:'Cereali',error:''},
+  addForm:{name:'',cho:'',sug:'',fib:'',pol:'',gi:'',cat:'Pasta',error:''},
   editCustom:null,    // indice dell'alimento personale in modifica (null = nuovo)
   profilo:{icr:6,insulinType:'fiasp',saved:false},
   profiloForm:{icr:'6',insulinType:'fiasp'},
@@ -60,18 +60,32 @@ let state={
   glicEsito:null,     // riepilogo dell'ultimo import di glicemie (2.6)
   glicElimina:false,  // conferma "Elimina tutte le glicemie"
   conf:null,          // confronto con / senza attività: {tipo, giorni}
+  catSposta:{},       // 2.8: alimenti dell'archivio spostati a mano {nome: chiave categoria}
+  catFoglio:false,    // 2.8: foglio "Sposta in un'altra categoria" aperto sopra la scheda
+  customElimina:null, // 2.8: indice dell'alimento personale da eliminare (in attesa di conferma)
+  recentiSvuota:false,// 2.8: conferma "Svuota" dei recenti
+  toastAz:false,      // 2.8: il messaggio ha il pulsante "Annulla"
 };
 
 // Liste mostrate a schermo: i tocchi le richiamano per posizione
 const listeUI={ris:[],cat:[],rec:[]};
 
 let toastTimer=null;
-function showToast(msg){
-  state.toast=msg;render();
+// annulla (2.8, facoltativo): funzione che rimette le cose com'erano; il messaggio
+// mostra allora il pulsante "Annulla" e resta 6 secondi invece di 2.
+let toastAnnulla=null;
+function showToast(msg,annulla){
+  toastAnnulla=typeof annulla==='function'?annulla:null;
+  state.toast=msg;state.toastAz=!!toastAnnulla;render();
   clearTimeout(toastTimer);
   // Alla scadenza tolgo solo il messaggio, senza ridisegnare: se nel frattempo
   // si sta scrivendo (grammi, ricerca) la tastiera non si chiude.
-  toastTimer=setTimeout(()=>{state.toast=null;const t=root.querySelector('.toast');if(t) t.remove();},2200);
+  toastTimer=setTimeout(()=>{state.toast=null;state.toastAz=false;toastAnnulla=null;const t=root.querySelector('.toast');if(t) t.remove();},toastAnnulla?6000:2200);
+}
+function annullaUltima(){
+  const fn=toastAnnulla;toastAnnulla=null;clearTimeout(toastTimer);
+  state.toast=null;state.toastAz=false;
+  if(fn) fn(); else render();
 }
 
 // ── Piccoli aiuti di disegno ──
@@ -137,7 +151,7 @@ function recentiDalDiario(max=5){
 // se non si trova (es. prodotti online) si ricavano dai valori salvati nella voce del diario.
 function alimentoDaNome(name,voce){
   const c=state.custom.find(f=>f.n===name);
-  if(c) return {name:c.n,cho100:c.cho,sug100:c.sug,fib100:c.fib,cat:c.c,src:'custom',...(c.pol?{pol100:c.pol}:{})};
+  if(c) return {name:c.n,cho100:c.cho,sug100:c.sug,fib100:c.fib,cat:c.c,src:'custom',...(c.pol?{pol100:c.pol}:{}),...(c.codice?{codice:c.codice}:{})};
   const k=CREA.find(f=>f.n===name);
   if(k) return daLista({...k,src:'crea'});
   if(voce&&voce.grams>0){
@@ -194,7 +208,7 @@ function cercaBodyHTML(){
 
   if(s.activeCat){
     const cat=CATS.find(c=>c.id===s.activeCat);
-    const customInCat=s.custom.filter(f=>cat.keywords.includes(f.c)).map(f=>({...f,custom:true,src:'custom'}));
+    const customInCat=s.custom.filter(f=>cat.keywords.includes(f.c)).map(f=>({...f,custom:true,src:'custom'})).sort((a,b)=>a.n.localeCompare(b.n,'it'));
     const list=[...customInCat,...catFoods(cat).map(f=>({...f,src:'crea'}))];
     listeUI.cat=list;
     h+=`<button class="back-row" onclick="state.activeCat=null;render()">${icons.back}<span>${escH(cat.label)}</span></button>`;
@@ -212,7 +226,7 @@ function cercaBodyHTML(){
   const rec=recentiDalDiario(5);
   listeUI.rec=rec;
   if(rec.length){
-    h+=`<div class="section-row"><div class="section-lbl">Usati di recente</div><button class="section-link" onclick="svuotaRecenti()">Svuota</button></div><div class="rows rows-joined">`;
+    h+=`<div class="section-row"><div class="section-lbl">Usati di recente</div><button class="section-link" onclick="state.recentiSvuota=true;render()">Svuota</button></div><div class="rows rows-joined">`;
     rec.forEach((r,i)=>{
       h+=`<div class="row-rec">
         <button class="row-rec-main" onclick="apriRecente(${i})"><span class="row-name">${escH(r.name)}</span><span class="row-sub">${numG(r.grams,0)} g</span></button>
@@ -342,6 +356,7 @@ function render(){
 
   // Foglio "scheda alimento"
   if(s.tab==='cerca'&&s.selected) html+=renderScheda();
+  if(s.tab==='cerca'&&s.selected&&s.catFoglio) html+=renderFoglioCategoria();
 
   if(s.confirmClear){
     html+=`<div class="confirm-overlay" onclick="state.confirmClear=false;render()">
@@ -426,7 +441,10 @@ function render(){
     </div>`;
   }
 
-  if(s.toast) html+=`<div class="toast" role="status">${s.toast}</div>`;
+  html+=renderConfermeEliminazione();
+  if(s.toast) html+=s.toastAz
+    ?`<div class="toast toast-az" role="status"><span>${s.toast}</span><button class="toast-btn" onclick="annullaUltima()">Annulla</button></div>`
+    :`<div class="toast" role="status">${s.toast}</div>`;
 
   // Salvo la posizione di scroll prima di riscrivere il DOM
   const sarea=document.getElementById('sarea');
@@ -471,7 +489,7 @@ function renderScheda(){
   else if(f.src==='online') fonte='Prodotto trovato online · verifica i valori sull’etichetta';
   else if(f.vecchio) fonte='Valore indicativo delle versioni precedenti (non presente nelle tabelle CREA)';
   else fonte=`Tabelle CREA 2019${f.nomeCrea?` · «${escH(f.nomeCrea)}»`:''}`;
-  if(!online&&f.cat==='Cereali'&&/cott/i.test(f.name+' '+(f.nomeCrea||''))) fonte+=`<br><strong>Da cotto il peso cambia con la cottura</strong> (acqua assorbita): per pasta, riso e cereali è più preciso pesarli da crudi.`;
+  if(!online&&f.cat==='Pasta'&&/cott/i.test(f.name+' '+(f.nomeCrea||''))) fonte+=`<br><strong>Da cotto il peso cambia con la cottura</strong> (acqua assorbita): per pasta, riso e cereali è più preciso pesarli da crudi.`;
   if(f.edibile) fonte+=`<br>Valori per la parte che si mangia (${f.edibile}% del peso: pesa senza buccia, noccioli, ossa o scarti)`;
   let giTxt='';
   const stim=info&&info.t==='s';
@@ -495,6 +513,7 @@ function renderScheda(){
             <div class="sh-meta sh-gi">${giTxt}</div>
             ${prov?`<div class="sh-meta sh-prov">${prov}</div>`:''}
             ${fonte?`<div class="sh-meta sh-src">${fonte}</div>`:''}
+            ${rigaCategoria(f)}
           </div>
           <button class="btn-icon" onclick="toggleFav()" aria-label="${isFav?'Togli dai preferiti':'Aggiungi ai preferiti'}" aria-pressed="${isFav}">${isFav?icons.star_fill:icons.star}</button>
           <button class="btn-icon" onclick="chiudiScheda()" aria-label="Chiudi">${icons.close}</button>
@@ -634,10 +653,10 @@ function renderProfilo(){
       html+=`<div class="custom-item">
         <div class="ci-info">
           <div class="row-name">${escH(f.n)}</div>
-          <div class="row-sub">${escH(f.c)} · CHO netti ${numG(netto100(f))} g${f.pol?` (polioli ${numG(f.pol)} g, metà contata)`:''} · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)</div>
+          <div class="row-sub">${escH(catLabel(f.c))} · CHO netti ${numG(netto100(f))} g${f.pol?` (polioli ${numG(f.pol)} g, metà contata)`:''} · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)</div>
         </div>
         <button class="mi-del" onclick="modificaCustom(${i})" aria-label="Modifica ${escH(f.n)}">${icons.edit}</button>
-        <button class="mi-del" onclick="removeCustomFood(${i})" aria-label="Elimina ${escH(f.n)}">${icons.trash}</button>
+        <button class="mi-del" onclick="chiediEliminaCustom(${i})" aria-label="Elimina ${escH(f.n)}">${icons.trash}</button>
       </div>`;
     });
     html+=`</div>`;
@@ -660,7 +679,7 @@ function renderProfilo(){
     <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
     <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
     <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
-    <p>CarbOCalc 2.7.1 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
+    <p>CarbOCalc 2.8 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
   </div>`;
   html+=`</div>`;
   return html;
@@ -735,3 +754,66 @@ function renderFoglioAlimento(){
 }
 
 function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── 2.8: categoria nella scheda alimento e foglio "Sposta in un'altra categoria" ──
+// Alimenti dell'archivio: la scelta si salva in state.catSposta (per nome).
+// Alimenti personali: si cambia direttamente la loro categoria.
+function catAttuale(f){
+  if(f.src==='custom'){ const c=state.custom.find(x=>x.n===f.name); return c?c.c:f.cat; }
+  return state.catSposta[f.name]||f.cat;
+}
+function rigaCategoria(f){
+  if(f.src!=='crea'&&f.src!=='custom') return '';
+  const k=catAttuale(f), c=catPerChiave(k);
+  if(!c) return '';
+  return `<button class="sh-cat" onclick="apriFoglioCategoria()" aria-label="Categoria ${escH(c.label)}: cambia">
+    <span>${c.emoji} ${escH(c.label)}${f.src==='crea'&&state.catSposta[f.name]?' <span class="sh-cat-mia">(spostato da te)</span>':''}</span><span class="sh-cat-link">Cambia</span></button>`;
+}
+function renderFoglioCategoria(){
+  const f=state.selected;
+  const att=catAttuale(f);
+  const orig=f.src==='crea'?f.cat:null;
+  const spostato=orig&&state.catSposta[f.name];
+  return `<div class="confirm-overlay" onclick="chiudiFoglioCategoria()">
+    <div class="confirm-box sheet-box" role="dialog" aria-modal="true" aria-labelledby="cat-t" onclick="event.stopPropagation()">
+      <div class="confirm-title" id="cat-t">Sposta in un’altra categoria</div>
+      <div class="confirm-sub">${escH(f.name)}</div>
+      <div class="cat-scelta">
+        ${CATS.map(c=>{const k=c.keywords[0];return `<button class="cat-opt${k===att?' active':''}" aria-pressed="${k===att}" onclick="spostaCategoria('${k}')"><span class="cat-emoji">${c.emoji}</span><span>${escH(c.label)}</span></button>`;}).join('')}
+      </div>
+      ${spostato?`<button class="btn-link" onclick="spostaCategoria('${orig}')">Rimetti nella categoria originale (${escH(catLabel(orig))})</button>`:''}
+      <div class="confirm-btns" style="margin-top:10px"><button class="confirm-btn-cancel" onclick="chiudiFoglioCategoria()">Annulla</button></div>
+    </div>
+  </div>`;
+}
+
+// ── 2.8: conferme prima di cancellare ──
+function renderConfermeEliminazione(){
+  const s=state;let h='';
+  if(s.customElimina!=null&&s.custom[s.customElimina]){
+    const f=s.custom[s.customElimina];
+    h+=`<div class="confirm-overlay" onclick="state.customElimina=null;render()">
+      <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="ce-t" onclick="event.stopPropagation()">
+        <div class="confirm-title" id="ce-t">Eliminare «${escH(f.n)}»?</div>
+        <div class="confirm-sub">Si perdono i valori copiati dall’etichetta${f.codice?' e il collegamento al codice a barre':''}. I pasti già registrati nel diario non cambiano.<br>L’operazione non si può annullare.</div>
+        <div class="confirm-btns">
+          <button class="confirm-btn-cancel" onclick="state.customElimina=null;render()">Annulla</button>
+          <button class="confirm-btn-ok" onclick="confermaEliminaCustom()">Elimina</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  if(s.recentiSvuota){
+    h+=`<div class="confirm-overlay" onclick="state.recentiSvuota=false;render()">
+      <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="rs-t" onclick="event.stopPropagation()">
+        <div class="confirm-title" id="rs-t">Svuotare gli usati di recente?</div>
+        <div class="confirm-sub">L’elenco riparte da zero e si riempie con i prossimi pasti che registri. Il diario non cambia.</div>
+        <div class="confirm-btns">
+          <button class="confirm-btn-cancel" onclick="state.recentiSvuota=false;render()">Annulla</button>
+          <button class="confirm-btn-ok" onclick="svuotaRecenti()">Svuota</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  return h;
+}
