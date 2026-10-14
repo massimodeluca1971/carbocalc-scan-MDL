@@ -9,6 +9,7 @@ const TIPI_ATTIVITA=[
   {id:'palestra',label:'Palestra',emoji:'🏋️'},
   {id:'nuoto',label:'Nuoto',emoji:'🏊'},
   {id:'ballo',label:'Ballo',emoji:'💃'},
+  {id:'tennis',label:'Tennis / padel',emoji:'🎾'},   // 2.8.1
   {id:'casa',label:'Casa / giardino',emoji:'🧹'},
   {id:'altro',label:'Altro',emoji:'🤸'},
 ];

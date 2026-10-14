@@ -679,7 +679,7 @@ function renderProfilo(){
     <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
     <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
     <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
-    <p>CarbOCalc 2.8 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
+    <p>CarbOCalc 2.8.1 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
   </div>`;
   html+=`</div>`;
   return html;

@@ -361,7 +361,7 @@ button:disabled{cursor:default}
 .att-ripeti strong{color:var(--accent)}
 .pad .btn-primary + .att-ripeti{margin-top:10px}
 .pad .att-sum + .btn-primary{margin-top:0}
-.att-tipi{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:6px}
+.att-tipi{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:6px}
 .att-tipo{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:68px;padding:6px 2px;
   border-radius:14px;border:1.5px solid var(--border-strong);font-size:13px;font-weight:600;line-height:1.15;text-align:center;touch-action:manipulation}
 .att-tipo.active{background:var(--accent);border-color:var(--accent);color:#fff}
