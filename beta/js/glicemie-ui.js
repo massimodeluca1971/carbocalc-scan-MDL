@@ -258,7 +258,7 @@ function renderConfrontoVista(){
       ${riga('CHO netti medi',g=>se(g,x=>`${mg(x.cho)} g`))}
     </tbody></table>`;
   if(r.esclusi) h+=`<div class="dv-muted" style="margin:8px 4px">${r.esclusi} ${r.esclusi===1?'pasto escluso':'pasti esclusi'}: senza glicemia d’inizio o con meno di 2 ore di dati.</div>`;
-  h+=`<div class="dv-warn"><strong>Come leggerlo.</strong> È un confronto osservativo sui tuoi dati: le differenze possono dipendere anche da quantità di carboidrati, dose, orario, modalità Attività dell’Omnipod 5, stress o malattia. Non dimostra causa-effetto: parlane con la diabetologa.</div>`;
+  h+=`<div class="dv-warn"><strong>Come leggerlo.</strong> È un confronto osservativo sui tuoi dati: le differenze possono dipendere anche da quantità di carboidrati, dose, orario, modalità attività del microinfusore, stress o malattia. Non dimostra causa-effetto: parlane con la diabetologa.</div>`;
   return h;
 }
 

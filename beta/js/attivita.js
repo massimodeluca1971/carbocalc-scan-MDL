@@ -40,9 +40,8 @@ function fineAttivita(a){return new Date(new Date(a.ts).getTime()+a.durata*60000
 
 // Durata scritta dall'utente: minuti interi da 1 a 600
 function parseDurata(str){
-  const t=String(str||'').trim().replace(',','.');
-  const v=Number(t);
-  if(t===''||!isFinite(v)||v<1||v>600) return {ok:false,msg:'Durata non valida (da 1 a 600 minuti)'};
+  const v=numDaTesto(str);
+  if(v===null||isNaN(v)||v<1||v>600) return {ok:false,msg:'Durata non valida (da 1 a 600 minuti)'};
   return {ok:true,val:Math.round(v)};
 }
 
@@ -95,5 +94,13 @@ function eliminaAttivita(id){
 function validAttivita(a){
   return a&&typeof a==='object'&&typeof a.id==='string'&&a.id!==''
     &&typeof a.ts==='string'&&!isNaN(new Date(a.ts))
-    &&typeof a.tipo==='string'&&typeof a.durata==='number'&&isFinite(a.durata)&&a.durata>0;
+    &&typeof a.tipo==='string'&&typeof a.durata==='number'&&isFinite(a.durata)&&a.durata>0&&a.durata<=1440;
+}
+// 2.8.2: come sanaVoceDiario, per le attività
+function sanaAttivita(a){
+  if(!idSicuro(a.id)) a.id=nuovoIdAttivita();
+  if(a.nota!=null&&typeof a.nota!=='string') a.nota='';
+  ['intensita','rispettoPasto'].forEach(k=>{ if(a[k]!=null&&typeof a[k]!=='string') a[k]=null; });
+  a.omnipod=!!a.omnipod;
+  return a;
 }

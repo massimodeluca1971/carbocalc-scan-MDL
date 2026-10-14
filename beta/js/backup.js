@@ -104,9 +104,9 @@ function parseBackup(text){
     if(icr>=1&&icr<=30&&okType) profilo={icr,insulinType:d.profilo.insulinType};
   }
   const haDiario=Array.isArray(d.diario);
-  const diario=haDiario?d.diario.filter(validVoceDiario):[];
+  const diario=haDiario?d.diario.filter(validVoceDiario).map(sanaVoceDiario):[];
   const haAttivita=Array.isArray(d.attivita);
-  const attivita=haAttivita?d.attivita.filter(validAttivita):[];
+  const attivita=haAttivita?d.attivita.filter(validAttivita).map(sanaAttivita):[];
   const scartati=(Array.isArray(d.favs)?d.favs.length:0)-favs.length+(Array.isArray(d.custom)?d.custom.length:0)-custom.length
     +(haDiario?d.diario.length-diario.length:0)+(haAttivita?d.attivita.length-attivita.length:0);
   const haGlicemie=d.glicemie!=null;
@@ -156,7 +156,7 @@ async function applyImport(mode){
     state.custom=p.custom.slice();
     if(p.profilo){
       state.profilo={...p.profilo,saved:true};
-      state.profiloForm={icr:String(p.profilo.icr),insulinType:p.profilo.insulinType};
+      state.profiloForm={icr:numInTesto(p.profilo.icr,1),insulinType:p.profilo.insulinType};state.profiloErr='';
     }
     // un backup senza diario (formato 1) non cancella il diario esistente
     if(p.haDiario) state.diario=p.diario.slice();
@@ -171,7 +171,7 @@ async function applyImport(mode){
     p.custom.forEach(f=>{ const k=f.n.toLowerCase(); if(!customNames.has(k)){ state.custom.push(f); customNames.add(k); } });
     if(p.profilo&&!state.profilo.saved){
       state.profilo={...p.profilo,saved:true};
-      state.profiloForm={icr:String(p.profilo.icr),insulinType:p.profilo.insulinType};
+      state.profiloForm={icr:numInTesto(p.profilo.icr,1),insulinType:p.profilo.insulinType};state.profiloErr='';
     }
     const ids=new Set(state.diario.map(v=>v.id));
     p.diario.forEach(v=>{ if(!ids.has(v.id)){ state.diario.push(v); ids.add(v.id); } });
