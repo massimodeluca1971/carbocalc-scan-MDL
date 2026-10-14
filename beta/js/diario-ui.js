@@ -65,7 +65,7 @@ function renderDiarioTab(){
 }
 
 function renderVoce(v){
-  const alimenti=v.alimenti.map(a=>`${escH(a.name)} <span class="dv-g">${a.grams} g</span>`).join(' · ');
+  const alimenti=v.alimenti.map(a=>`${escH(a.name)} <span class="dv-g">${numInTesto(a.grams,1)} g</span>`).join(' · ');
   let dosi;
   if(v.doseStd!=null){
     dosi=`<div class="dv-dose"><span>Suggerita <strong>${fmtIt(v.doseStd,1)}</strong></span>`
@@ -75,22 +75,22 @@ function renderVoce(v){
     dosi=`<div class="dv-dose"><span class="dv-muted">Nessuna dose suggerita (profilo insulinico non salvato)</span></div>`;
   }
   const ins=v.doseInserita!=null
-    ?`<div class="dv-ins">Inserita in Omnipod 5: <strong>${fmtIt(v.doseInserita,1)} UI</strong></div>`
-    :`<button class="dv-ins dv-ins-todo" onclick="apriModifica('${v.id}')">Dose inserita: da completare ›</button>`;
+    ?`<div class="dv-ins">Dose inserita: <strong>${fmtIt(v.doseInserita,1)} UI</strong></div>`
+    :`<button class="dv-ins dv-ins-todo" onclick="apriModifica('${idSicuro(v.id)}')">Dose inserita: da completare ›</button>`;
   return `<div class="dv-card">
     <div class="dv-head">
       <div class="dv-title">${oraHM(v.ts)} · ${tipoLabel(v.tipo)}${v.modificato?' <span class="dv-mod">modificato</span>':''}</div>
       <div class="dv-cho">${fmtIt(v.choNetti,1)}<span> g</span></div>
     </div>
     <div class="dv-foods">${alimenti}</div>
-    ${v.igMedio!=null?`<div class="dv-muted">IG medio ${v.igMedio} · CG ${fmtIt(v.cg,1)}${v.igNoti<v.alimenti.length?` · IG noto per ${v.igNoti}/${v.alimenti.length}`:''}</div>`:''}
+    ${v.igMedio!=null?`<div class="dv-muted">IG medio ${numInTesto(v.igMedio,0)} · CG ${fmtIt(v.cg,1)}${v.igNoti<v.alimenti.length?` · IG noto per ${numInTesto(v.igNoti,0)}/${v.alimenti.length}`:''}</div>`:''}
     ${rigaGlicPasto(v)}
     ${dosi}
     ${ins}
     ${v.nota?`<div class="dv-nota">${escH(v.nota)}</div>`:''}
     <div class="dv-actions">
-      <button onclick="apriModifica('${v.id}')">${icons.edit.replace(/width="22" height="22"/,'width="17" height="17"')} Modifica</button>
-      <button class="dv-del" onclick="chiediElimina('${v.id}')">${icons.trash} Elimina</button>
+      <button onclick="apriModifica('${idSicuro(v.id)}')">${icons.edit.replace(/width="22" height="22"/,'width="17" height="17"')} Modifica</button>
+      <button class="dv-del" onclick="chiediElimina('${idSicuro(v.id)}')">${icons.trash} Elimina</button>
     </div>
   </div>`;
 }
@@ -109,12 +109,13 @@ function renderDiarioOverlays(){
       <input class="form-input" type="datetime-local" id="reg-ts" data-keep value="${r.ts}"/>
       <label class="form-lbl sheet-gap">Tipo di pasto</label>
       ${chipsTipo(r.tipo,'setRegTipo')}
-      <label class="form-lbl sheet-gap">Dose inserita in Omnipod 5 (UI)</label>
-      <input class="form-input" type="text" inputmode="decimal" id="reg-dose" data-keep placeholder="es. 7,5" autocomplete="off"/>
-      <div class="sheet-hint">Puoi lasciarla vuota e completarla dopo dal diario.</div>
+      <label class="form-lbl sheet-gap" for="reg-dose">Dose inserita (UI)</label>
+      <input class="form-input" ${attrNum()} id="reg-dose" data-keep placeholder="es. 7,5" oninput="if(state.registra)state.registra.confermaDose=null"/>
+      <div class="sheet-hint">Le unità che hai effettivamente fatto. Puoi lasciarla vuota e completarla dopo dal diario.</div>
       <label class="form-lbl sheet-gap">Nota (facoltativa)</label>
       <input class="form-input" type="text" id="reg-nota" data-keep maxlength="200" placeholder="es. pizzeria, pasto fuori casa" autocomplete="off"/>
       ${r.errore?`<div class="form-error" style="margin-top:8px">${escH(r.errore)}</div>`:''}
+      ${r.confermaDose!=null?`<div class="plaus-warn" role="alert">${escH(avvisoDoseAlta(r.confermaDose))}</div>`:''}
       <div class="sheet-hint">Dopo il salvataggio il pasto in corso viene azzerato.</div>
       <div class="confirm-btns" style="margin-top:14px">
         <button class="confirm-btn-cancel" onclick="chiudiRegistra()">Annulla</button>
@@ -138,15 +139,16 @@ function renderDiarioOverlays(){
           return `<div class="ed-row${off?' ed-off':''}">
             <div class="ed-name">${escH(a.name)}</div>
             ${off?`<button class="ed-btn" onclick="toggleRimosso(${i})">Ripristina</button>`
-              :`<input class="form-num ed-g" type="number" inputmode="decimal" min="1" max="2000" id="ed-g-${i}" data-keep value="${a.grams}"/><span class="ed-u">g</span>
+              :`<input class="form-num ed-g" ${attrNum()} id="ed-g-${i}" data-keep value="${numInTesto(a.grams,1)}" aria-label="Grammi di ${escH(a.name)}"/><span class="ed-u">g</span>
                 <button class="ed-btn ed-x" onclick="toggleRimosso(${i})" aria-label="Togli ${escH(a.name)}">✕</button>`}
           </div>`;}).join('')}
         <div class="sheet-hint">CHO e dosi suggerite si ricalcolano al salvataggio, con il profilo in vigore quando hai registrato il pasto${v.icr?` (1 UI ogni ${v.icr} g)`:''}. Per aggiungere un alimento dimenticato, elimina il pasto e registralo di nuovo.</div>
-        <label class="form-lbl sheet-gap">Dose inserita in Omnipod 5 (UI)</label>
-        <input class="form-input" type="text" inputmode="decimal" id="ed-dose" data-keep placeholder="es. 7,5" autocomplete="off" value="${v.doseInserita!=null?String(v.doseInserita).replace('.',','):''}"/>
+        <label class="form-lbl sheet-gap" for="ed-dose">Dose inserita (UI)</label>
+        <input class="form-input" ${attrNum()} id="ed-dose" data-keep placeholder="es. 7,5" value="${numInTesto(v.doseInserita,1)}" oninput="if(state.diarioEdit)state.diarioEdit.confermaDose=null"/>
         <label class="form-lbl sheet-gap">Nota (facoltativa)</label>
         <input class="form-input" type="text" id="ed-nota" data-keep maxlength="200" autocomplete="off" value="${escH(v.nota||'')}"/>
         ${e.errore?`<div class="form-error" style="margin-top:8px">${escH(e.errore)}</div>`:''}
+        ${e.confermaDose!=null?`<div class="plaus-warn" role="alert">${escH(avvisoDoseAlta(e.confermaDose))}</div>`:''}
         <div class="confirm-btns" style="margin-top:14px">
           <button class="confirm-btn-cancel" onclick="chiudiModifica()">Annulla</button>
           <button class="confirm-btn-cancel sheet-ok" onclick="salvaModifica()">Salva</button>
@@ -225,7 +227,9 @@ function salvaRegistra(){
   if(!quando){r.errore='Data e ora non valide';render();return;}
   if(quando.getTime()>Date.now()+5*60*1000){r.errore='Data e ora nel futuro';render();return;}
   const dose=parseDose(valoreCampo('reg-dose'));
-  if(!dose.ok){r.errore=dose.msg;render();return;}
+  if(!dose.ok){r.errore=dose.msg;r.confermaDose=null;render();return;}
+  // 2.8.2: dose alta → avviso; un secondo «Salva» con lo stesso valore conferma
+  if(dose.val!=null&&dose.val>SOGLIA_DOSE&&r.confermaDose!==dose.val){r.errore='';r.confermaDose=dose.val;render();return;}
   const v=creaVoceDiario({quando,tipo:r.tipo,doseInserita:dose.val,nota:valoreCampo('reg-nota').trim()});
   state.diario.push(v);
   diarioOrdina();
@@ -255,8 +259,9 @@ function salvaModifica(){
   if(!quando){e.errore='Data e ora non valide';render();return;}
   if(quando.getTime()>Date.now()+5*60*1000){e.errore='Data e ora nel futuro';render();return;}
   const dose=parseDose(valoreCampo('ed-dose'));
-  if(!dose.ok){e.errore=dose.msg;render();return;}
-  const alimenti=v.alimenti.map((a,i)=>e.rimossi[i]?{rimosso:true}:{grams:Number(String(valoreCampo('ed-g-'+i)).replace(',','.'))});
+  if(!dose.ok){e.errore=dose.msg;e.confermaDose=null;render();return;}
+  if(dose.val!=null&&dose.val>SOGLIA_DOSE&&dose.val!==v.doseInserita&&e.confermaDose!==dose.val){e.errore='';e.confermaDose=dose.val;render();return;}
+  const alimenti=v.alimenti.map((a,i)=>{ if(e.rimossi[i]) return {rimosso:true}; const g=numDaTesto(valoreCampo('ed-g-'+i)); return {grams:g==null?NaN:g}; });
   let res;
   try{ res=applicaModifica(e.id,{quando,tipo:e.tipo,doseInserita:dose.val,nota:valoreCampo('ed-nota').trim(),alimenti}); }
   catch(err){ e.errore=err.message; render(); return; }

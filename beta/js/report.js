@@ -83,7 +83,7 @@ function costruisciCSV(voci){
 
 // ── CSV attività: una riga per attività ──
 function costruisciCSVAttivita(lista){
-  const intest=['Data','Inizio','Fine','Attività','Intensità','Durata (min)','Rispetto al pasto','Modalità Attività Omnipod 5','Modificata','Nota',
+  const intest=['Data','Inizio','Fine','Attività','Intensità','Durata (min)','Rispetto al pasto','Modalità attività microinfusore','Modificata','Nota',
     'Glicemia inizio (mg/dL)','Glicemia fine (mg/dL)','Minima fino a 2 h dopo (mg/dL)','Ora della minima'];
   const righe=[intest];
   lista.forEach(x=>{
@@ -167,7 +167,7 @@ async function costruisciPDF(voci,att,da,a){
       ['Dose suggerita* (totale nel periodo)',t.conSugg?`${numIt(t.doseStd)} UI standard, ${numIt(t.doseIG)} UI con correzione IG - sperimentali`:'-'],
       ['Profilo insulinico usato',profili.length?profili.join('; '):'non impostato'],
       ['Attività fisica',att.length?`${att.length} attività in ${giorniAtt} ${giorniAtt===1?'giorno':'giorni'} - ${minAtt} min in totale`+(np>=7?`, in media ${numIt(minAtt/np*7,0)} min a settimana`:''):'nessuna registrata'],
-      ...(att.length?[['Attività per tipo',attivitaPerTipo(att)],['Con modalità Attività Omnipod 5',`${conOmnipod} su ${att.length}`]]:[]),
+      ...(att.length?[['Attività per tipo',attivitaPerTipo(att)],['Con modalità attività del microinfusore',`${conOmnipod} su ${att.length}`]]:[]),
     ],
     margin:{left:14,right:14,bottom:20},
     didDrawPage:piede,
@@ -241,7 +241,7 @@ async function costruisciPDF(voci,att,da,a){
     });
     doc.autoTable({
       startY:y+3,
-      head:[['Ora','Attività','Intensità','Durata (min)','Rispetto al pasto','Modalità Attività Omnipod','Glicemia (mg/dL)']],
+      head:[['Ora','Attività','Intensità','Durata (min)','Rispetto al pasto','Modalità attività microinfusore','Glicemia (mg/dL)']],
       body:corpoA,
       styles:{fontSize:8,cellPadding:1.6,valign:'top'},
       headStyles:{fillColor:viola,textColor:255,fontSize:8},
