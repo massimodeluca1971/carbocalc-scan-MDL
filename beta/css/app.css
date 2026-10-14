@@ -468,3 +468,20 @@ body.scan-aperto{overflow:hidden}
   border:1px solid rgba(255,255,255,.35);touch-action:manipulation}
 .scan-btn[hidden]{display:none}
 .scan-annulla{width:100%;background:#fff;color:var(--text);border-color:#fff}
+
+/* 2.8: categoria nella scheda alimento */
+.sh-cat{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:8px;padding:8px 12px;min-height:44px;
+  background:var(--accent-soft);border-radius:12px;font-size:15px;color:var(--text);text-align:left;touch-action:manipulation}
+.sh-cat-mia{color:var(--sub);font-size:14px}
+.sh-cat-link{color:var(--accent);font-weight:700;flex-shrink:0}
+/* 2.8: foglio "Sposta in un'altra categoria" */
+.cat-scelta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.cat-opt{display:flex;align-items:center;gap:8px;min-height:48px;padding:8px 10px;border-radius:12px;border:1.5px solid var(--border-strong);
+  background:var(--card);font-size:15px;font-weight:600;text-align:left;line-height:1.2;color:var(--text);touch-action:manipulation}
+.cat-opt .cat-emoji{font-size:22px}
+.cat-opt.active{background:var(--accent);border-color:var(--accent);color:#fff}
+/* 2.8: messaggio con "Annulla" (resta 6 secondi, si può toccare) */
+.toast.toast-az{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:8px 8px 8px 18px;pointer-events:auto;text-align:left;
+  width:max-content;min-width:min(340px,calc(100% - 32px));
+  animation:fadeup .3s ease,fadedown .3s ease 5.7s forwards}
+.toast-btn{flex-shrink:0;min-height:40px;padding:8px 14px;border-radius:20px;background:#fff;color:var(--accent);font-size:16px;font-weight:700;touch-action:manipulation}
