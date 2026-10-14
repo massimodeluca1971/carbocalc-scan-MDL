@@ -3,9 +3,11 @@
 // Il pasto in corso non viene salvato nel backup.
 // Formato 2 = formato 1 + diario. Formato 3 (2.5) = formato 2 + attività fisiche.
 // Formato 4 (2.6) = formato 3 + glicemie del sensore.
-// I file in formato 1, 2 e 3 si importano ancora e non cancellano diario, attività e glicemie.
+// Formato 5 (2.8) = formato 4 + categorie spostate a mano; alimenti personali e preferiti
+// con le categorie nuove (nei file 1–4 si convertono all'import con le stesse regole).
+// I file in formato 1, 2, 3 e 4 si importano ancora e non cancellano diario, attività, glicemie e categorie.
 
-const BACKUP_FORMATO=4;
+const BACKUP_FORMATO=5;
 
 function backupFileName(){
   const d=new Date();
@@ -25,6 +27,7 @@ function buildBackup(){
       diario:state.diario,
       attivita:state.attivita,
       glicemie:glicPerBackup(),
+      categorie:state.catSposta,
     },
   };
 }
@@ -85,6 +88,15 @@ function parseBackup(text){
   const d=o.dati;
   const favs=Array.isArray(d.favs)?d.favs.filter(validFood):[];
   const custom=Array.isArray(d.custom)?d.custom.filter(validFood):[];
+  // 2.8: categorie vecchie → nuove (file 1–4); nei file 5 si correggono solo chiavi sconosciute
+  custom.forEach(f=>{ if(o.formato<5||!CAT_CHIAVI.includes(f.c)) f.c=nuovaCategoria(f.n,f.c); });
+  favs.forEach(f=>{
+    if(o.formato>=5&&CAT_CHIAVI.includes(f.c)) return;
+    const k=CREA.find(x=>x.n===f.n);
+    f.c=(k&&f.src!=='custom')?k.c:nuovaCategoria(f.n,f.c);
+  });
+  const haCategorie=d.categorie!=null&&typeof d.categorie==='object'&&!Array.isArray(d.categorie);
+  const categorie=haCategorie?catSpostaValide(d.categorie):{};
   let profilo=null;
   if(d.profilo){
     const icr=Number(d.profilo.icr);
@@ -100,7 +112,7 @@ function parseBackup(text){
   const haGlicemie=d.glicemie!=null;
   const glicemie=haGlicemie?glicValidaBackup(d.glicemie):null;
   if(haGlicemie&&!glicemie) throw new Error('Le glicemie nel backup non sono valide');
-  return {favs,custom,profilo,diario,haDiario,attivita,haAttivita,glicemie,haGlicemie,esportato:o.esportato||null,
+  return {favs,custom,profilo,diario,haDiario,attivita,haAttivita,glicemie,haGlicemie,categorie,haCategorie,esportato:o.esportato||null,
     scartati:scartati+(glicemie?glicemie.scartate:0)};
 }
 
@@ -150,6 +162,8 @@ async function applyImport(mode){
     if(p.haDiario) state.diario=p.diario.slice();
     // idem per le attività: un backup precedente alla 2.5 non le cancella
     if(p.haAttivita) state.attivita=p.attivita.slice();
+    // idem per le categorie spostate a mano: un backup precedente alla 2.8 non le cancella
+    if(p.haCategorie) state.catSposta={...p.categorie};
   } else {
     const favNames=new Set(state.favs.map(f=>f.n));
     p.favs.forEach(f=>{ if(!favNames.has(f.n)){ state.favs.push(f); favNames.add(f.n); } });
@@ -163,6 +177,8 @@ async function applyImport(mode){
     p.diario.forEach(v=>{ if(!ids.has(v.id)){ state.diario.push(v); ids.add(v.id); } });
     const aids=new Set(state.attivita.map(a=>a.id));
     p.attivita.forEach(a=>{ if(!aids.has(a.id)){ state.attivita.push(a); aids.add(a.id); } });
+    // categorie: valgono le scelte già fatte su questo dispositivo, si aggiungono le altre
+    if(p.haCategorie) state.catSposta={...p.categorie,...state.catSposta};
   }
   diarioOrdina();
   attivitaOrdina();

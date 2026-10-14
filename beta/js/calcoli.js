@@ -84,19 +84,87 @@ function doseTimingMsg(gi, insulinId){
 
 const QUICK=[30,50,80,100,125,150,200,250,300];
 
+// 2.8: 17 categorie. f.c contiene la chiave (keywords[0]) della categoria.
 const CATS=[
-  {id:'cereali',label:'Cereali & Pasta',emoji:'🍝',keywords:['Cereali']},
+  {id:'pane',label:'Pane & forno',emoji:'🍞',keywords:['Pane']},
+  {id:'pasta',label:'Pasta, riso & cereali',emoji:'🍝',keywords:['Pasta']},
+  {id:'colazione',label:'Colazione & biscotti',emoji:'🥣',keywords:['Colazione']},
+  {id:'patate',label:'Patate',emoji:'🥔',keywords:['Patate']},
+  {id:'legumi',label:'Legumi',emoji:'🫘',keywords:['Legumi']},
   {id:'frutta',label:'Frutta',emoji:'🍎',keywords:['Frutta']},
   {id:'verdura',label:'Verdura',emoji:'🥦',keywords:['Verdura']},
-  {id:'legumi',label:'Legumi',emoji:'🫘',keywords:['Legumi']},
-  {id:'latticini',label:'Latticini & Uova',emoji:'🥛',keywords:['Latticini']},
-  {id:'carni',label:'Carni & Pesce',emoji:'🍗',keywords:['Carni','Pesce']},
-  {id:'dolci',label:'Dolci & Snack',emoji:'🍫',keywords:['Dolci','Snack']},
+  {id:'latte',label:'Latte & yogurt',emoji:'🥛',keywords:['Latte']},
+  {id:'formaggi',label:'Formaggi & uova',emoji:'🧀',keywords:['Formaggi']},
+  {id:'carni',label:'Carni',emoji:'🍗',keywords:['Carni']},
+  {id:'pesce',label:'Pesce',emoji:'🐟',keywords:['Pesce']},
+  {id:'dolci',label:'Dolci & snack',emoji:'🍫',keywords:['Dolci']},
   {id:'bevande',label:'Bevande',emoji:'🥤',keywords:['Bevande']},
-  {id:'fruttasecca',label:'Frutta secca',emoji:'🥜',keywords:['Frutta secca']},
-  {id:'condimenti',label:'Condimenti',emoji:'🫙',keywords:['Condimenti']},
-  {id:'pronti',label:'Piatti pronti & altro',emoji:'🍲',keywords:['Piatti pronti']},
+  {id:'fruttasecca',label:'Frutta secca & semi',emoji:'🥜',keywords:['Frutta secca']},
+  {id:'condimenti',label:'Condimenti, salse & spezie',emoji:'🫒',keywords:['Condimenti']},
+  {id:'farine',label:'Farine & ingredienti',emoji:'🌾',keywords:['Farine']},
+  {id:'pronti',label:'Piatti pronti',emoji:'🍲',keywords:['Piatti pronti']},
 ];
+const CAT_CHIAVI=CATS.map(c=>c.keywords[0]);
+function catPerChiave(k){return CATS.find(c=>c.keywords[0]===k)||null;}
+function catLabel(k){const c=catPerChiave(k);return c?c.label:(k||'');}
+// Preferenze "sposta in un'altra categoria" valide: alimento dell'archivio, categoria esistente e diversa dall'originale
+function catSpostaValide(o){
+  const out={};
+  Object.keys(o||{}).forEach(n=>{
+    const k=o[n];const f=CREA.find(x=>x.n===n);
+    if(f&&typeof k==='string'&&CAT_CHIAVI.includes(k)&&k!==f.c) out[n]=k;
+  });
+  return out;
+}
+
+// Dalle categorie delle versioni ≤2.7.1 (Cereali, Latticini, Snack…) alle nuove:
+// le stesse regole per nome usate per riordinare l'archivio CREA, applicate
+// anche agli alimenti personali e ai preferiti salvati con la vecchia categoria.
+function nuovaCategoria(nome,c){
+  // chiavi nuove che non esistevano prima: già nel formato 2.8
+  if(['Pane','Pasta','Colazione','Patate','Latte','Formaggi','Farine'].includes(c)) return c;
+  const n=normTesto(nome||'');
+  const ha=re=>re.test(n);
+  // ingredienti per cucinare, ovunque fossero
+  if(ha(/^farin|\bfarina\b|^semola|amido|fecola|pangrattato|lievito|cacao amaro|^crusca|germe di frumento/)) return 'Farine';
+  if(ha(/^bevanda alcolica|^te, foglie|^caffe' tostato|^succo|succo, in cartone|succo, fresco/)) return 'Bevande';
+  if(ha(/^latte di (soia|avena|riso|mandorla)|^soia, bevanda|^soia, yogurt/)) return 'Latte';
+  switch(c){
+    case 'Cereali':
+      if(ha(/biscott|fiocchi|corn flakes|muesli|soffiato|bastoncini di crusca|croissant|wafer/)) return 'Colazione';
+      if(ha(/^pane|panin|grissin|cracker|piadin|pizza|focacc|azzimo/)) return 'Pane';
+      return 'Pasta';
+    case 'Dolci':
+      if(ha(/biscott|cantucci|savoiard|cornetto|brioche|merendin/)&&!ha(/^gelato/)) return 'Colazione';
+      return 'Dolci';
+    case 'Snack':
+      if(ha(/cracker|gallett/)) return 'Pane';
+      return 'Dolci';
+    case 'Latticini':
+      if(ha(/^uov|uovo/)) return 'Formaggi';
+      if(ha(/^latte\b|^yogurt|panna|crema di latte/)) return 'Latte';
+      return 'Formaggi';
+    case 'Verdura':
+      if(ha(/patat|topinambur/)) return 'Patate';
+      if(ha(/^basilico|^menta|^pepe nero|^prezzemolo|^rosmarino|^salvia/)) return 'Condimenti';
+      if(ha(/^minestrone/)) return 'Piatti pronti';
+      return 'Verdura';
+    case 'Frutta':
+      if(ha(/^oliv/)) return 'Condimenti';
+      if(ha(/^limone \(succo\)/)) return 'Condimenti';
+      return 'Frutta';
+    case 'Frutta secca':
+      if(ha(/^pasta di mandorle/)) return 'Dolci';
+      return 'Frutta secca';
+    case 'Piatti pronti':
+      if(ha(/dadi da brodo|^soia, salsa/)) return 'Condimenti';
+      if(ha(/pappa reale/)) return 'Dolci';
+      return 'Piatti pronti';
+    case 'Condimenti': case 'Carni': case 'Pesce': case 'Legumi': case 'Bevande':
+      return c;
+  }
+  return 'Pasta';
+}
 
 
 function searchCREA(q){
@@ -124,8 +192,10 @@ function searchCREA(q){
 // minuscole e senza accenti (caffè = caffe)
 function normTesto(s){return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
 
+// 2.8: vale la categoria scelta a mano, se c'è
 function catFoods(cat){
-  return CREA.filter(f=>cat.keywords.includes(f.c)).sort((a,b)=>a.n.localeCompare(b.n,'it'));
+  const sp=(typeof state!=='undefined'&&state.catSposta)||{};
+  return CREA.filter(f=>cat.keywords.includes(sp[f.n]||f.c)).sort((a,b)=>a.n.localeCompare(b.n,'it'));
 }
 
 function fmt(v,d=1){
