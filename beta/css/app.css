@@ -505,3 +505,61 @@ body.scan-aperto{overflow:hidden}
 .avvio-box p{font-size:15px;color:var(--text);line-height:1.5;margin:0 0 10px}
 .avvio-box ul{margin:0 0 10px;padding-left:20px;font-size:15px;line-height:1.5;color:var(--text)}
 .avvio-box li{margin-bottom:6px}
+
+/* 2.8.3 — colori: titoli di sezione, icone di categoria, preferiti, azione principale */
+.section-lbl svg{width:18px;height:18px;vertical-align:-3px;margin-right:6px}
+.sl-rec{color:#185FA5}
+.sl-fav{color:#854F0B}
+.sl-cat{color:var(--accent-2)}
+.ic-cat{flex-shrink:0;width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:18px;line-height:1}
+.ic-oro{background:#FAEEDA}.ic-rosa{background:#FBEAF0}.ic-acqua{background:#E1F5EE}
+.ic-azzurro{background:#E6F1FB}.ic-corallo{background:#FAECE7}.ic-grigio{background:#F1EFE8}
+.chip-fav{background:#FAEEDA;border-color:#FAC775;color:#633806;font-weight:600}
+.chip-fav:active{background:#FAC775}
+.home-azioni .home-az-pieno{background:var(--accent-2);border-color:var(--accent-2);color:#fff}
+.home-azioni .home-az-pieno svg{color:#fff}
+.home-azioni .home-az-pieno:active{background:var(--accent)}
+
+/* 2.8.3 — Diario */
+.dg-tot-cho{color:var(--green)}
+.dg-tot-sug{color:#888780;font-size:17px;font-weight:600;padding-top:4px}
+.glic-vuoto{background:none;padding:2px 6px;font-size:14px;margin:0 0 10px;gap:6px}
+.glic-vuoto svg{width:18px;height:18px}
+.dg-duo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 12px}
+.dg-duo .att-row{flex-direction:column;align-items:flex-start;gap:6px;padding:12px;margin:0;background:#E1F5EE;min-height:96px}
+.dg-duo .att-row + .att-row{margin-top:0;background:#E6F1FB}
+.dg-duo .att-row-go{display:none}
+.dg-duo .att-row-ico{width:34px;height:34px;background:#fff!important}
+.dg-duo .att-row-t{font-size:16px;color:#085041}
+.dg-duo .att-row-s{font-size:14px;color:#0F6E56}
+.dg-duo .att-row + .att-row .att-row-t{color:#0C447C}
+.dg-duo .att-row + .att-row .att-row-s{color:#185FA5}
+.dg-duo .att-row + .att-row .att-row-ico{color:#185FA5!important}
+.dv-card{border-left:5px solid #B4B2A9;border-radius:6px 18px 18px 6px}
+.dv-tipo{display:inline-block;font-size:14px;font-weight:700;border-radius:10px;padding:2px 9px;margin-right:4px;background:#F1EFE8;color:#444441}
+.dv-t-colazione{border-left-color:#EF9F27}.dv-t-colazione .dv-tipo{background:#FAEEDA;color:#633806}
+.dv-t-pranzo{border-left-color:#D85A30}.dv-t-pranzo .dv-tipo{background:#FAECE7;color:#712B13}
+.dv-t-cena{border-left-color:#7F77DD}.dv-t-cena .dv-tipo{background:#EEEDFE;color:#3C3489}
+.dv-t-spuntino{border-left-color:#1D9E75}.dv-t-spuntino .dv-tipo{background:#E1F5EE;color:#085041}
+.dv-foods{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.dv-food{display:flex;align-items:center;gap:8px;line-height:1.3}
+.dv-food .ic-cat{width:30px;height:30px;font-size:16px}
+.dv-ins-box{background:var(--accent-soft);border-radius:12px;padding:8px 12px;margin-top:10px}
+.dv-ins-box .dv-ins{margin-top:0;color:var(--accent)}
+.dv-sugg{font-size:14px;color:var(--sub);margin-top:4px}
+.dv-sugg .dv-exp{font-size:11px;padding:2px 5px}
+.dv-actions{justify-content:flex-end;gap:4px}
+.dv-actions button{flex:none;min-height:44px;padding:8px 10px;border:none;background:none;font-size:15px;color:var(--accent-2)}
+.dv-actions .dv-del{color:var(--sub)}
+.dv-t-att{border-left-color:#1D9E75}
+.dv-card .dv-actions{margin-top:4px;margin-bottom:-6px}
+/* 2.8.3 — Pasto */
+.meal-item>.ic-cat{margin-left:-4px}
+.mi-del{color:var(--sub)}
+/* 2.8.3 — Profilo: una striscia di colore per sezione */
+.pc-insulina{border-top:5px solid var(--accent-2)}
+.pc-insulina .profilo-title{color:var(--accent)}
+.pc-glic{border-top:5px solid #378ADD}
+.pc-glic .profilo-title{color:#0C447C}
+.backup-card{border-top:5px solid #B4B2A9}
+.custom-item>.ic-cat{margin-left:-4px}

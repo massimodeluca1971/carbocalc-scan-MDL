@@ -43,14 +43,14 @@ function renderDiarioTab(){
   const voci=vociDelGiorno(k);
   const t=totaliGiorno(voci);
   let h=navGiornoHTML(k);
+  // 2.8.3: CHO in verde, dose inserita in viola, suggerita piccola e grigia (sperimentale)
   h+=`<div class="dg-tot">
-    <div><div class="dg-tot-val">${fmtIt(t.cho,0)}<span> g</span></div><div class="dg-tot-lbl">CHO netti</div></div>
-    <div><div class="dg-tot-val">${t.conSugg?fmtIt(t.doseStd,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">dose suggerita</div></div>
+    <div><div class="dg-tot-val dg-tot-cho">${fmtIt(t.cho,0)}<span> g</span></div><div class="dg-tot-lbl">CHO netti</div></div>
     <div><div class="dg-tot-val">${t.conDose?fmtIt(t.doseInserita,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">dose inserita${t.n&&t.conDose<t.n?` (${t.conDose}/${t.n})`:''}</div></div>
+    <div><div class="dg-tot-val dg-tot-sug">${t.conSugg?fmtIt(t.doseStd,1):'—'}<span> UI</span></div><div class="dg-tot-lbl">suggerita · sperim.</div></div>
   </div>`;
   h+=renderCurvaGiorno(k);
-  h+=renderRigaAttivita(k);
-  h+=renderRigaConfronto();
+  h+=`<div class="dg-duo">${renderRigaAttivita(k)}${renderRigaConfronto()}</div>`;
   if(!voci.length){
     h+=`<div class="empty-meal" style="padding:36px 20px">
       <div class="empty-title">Nessun pasto registrato</div>
@@ -65,27 +65,23 @@ function renderDiarioTab(){
 }
 
 function renderVoce(v){
-  const alimenti=v.alimenti.map(a=>`${escH(a.name)} <span class="dv-g">${numInTesto(a.grams,1)} g</span>`).join(' · ');
-  let dosi;
-  if(v.doseStd!=null){
-    dosi=`<div class="dv-dose"><span>Suggerita <strong>${fmtIt(v.doseStd,1)}</strong></span>`
-      +(v.doseIG!=null&&v.giMult!==1?`<span>con IG <strong>${fmtIt(v.doseIG,1)}</strong></span>`:'')
-      +`<span class="dv-exp">sperimentale</span></div>`;
-  } else {
-    dosi=`<div class="dv-dose"><span class="dv-muted">Nessuna dose suggerita (profilo insulinico non salvato)</span></div>`;
-  }
+  const alimenti=v.alimenti.map(a=>`<div class="dv-food">${iconaCat(a.name)}<span>${escH(a.name)} <span class="dv-g">${numInTesto(a.grams,1)} g</span></span></div>`).join('');
+  // 2.8.3: dose inserita in evidenza, suggerita (sperimentale) in piccolo sotto
+  const sugg=v.doseStd!=null
+    ?`<div class="dv-sugg">Suggerita ${fmtIt(v.doseStd,1)}${v.doseIG!=null&&v.giMult!==1?` · con IG ${fmtIt(v.doseIG,1)}`:''} <span class="dv-exp">sperimentale</span></div>`
+    :`<div class="dv-sugg">Nessuna dose suggerita (profilo insulinico non salvato)</div>`;
   const ins=v.doseInserita!=null
-    ?`<div class="dv-ins">Dose inserita: <strong>${fmtIt(v.doseInserita,1)} UI</strong></div>`
-    :`<button class="dv-ins dv-ins-todo" onclick="apriModifica('${idSicuro(v.id)}')">Dose inserita: da completare ›</button>`;
-  return `<div class="dv-card">
+    ?`<div class="dv-ins-box"><div class="dv-ins">Dose inserita: <strong>${fmtIt(v.doseInserita,1)} UI</strong></div>${sugg}</div>`
+    :`<button class="dv-ins dv-ins-todo" onclick="apriModifica('${idSicuro(v.id)}')">Dose inserita: da completare ›</button>${sugg}`;
+  const tp=TIPI_PASTO.some(x=>x.id===v.tipo)?v.tipo:'altro';
+  return `<div class="dv-card dv-t-${tp}">
     <div class="dv-head">
-      <div class="dv-title">${oraHM(v.ts)} · ${tipoLabel(v.tipo)}${v.modificato?' <span class="dv-mod">modificato</span>':''}</div>
+      <div class="dv-title"><span class="dv-tipo">${tipoLabel(v.tipo)}</span> ${oraHM(v.ts)}${v.modificato?' <span class="dv-mod">modificato</span>':''}</div>
       <div class="dv-cho">${fmtIt(v.choNetti,1)}<span> g</span></div>
     </div>
     <div class="dv-foods">${alimenti}</div>
     ${v.igMedio!=null?`<div class="dv-muted">IG medio ${numInTesto(v.igMedio,0)} · CG ${fmtIt(v.cg,1)}${v.igNoti<v.alimenti.length?` · IG noto per ${numInTesto(v.igNoti,0)}/${v.alimenti.length}`:''}</div>`:''}
     ${rigaGlicPasto(v)}
-    ${dosi}
     ${ins}
     ${v.nota?`<div class="dv-nota">${escH(v.nota)}</div>`:''}
     <div class="dv-actions">

@@ -10,7 +10,7 @@ function renderRigaAttivita(k){
   const det=l.length?`${l.length} attività · ${minutiTotali(l)} min`:'nessuna registrata';
   return `<button class="att-row" onclick="vistaDiario('attivita')">
     <span class="att-row-ico">${icoRun}</span>
-    <span class="att-row-txt"><span class="att-row-t">Attività fisica</span><span class="att-row-s">${det}</span></span>
+    <span class="att-row-txt"><span class="att-row-t">Attività</span><span class="att-row-s">${det}</span></span>
     <span class="att-row-go">${icons.chevron}</span>
   </button>`;
 }
@@ -37,7 +37,7 @@ function renderCartaAttivita(a){
   const t=tipoAttivita(a.tipo);
   const fine=fineAttivita(a);
   const dett=[intensitaLabel(a.intensita),rispettoLabel(a.rispettoPasto)].filter(Boolean).join(' · ');
-  return `<div class="dv-card">
+  return `<div class="dv-card dv-t-att">
     <div class="dv-head">
       <div class="dv-title">${oraHM(a.ts)}–${oraHM(fine.toISOString())} · <span aria-hidden="true">${t.emoji}</span> ${escH(t.label)}${a.modificato?' <span class="dv-mod">modificata</span>':''}</div>
       <div class="dv-cho">${numInTesto(a.durata,0)}<span> min</span></div>

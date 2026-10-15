@@ -4,6 +4,8 @@
 //   le parti di pagina interessate, così la tastiera non si chiude;
 // - render() salva e ripristina lo scorrimento e i campi con data-keep.
 const icons={
+  orologio:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`,
+  griglia:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>`,
   search:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>`,
   fork:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
   star:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
@@ -164,6 +166,23 @@ function alimentoDaNome(name,voce){
   return null;
 }
 
+// 2.8.3 — colori: tinta di sfondo dell'icona per gruppo di categorie
+// (rosso e verde pieno restano riservati ad avvisi e carboidrati)
+const CAT_TINTA={pane:'oro',pasta:'oro',colazione:'oro',farine:'oro',patate:'oro',frutta:'rosa',dolci:'rosa',
+  verdura:'acqua',legumi:'acqua',latte:'azzurro',formaggi:'azzurro',bevande:'azzurro',carni:'corallo',pesce:'corallo',
+  fruttasecca:'grigio',condimenti:'grigio',pronti:'grigio'};
+function catDiNome(name,fallback){
+  const c=state.custom.find(f=>f.n===name); if(c&&c.c) return c.c;
+  if(state.catSposta&&state.catSposta[name]) return state.catSposta[name];
+  const k=CREA.find(f=>f.n===name); if(k) return k.c;
+  return fallback||'';
+}
+function iconaCat(name,fallback){
+  const c=catPerChiave(catDiNome(name,fallback));
+  const t=c?(CAT_TINTA[c.id]||'grigio'):'grigio';
+  return `<span class="ic-cat ic-${t}" aria-hidden="true">${c?c.emoji:'🍽️'}</span>`;
+}
+
 // ── Contenuto della scheda Cerca (riscritto anche durante la digitazione) ──
 function cercaBodyHTML(){
   const s=state;
@@ -223,16 +242,16 @@ function cercaBodyHTML(){
 
   // Home: codice a barre, recenti, preferiti, categorie
   h+=`<div class="home-azioni">
-    <button class="btn-ghost home-az" onclick="apriCodiceBarre()">${icons.barcode}<span>Codice a barre</span></button>
+    <button class="btn-ghost home-az home-az-pieno" onclick="apriCodiceBarre()">${icons.barcode}<span>Codice a barre</span></button>
     <button class="btn-ghost home-az" onclick="apriFoglioAlimento('cerca','')">${icons.plus}<span>Nuovo da etichetta</span></button>
   </div>`;
   const rec=recentiDalDiario(5);
   listeUI.rec=rec;
   if(rec.length){
-    h+=`<div class="section-row"><div class="section-lbl">Usati di recente</div><button class="section-link" onclick="state.recentiSvuota=true;render()">Svuota</button></div><div class="rows rows-joined">`;
+    h+=`<div class="section-row"><div class="section-lbl sl-rec">${icons.orologio}Usati di recente</div><button class="section-link" onclick="state.recentiSvuota=true;render()">Svuota</button></div><div class="rows rows-joined">`;
     rec.forEach((r,i)=>{
       h+=`<div class="row-rec">
-        <button class="row-rec-main" onclick="apriRecente(${i})"><span class="row-name">${escH(r.name)}</span><span class="row-sub">${numG(r.grams,0)} g</span></button>
+        <button class="row-rec-main" onclick="apriRecente(${i})">${iconaCat(r.name)}<span class="row-name">${escH(r.name)}</span><span class="row-sub">${numG(r.grams,0)} g</span></button>
         <button class="btn-round-x" onclick="nascondiRecente(${i})" aria-label="Togli ${escH(r.name)} dai recenti">${icons.close}</button>
         <button class="btn-round-add" onclick="aggiungiRecente(${i})" aria-label="Aggiungi di nuovo ${escH(r.name)}, ${numG(r.grams,0)} grammi">${icons.plus}</button>
       </div>`;
@@ -240,14 +259,14 @@ function cercaBodyHTML(){
     h+=`</div>`;
   }
   if(s.favs.length){
-    h+=`<div class="section-lbl">Preferiti</div><div class="chips">`;
-    s.favs.forEach((f,i)=>{ h+=`<button class="chip" onclick="selectFav(${i})">${escH(f.n)}</button>`; });
+    h+=`<div class="section-lbl sl-fav">${icons.star}Preferiti</div><div class="chips">`;
+    s.favs.forEach((f,i)=>{ h+=`<button class="chip chip-fav" onclick="selectFav(${i})">${escH(f.n)}</button>`; });
     h+=`</div>`;
   }
   if(!rec.length&&!s.favs.length){
     h+=`<div class="welcome">Scrivi il nome di un alimento qui sopra, oppure sfoglia una categoria.<br>Gli alimenti che registri nel diario compariranno qui, pronti da riaggiungere.</div>`;
   }
-  h+=`<div class="section-lbl">Sfoglia per categoria</div><div class="cat-grid">`;
+  h+=`<div class="section-lbl sl-cat">${icons.griglia}Sfoglia per categoria</div><div class="cat-grid">`;
   CATS.forEach(cat=>{
     h+=`<button class="cat-card" onclick="openCat('${cat.id}')"><span class="cat-emoji" aria-hidden="true">${cat.emoji}</span><span class="cat-name">${escH(cat.label)}</span></button>`;
   });
@@ -320,7 +339,7 @@ function render(){
       html+=`<div class="rows rows-joined">`;
       s.meal.forEach((item,i)=>{
         const cho=item.netcho??item.cho;
-        html+=`<div class="meal-item">
+        html+=`<div class="meal-item">${iconaCat(item.name)}
           <div class="mi-main"><div class="row-name">${escH(item.name)}</div><div class="row-sub">${numG(item.grams,0)} g${item.grams>SOGLIA_GRAMMI?' <span class="mi-plaus">⚠️ controlla il peso</span>':''}</div></div>
           <div class="mi-cho">${numG(cho)} g</div>
           <button class="mi-del" onclick="removeMealItem(${i})" aria-label="Togli ${escH(item.name)}">${icons.trash}</button>
@@ -675,7 +694,7 @@ function renderProfilo(){
   const s=state;
   const pf=s.profiloForm;
   let html=`<div class="pad">`;
-  html+=`<div class="profilo-card">
+  html+=`<div class="profilo-card pc-insulina">
     <div class="profilo-title">Profilo insulinico</div>
     <div class="profilo-subtitle">Rapporto insulina/carboidrati e tipo di insulina. Servono per la dose indicativa, che è <strong>sperimentale</strong> e va valutata con il medico.</div>
     <label class="profilo-lbl" for="icr-input">Rapporto insulina/CHO</label>
@@ -697,13 +716,13 @@ function renderProfilo(){
     ${s.profilo.saved?`<div class="profilo-saved">Attivo: 1 UI ogni ${String(s.profilo.icr).replace('.',',')} g di CHO · ${getInsulinInfo(s.profilo.insulinType).label}</div>`:''}
   </div>`;
 
-  html+=`<div class="section-lbl">I tuoi alimenti${s.custom.length?` (${s.custom.length})`:''}</div>`;
+  html+=`<div class="section-lbl sl-fav">${icons.star}I tuoi alimenti${s.custom.length?` (${s.custom.length})`:''}</div>`;
   html+=`<button class="btn-dashed" onclick="apriFoglioAlimento('profilo','')">${icons.plus} Nuovo alimento dall’etichetta</button>`;
   if(s.custom.length>0){
     html+=`<div class="rows rows-joined" style="margin-top:10px">`;
     s.custom.forEach((f,i)=>{
       const fgi=f.gi!=null?f.gi:null;
-      html+=`<div class="custom-item">
+      html+=`<div class="custom-item">${iconaCat(f.n,f.c)}
         <div class="ci-info">
           <div class="row-name">${escH(f.n)}</div>
           <div class="row-sub">${escH(catLabel(f.c))} · CHO netti ${numG(netto100(f))} g${f.pol?` (polioli ${numG(f.pol)} g, metà contata)`:''} · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)</div>
@@ -732,7 +751,7 @@ function renderProfilo(){
     <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
     <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
     <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
-    <p>CarbOCalc 2.8.2 · prototipo personale in sperimentazione, <strong>non è un dispositivo medico</strong>; dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
+    <p>CarbOCalc 2.8.3 · prototipo personale in sperimentazione, <strong>non è un dispositivo medico</strong>; dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
     <button class="btn-link" style="margin-top:4px" onclick="state.avvioAperto=true;render()">Rivedi le avvertenze</button>
   </div>`;
   html+=`</div>`;

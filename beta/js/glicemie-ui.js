@@ -25,7 +25,7 @@ function renderProfiloGlicemie(){
     const ultimo=glic.imp.length?glic.imp[glic.imp.length-1].quando:null;
     stato=`Hai <strong>${n.toLocaleString('it-IT')}</strong> letture dal <strong>${fmtData(glic.t[0])}</strong> al <strong>${fmtData(glic.t[n-1])}</strong>.${ultimo?`<br>Ultimo import: ${escH(fmtDataOra(ultimo)||'')}`:''}`;
   } else stato='Nessuna glicemia importata finora.';
-  return `<div class="profilo-card">
+  return `<div class="profilo-card pc-glic">
     <div class="profilo-title">Glicemie dal sensore</div>
     <div class="profilo-subtitle">Importa il file CSV esportato da Dexcom Clarity: vedrai la curva nel Diario, le glicemie prima e dopo pasti e attività, il confronto con / senza attività e i dati nel report. Si leggono solo le letture del sensore: nome, data di nascita e avvisi del file vengono ignorati.</div>
     ${storageMode==='idb'
@@ -213,7 +213,7 @@ function rigaGlicAttivita(a){
 function renderRigaConfronto(){
   return `<button class="att-row" onclick="vistaDiario('confronto')">
     <span class="att-row-ico glic-ico">${icoChart}</span>
-    <span class="att-row-txt"><span class="att-row-t">Glicemia: con e senza attività</span><span class="att-row-s">Confronta i pasti seguiti da attività</span></span>
+    <span class="att-row-txt"><span class="att-row-t">Confronto</span><span class="att-row-s">glicemia con / senza attività</span></span>
     <span class="att-row-go">${icons.chevron}</span>
   </button>`;
 }
