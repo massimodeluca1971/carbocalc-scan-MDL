@@ -91,14 +91,25 @@ function applyLoaded(d){
   if(Array.isArray(d.meal)) state.meal=d.meal;
   if(Array.isArray(d.favs)) state.favs=d.favs;
   if(Array.isArray(d.custom)) state.custom=d.custom;
-  if(Array.isArray(d.diario)){ state.diario=d.diario; diarioOrdina(); }
-  if(Array.isArray(d.attivita)){ state.attivita=d.attivita.filter(validAttivita); attivitaOrdina(); }
+  // 2.8.2: le voci si rendono innocue senza toglierle (si scartano solo quelle che non
+  // sono nemmeno un pasto, che prima bloccavano il Diario); le attività come prima
+  if(Array.isArray(d.diario)){ state.diario=d.diario.filter(v=>v&&typeof v==='object'&&Array.isArray(v.alimenti)).map(sanaVoceDiario); diarioOrdina(); }
+  if(Array.isArray(d.attivita)){ state.attivita=d.attivita.filter(validAttivita).map(sanaAttivita); attivitaOrdina(); }
   // 2.8: alimenti dell'archivio spostati a mano in un'altra categoria
   if(d.categorie&&typeof d.categorie==='object'&&!Array.isArray(d.categorie)) state.catSposta=catSpostaValide(d.categorie);
   if(d.profilo){
     const prof=d.profilo;
-    state.profilo={icr:prof.icr||6,insulinType:prof.insulinType||'fiasp',saved:true};
-    state.profiloForm={icr:String(prof.icr||6),insulinType:prof.insulinType||'fiasp'};
+    const icr=Number(prof.icr);
+    const tipo=INSULIN_TYPES.some(t=>t.id===prof.insulinType)?prof.insulinType:'fiasp';
+    // 2.8.2: nessun rapporto «di riserva»: se quello salvato non è valido il profilo
+    // risulta non impostato (la dose non compare finché non lo scrivi di nuovo)
+    if(isFinite(icr)&&icr>=1&&icr<=30){
+      state.profilo={icr,insulinType:tipo,saved:true};
+      state.profiloForm={icr:numInTesto(icr,1),insulinType:tipo};
+    } else {
+      state.profilo={icr:null,insulinType:tipo,saved:false};
+      state.profiloForm={icr:'',insulinType:tipo};
+    }
   }
 }
 

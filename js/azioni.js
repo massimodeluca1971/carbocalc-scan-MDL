@@ -72,11 +72,22 @@ function cercaOnline(){
 }
 
 function saveProfilo(){
-  const icr=parseFloat(state.profiloForm.icr);
-  if(isNaN(icr)||icr<1||icr>30) return;
+  const c=numValido(state.profiloForm.icr,1,30,'il rapporto insulina/CHO',{unita:'g per UI'});
+  if(!c.ok){mostraErroreProfilo(c.msg);return;}
+  const icr=Math.round(c.val*10)/10;
   state.profilo={icr,insulinType:state.profiloForm.insulinType,saved:true};
+  state.profiloForm.icr=numInTesto(icr,1);
+  state.profiloErr='';
+  const el=document.getElementById('icr-input');if(el) el.value=state.profiloForm.icr;
   saveToStorage();
   showToast('Profilo insulinico salvato');
+}
+
+// Messaggio sotto il rapporto insulina/CHO, senza ridisegnare (la tastiera resta aperta)
+function mostraErroreProfilo(msg){
+  state.profiloErr=msg;
+  const el=document.getElementById('icr-err');
+  if(el){el.textContent=msg;el.style.display=msg?'':'none';}
 }
 
 // ── SCHEDE IN BASSO E NAVIGAZIONE ──
@@ -176,9 +187,8 @@ function passoGrammi(delta){
   scriviGrammi(g);
 }
 function onGramNum(e){
-  const t=String(e.target.value).trim().replace(',','.');
-  const g=t===''?NaN:Number(t);
-  state.grams=isFinite(g)?g:NaN;
+  const g=numDaTesto(e.target.value);
+  state.grams=g!=null&&isFinite(g)?g:NaN;
   aggiornaScheda();
 }
 
@@ -191,7 +201,7 @@ function addToMeal(){
   const sug=calcFor(f.sug100,state.grams);
   const net=cho!=null&&fib!=null?Math.max(0,cho-fib):cho;
   const nome=f.name;
-  state.meal.push({name:nome,grams:state.grams,cho,sug,fib,netcho:net,src:f.src});
+  state.meal.push({name:nome,grams:state.grams,cho,sug,fib,netcho:net,src:f.src,t:Date.now()}); // 2.8.2: t = quando è stato aggiunto
   saveToStorage();
   state.query='';state.creaResults=[];state.offResults=[];state.offCercato=false;state.offErrore=null;
   state.selected=null;state.grams=100;state.activeCat=null;
@@ -267,15 +277,22 @@ function saveCustomFood(){
   const f=state.addForm;
   const name=f.name.trim();
   if(!name) return mostraErroreForm("Inserisci il nome dell'alimento.");
-  const cho=parseFloat(String(f.cho).replace(',','.'));
-  if(isNaN(cho)||cho<0||cho>100) return mostraErroreForm("Carboidrati non validi (da 0 a 100 g).");
-  const sug=parseFloat(String(f.sug).replace(',','.'))||0;
-  const fib=parseFloat(String(f.fib).replace(',','.'))||0;
-  const pol=parseFloat(String(f.pol||'').replace(',','.'))||0;
-  if(pol<0||pol>cho) return mostraErroreForm("Polioli non validi: non possono superare i carboidrati.");
-  const giRaw=String(f.gi??'').trim();
-  const gi=giRaw===''?null:parseFloat(giRaw);
-  if(giRaw!==''&&(isNaN(gi)||gi<0||gi>120)) return mostraErroreForm("Indice glicemico non valido (da 0 a 120, o lascia vuoto).");
+  // 2.8.2: numeri con virgola o punto; un testo non numerico è un errore (prima valeva 0 in silenzio)
+  const cC=numValido(f.cho,0,100,'i carboidrati',{unita:'g'});
+  if(!cC.ok) return mostraErroreForm(cC.msg+'.');
+  const cho=cC.val;
+  const cS=numValido(f.sug,0,100,'gli zuccheri',{vuotoOk:true,unita:'g'});
+  if(!cS.ok) return mostraErroreForm(cS.msg+'.');
+  const cF=numValido(f.fib,0,100,'le fibre',{vuotoOk:true,unita:'g'});
+  if(!cF.ok) return mostraErroreForm(cF.msg+'.');
+  const cP=numValido(f.pol,0,100,'i polioli',{vuotoOk:true,unita:'g'});
+  if(!cP.ok) return mostraErroreForm(cP.msg+'.');
+  const sug=cS.val||0, fib=cF.val||0, pol=cP.val||0;
+  if(sug>cho) return mostraErroreForm("Gli zuccheri non possono superare i carboidrati: controlla l'etichetta.");
+  if(pol>cho) return mostraErroreForm("Polioli non validi: non possono superare i carboidrati.");
+  const cG=numValido(f.gi,0,120,"l'indice glicemico",{vuotoOk:true});
+  if(!cG.ok) return mostraErroreForm(cG.msg+' (o lascia vuoto).');
+  const gi=cG.val===null?null:Math.round(cG.val);
   const ed=state.editCustom;
   if(state.custom.some((c,i)=>i!==ed&&c.n.toLowerCase()===name.toLowerCase())) return mostraErroreForm("Hai già un alimento con questo nome.");
   // Etichetta UE: i carboidrati escludono già la fibra e includono i polioli.
@@ -407,7 +424,7 @@ function correggiDaOFF(){
   }
   const fib=typeof f.fib100==='number'?f.fib100:0, pol=typeof f.pol100==='number'?f.pol100:0;
   const carb=Math.round((f.cho100-fib+pol/2)*10)/10;
-  const s=v=>v==null?'':String(v);
+  const s=v=>numInTesto(v,1);
   const nome=f.name, cat=(state.addForm&&state.addForm.cat)||'Dolci';
   state.editCustom=null;
   state.addForm={name:nome,cho:s(carb),sug:s(f.sug100),fib:s(f.fib100),pol:pol?s(pol):'',gi:'',cat,error:''};
@@ -424,7 +441,7 @@ function modificaCustom(i){
   const fib=typeof c.fib==='number'?c.fib:0, pol=typeof c.pol==='number'?c.pol:0;
   // carboidrati come in etichetta: salvati (cl) oppure ricavati dai valori salvati
   const carb=typeof c.cl==='number'?c.cl:Math.round((c.cho-fib+pol/2)*10)/10;
-  const s=v=>v==null?'':String(v);
+  const s=v=>numInTesto(v,1);
   state.editCustom=i;
   state.foglioAlimento={origine:'profilo'};
   state.addForm={name:c.n,cho:s(carb),sug:s(c.sug),fib:s(c.fib),pol:pol?s(pol):'',gi:c.gi!=null?s(c.gi):'',cat:c.c||'Pasta',error:''};

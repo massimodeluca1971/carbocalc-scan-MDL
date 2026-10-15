@@ -40,15 +40,15 @@ function renderCartaAttivita(a){
   return `<div class="dv-card">
     <div class="dv-head">
       <div class="dv-title">${oraHM(a.ts)}–${oraHM(fine.toISOString())} · <span aria-hidden="true">${t.emoji}</span> ${escH(t.label)}${a.modificato?' <span class="dv-mod">modificata</span>':''}</div>
-      <div class="dv-cho">${a.durata}<span> min</span></div>
+      <div class="dv-cho">${numInTesto(a.durata,0)}<span> min</span></div>
     </div>
     ${dett?`<div class="dv-muted">${escH(dett)}</div>`:''}
-    <div class="dv-muted">Modalità Attività Omnipod 5: <strong>${a.omnipod?'sì':'no'}</strong></div>
+    <div class="dv-muted">Modalità attività del microinfusore: <strong>${a.omnipod?'sì':'no'}</strong></div>
     ${rigaGlicAttivita(a)}
     ${a.nota?`<div class="dv-nota">${escH(a.nota)}</div>`:''}
     <div class="dv-actions">
-      <button onclick="apriModificaAttivita('${a.id}')">${icons.edit.replace(/width="22" height="22"/,'width="17" height="17"')} Modifica</button>
-      <button class="dv-del" onclick="chiediEliminaAttivita('${a.id}')">${icons.trash} Elimina</button>
+      <button onclick="apriModificaAttivita('${idSicuro(a.id)}')">${icons.edit.replace(/width="22" height="22"/,'width="17" height="17"')} Modifica</button>
+      <button class="dv-del" onclick="chiediEliminaAttivita('${idSicuro(a.id)}')">${icons.trash} Elimina</button>
     </div>
   </div>`;
 }
@@ -67,7 +67,7 @@ function renderAttivitaOverlays(){
       <label class="form-lbl sheet-gap" for="att-dur">Durata (minuti)</label>
       <div class="att-dur-row">
         ${DURATE_RAPIDE.map(m=>`<button class="insulin-chip att-dchip${String(m)===String(f.durata)?' active':''}" data-m="${m}" onclick="setAttDurata(${m})">${m}</button>`).join('')}
-        <input class="form-num att-dur-in" id="att-dur" data-keep type="text" inputmode="numeric" autocomplete="off" placeholder="min" aria-label="Durata in minuti" oninput="onAttDurata(event)" onkeydown="if(event.key==='Enter')this.blur()"/>
+        <input class="form-num att-dur-in" id="att-dur" data-keep ${attrNum(false)} placeholder="min" aria-label="Durata in minuti" oninput="onAttDurata(event)" onkeydown="if(event.key==='Enter')this.blur()"/>
       </div>
       <div class="form-lbl sheet-gap">Intensità</div>
       <div class="insulin-type-grid">${INTENSITA.map(x=>`<button class="insulin-chip${f.intensita===x.id?' active':''}" onclick="setAttCampo('intensita','${x.id}')">${x.label}</button>`).join('')}</div>
@@ -78,7 +78,7 @@ function renderAttivitaOverlays(){
       <div class="form-lbl sheet-gap">Rispetto al pasto</div>
       <div class="att-rp">${RISPETTO_PASTO.map(x=>`<button class="insulin-chip${f.rp===x.id?' active':''}" data-rp="${x.id}" onclick="setAttRp('${x.id}')">${x.label}</button>`).join('')}</div>
       <div class="sheet-hint" id="att-rp-hint">${f.rpManuale?'':'Proposto in base ai pasti del diario.'}</div>
-      <div class="form-lbl sheet-gap">Modalità Attività di Omnipod 5</div>
+      <div class="form-lbl sheet-gap">Modalità attività del microinfusore</div>
       <div class="insulin-type-grid">
         <button class="insulin-chip${f.omnipod?' active':''}" onclick="setAttCampo('omnipod',true)">Sì</button>
         <button class="insulin-chip${!f.omnipod?' active':''}" onclick="setAttCampo('omnipod',false)">No</button>
@@ -193,11 +193,15 @@ function onAttDurata(e){
   aggiornaAttDerivati();
 }
 
+// 2.8.2b: nessun render() qui. Su iPhone la ruota di data/ora manda «change» mentre si scorre:
+// ridisegnare sostituiva il campo, chiudeva la ruota e fissava un valore a metà.
 function onAttInizio(e){
   const f=state.attForm;if(!f) return;
   f.ts=e.target.value;f.tsManuale=true;
-  if(!f.rpManuale){const d=parseLocalInput(f.ts);if(d) f.rp=propostaRispettoPasto(d);}
-  render();
+  if(!f.rpManuale){
+    const d=parseLocalInput(f.ts);if(d) f.rp=propostaRispettoPasto(d);
+    document.querySelectorAll('.att-rp [data-rp]').forEach(b=>b.classList.toggle('active',b.dataset.rp===f.rp));
+  }
 }
 
 function setAttRp(id){

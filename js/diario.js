@@ -42,10 +42,9 @@ function numIt(v,d=1){return v==null||!isFinite(v)?'':v.toFixed(d).replace('.','
 
 // Dose scritta dall'utente: '' → null; accetta la virgola; 0–100 UI
 function parseDose(str){
-  const t=String(str||'').trim().replace(',','.');
-  if(t==='') return {ok:true,val:null};
-  const v=Number(t);
-  if(!isFinite(v)||v<0||v>100) return {ok:false,msg:'Dose non valida (da 0 a 100 UI)'};
+  const v=numDaTesto(str);
+  if(v===null) return {ok:true,val:null};
+  if(isNaN(v)||v<0||v>100) return {ok:false,msg:'Dose non valida (da 0 a 100 UI, es. 7,5)'};
   return {ok:true,val:Math.round(v*10)/10};
 }
 
@@ -143,6 +142,28 @@ function validVoceDiario(v){
   return v&&typeof v==='object'&&typeof v.id==='string'&&v.id!==''
     &&typeof v.ts==='string'&&!isNaN(new Date(v.ts))
     &&Array.isArray(v.alimenti)&&v.alimenti.length>0
-    &&v.alimenti.every(a=>a&&typeof a.name==='string'&&typeof a.grams==='number'&&isFinite(a.grams))
+    &&v.alimenti.every(a=>a&&typeof a.name==='string'&&typeof a.grams==='number'&&isFinite(a.grams)&&a.grams>0)
     &&isNumOrNull(v.doseInserita)&&isNumOrNull(v.choNetti);
+}
+
+// 2.8.2: rende innocua una voce letta dall'archivio o da un backup. I campi numerici
+// che non sono numeri diventano null (prima un testo poteva bloccare il Diario o, in un
+// backup manipolato, inserire codice nella pagina); un identificativo strano si rigenera.
+// Non elimina nulla: i valori corretti restano identici.
+function sanaVoceDiario(v){
+  const n=x=>typeof x==='number'&&isFinite(x)?x:null;
+  if(!idSicuro(v.id)) v.id=nuovoId();
+  ['choNetti','igMedio','cg','igNoti','doseStd','giMult','doseIG','doseInserita','icr'].forEach(k=>{ if(k in v) v[k]=n(v[k]); });
+  if(typeof v.tipo!=='string'||!TIPI_PASTO.some(t=>t.id===v.tipo)) v.tipo='spuntino';
+  if(v.nota!=null&&typeof v.nota!=='string') v.nota='';
+  if(v.insulinType!=null&&typeof v.insulinType!=='string') v.insulinType=null;
+  if(typeof v.ts!=='string') v.ts=String(v.ts||'');
+  v.alimenti=v.alimenti.filter(a=>a&&typeof a==='object');
+  v.alimenti.forEach(a=>{
+    if(typeof a.name!=='string') a.name=String(a.name??'');
+    if(!(typeof a.grams==='number'&&isFinite(a.grams))) a.grams=0;
+    ['cho','sug','fib','netcho','gi'].forEach(k=>{ if(k in a) a[k]=n(a[k]); });
+    if(a.src!=null&&typeof a.src!=='string') a.src=null;
+  });
+  return v;
 }

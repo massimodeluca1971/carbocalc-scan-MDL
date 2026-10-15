@@ -37,8 +37,9 @@ let state={
   custom:[],
   addForm:{name:'',cho:'',sug:'',fib:'',pol:'',gi:'',cat:'Pasta',error:''},
   editCustom:null,    // indice dell'alimento personale in modifica (null = nuovo)
-  profilo:{icr:6,insulinType:'fiasp',saved:false},
-  profiloForm:{icr:'6',insulinType:'fiasp'},
+  profilo:{icr:null,insulinType:'fiasp',saved:false}, // 2.8.2: nessun rapporto precompilato
+  profiloForm:{icr:'',insulinType:'fiasp'},
+  profiloErr:'',      // 2.8.2: messaggio sotto il rapporto insulina/CHO
   toast:null,
   confirmClear:false,
   importPending:null,
@@ -65,6 +66,8 @@ let state={
   customElimina:null, // 2.8: indice dell'alimento personale da eliminare (in attesa di conferma)
   recentiSvuota:false,// 2.8: conferma "Svuota" dei recenti
   toastAz:false,      // 2.8: il messaggio ha il pulsante "Annulla"
+  pastoVecchioOk:null,
+  avvioAperto:false,  // 2.8.2: avvertenze riaperte da Profilo// 2.8.2: avviso "pasto aperto da più di 3 ore" chiuso con «continua»
 };
 
 // Liste mostrate a schermo: i tocchi le richiamano per posizione
@@ -313,11 +316,12 @@ function render(){
         <div class="mt-val">${numG(mealCHO)}<span class="mt-unit"> g</span></div>
         <div class="mt-sub">${s.meal.length} aliment${s.meal.length===1?'o':'i'} · da usare per il calcolo del bolo</div>
       </div>`;
+      html+=renderAvvisiPasto(mealCHO);
       html+=`<div class="rows rows-joined">`;
       s.meal.forEach((item,i)=>{
         const cho=item.netcho??item.cho;
         html+=`<div class="meal-item">
-          <div class="mi-main"><div class="row-name">${escH(item.name)}</div><div class="row-sub">${numG(item.grams,0)} g</div></div>
+          <div class="mi-main"><div class="row-name">${escH(item.name)}</div><div class="row-sub">${numG(item.grams,0)} g${item.grams>SOGLIA_GRAMMI?' <span class="mi-plaus">⚠️ controlla il peso</span>':''}</div></div>
           <div class="mi-cho">${numG(cho)} g</div>
           <button class="mi-del" onclick="removeMealItem(${i})" aria-label="Togli ${escH(item.name)}">${icons.trash}</button>
         </div>`;
@@ -374,7 +378,7 @@ function render(){
   if(s.importPending){
     const p=s.importPending;
     const quando=fmtDataOra(p.esportato);
-    const prof=p.profilo?`1 UI ogni ${p.profilo.icr}g CHO · ${getInsulinInfo(p.profilo.insulinType).label}`:'non presente';
+    const prof=p.profilo?`1 UI ogni ${numInTesto(p.profilo.icr,1)} g CHO · ${getInsulinInfo(p.profilo.insulinType).label}`:'non presente';
     html+=`<div class="confirm-overlay" onclick="cancelImport()">
       <div class="confirm-box" onclick="event.stopPropagation()">
         <div class="confirm-title">Importare il backup?</div>
@@ -442,6 +446,7 @@ function render(){
   }
 
   html+=renderConfermeEliminazione();
+  html+=renderAvvisoAvvio();
   if(s.toast) html+=s.toastAz
     ?`<div class="toast toast-az" role="status"><span>${s.toast}</span><button class="toast-btn" onclick="annullaUltima()">Annulla</button></div>`
     :`<div class="toast" role="status">${s.toast}</div>`;
@@ -523,8 +528,8 @@ function renderScheda(){
         <div class="gram-row">
           <button class="gbtn" onclick="passoGrammi(-10)" aria-label="Meno 10 grammi">−</button>
           <label class="gram-box">
-            <input class="gram-num" id="sh-g" type="text" inputmode="decimal" autocomplete="off"
-              aria-labelledby="sh-q-lbl" value="${numG(s.grams,1)}" oninput="onGramNum(event)" onfocus="selezionaTutto(this)" onkeydown="if(event.key==='Enter')this.blur()"/>
+            <input class="gram-num" id="sh-g" ${attrNum()}
+              aria-labelledby="sh-q-lbl" value="${numG(s.grams,1)}" oninput="onGramNum(event)" onkeydown="if(event.key==='Enter')this.blur()"/>
             <span class="gram-g">g</span>
           </label>
           <button class="gbtn" onclick="passoGrammi(10)" aria-label="Più 10 grammi">+</button>
@@ -539,6 +544,7 @@ function renderScheda(){
           <div class="net-val"><span id="sh-net">—</span><span class="net-unit"> g</span></div>
           <div class="net-det" id="sh-det"></div>
         </div>
+        <div class="plaus-warn" id="sh-warn" role="status" style="display:none"></div>
         ${f.src==='off'?`<button class="btn-link" onclick="correggiDaOFF()">Valori diversi dall’etichetta? <u>Correggi e salva tra i tuoi</u></button>`:''}
       </div>
       <div class="sheet-foot">
@@ -549,8 +555,7 @@ function renderScheda(){
 }
 
 const QUICK_SCHEDA=[30,50,100,150];
-// Toccando il campo grammi si seleziona il numero: si scrive subito il nuovo valore
-function selezionaTutto(el){setTimeout(()=>{try{el.setSelectionRange(0,el.value.length);}catch(e){}},0);}
+// (2.8.2: la selezione al tocco dei campi numerici è in campi.js)
 
 // Aggiorna solo i numeri della scheda (niente render: la tastiera resta aperta)
 function aggiornaScheda(){
@@ -569,9 +574,60 @@ function aggiornaScheda(){
         ?`Totali ${numG(cho)} g`+(fib!=null&&fib>0?` − fibre ${numG(fib)} g`:'')+(sug!=null?` · zuccheri ${numG(sug)} g`:'')
         :[fib!=null?`fibre ${numG(fib)} g (già escluse)`:null,sug!=null?`zuccheri ${numG(sug)} g`:null,f.pol100?`polioli ${numG(calcFor(f.pol100,g))} g (metà contata)`:null].filter(Boolean).join(' · ').replace(/^f/,'F').replace(/^z/,'Z'));
   }
+  // 2.8.2: avviso di plausibilità (non blocca)
+  if(el('sh-warn')){
+    const alto=valido&&g>SOGLIA_GRAMMI;
+    el('sh-warn').style.display=alto?'':'none';
+    el('sh-warn').textContent=alto?`⚠️ Più di ${SOGLIA_GRAMMI} g: controlla di aver scritto bene il peso.`:'';
+  }
   if(el('sh-add')) el('sh-add').disabled=!valido;
   if(el('sh-add-lbl')) el('sh-add-lbl').textContent=valido?`Aggiungi al pasto · ${numG(net)} g`:'Aggiungi al pasto';
   document.querySelectorAll('.qbtn[data-g]').forEach(b=>b.classList.toggle('active',valido&&Number(b.dataset.g)===g));
+}
+
+// ── Avvertenze al primo avvio (2.8.2) ──
+// Si mostrano finché non si tocca «Ho capito» (una volta per browser: l'app sulla Home
+// e Safari hanno archivi separati). Da Profilo si possono rivedere.
+function renderAvvisoAvvio(){
+  const prima=!(storageMeta&&storageMeta.avvertenzeViste);
+  if(!prima&&!state.avvioAperto) return '';
+  return `<div class="confirm-overlay" style="z-index:260"><div class="confirm-box sheet-box avvio-box" role="dialog" aria-modal="true" aria-labelledby="avvio-t" style="text-align:left">
+    <div class="confirm-title" id="avvio-t">Prima di usare CarbOCalc</div>
+    <ul>
+      <li>CarbOCalc è un <strong>prototipo personale in sperimentazione</strong>: <strong>non è un dispositivo medico</strong> e non ha marcatura CE.</li>
+      <li>I carboidrati vengono dalle tabelle CREA, dalle etichette e da Open Food Facts: <strong>controlla sempre i valori</strong>, soprattutto dei prodotti confezionati, e il peso che scrivi.</li>
+      <li>La <strong>dose indicativa è sperimentale</strong> e serve solo come confronto da discutere con il diabetologo: non usarla per decidere il bolo. Nel microinfusore si inseriscono i <strong>grammi di carboidrati</strong>.</li>
+      <li>I dati restano <strong>solo su questo dispositivo e in questo browser</strong>: fai ogni tanto un backup da Profilo.</li>
+    </ul>
+    <div class="confirm-btns" style="margin-top:6px">
+      <button class="confirm-btn-cancel sheet-ok" onclick="chiudiAvvisoAvvio()">Ho capito</button>
+    </div>
+  </div></div>`;
+}
+function chiudiAvvisoAvvio(){
+  if(!(storageMeta&&storageMeta.avvertenzeViste)) setStorageMeta({avvertenzeViste:new Date().toISOString()});
+  state.avvioAperto=false;
+  render();
+}
+
+// ── Avvisi di plausibilità del pasto in corso (2.8.2) ──
+// Pasto aperto da oltre 3 ore: probabilmente è rimasto un pasto vecchio non registrato.
+function inizioPasto(){
+  const t=state.meal.map(i=>i.t).filter(x=>typeof x==='number'&&isFinite(x));
+  return t.length?Math.min(...t):null;
+}
+function renderAvvisiPasto(mealCHO){
+  let h='';
+  const ini=inizioPasto();
+  if(ini!=null&&Date.now()-ini>SOGLIA_PASTO_ORE*3600000&&state.pastoVecchioOk!==ini){
+    const d=new Date(ini);
+    const oggi=dayKey(d)===dayKey(new Date());
+    const quando=(oggi?'oggi':'il '+d.toLocaleDateString('it-IT',{day:'numeric',month:'long'}))+' alle '+oraHM(d.toISOString());
+    h+=`<div class="plaus-warn" role="alert">⚠️ Questo pasto è aperto da più di ${SOGLIA_PASTO_ORE} ore (primo alimento ${quando}). Se è un pasto già finito, registralo nel diario o svuotalo prima di aggiungere alimenti nuovi.
+      <div class="plaus-btns"><button class="btn-link danger" onclick="state.confirmClear=true;render()">Svuota pasto</button><button class="btn-link" onclick="state.pastoVecchioOk=${ini};render()">È lo stesso pasto, continua</button></div></div>`;
+  }
+  if(mealCHO>SOGLIA_CHO_PASTO) h+=`<div class="plaus-warn" role="status">⚠️ Più di ${SOGLIA_CHO_PASTO} g di carboidrati nel pasto: ricontrolla grammi e alimenti.</div>`;
+  return h;
 }
 
 // ── Dose indicativa del pasto (sperimentale) ──
@@ -587,21 +643,19 @@ function renderDosePasto(mealCHO){
   const ins=getInsulinInfo(s.profilo.insulinType);
   const conIG=doseGI!==null&&giMult!==1;
   const ui=v=>v==null?'—':v.toFixed(1).replace('.',',');
-  // Le due dosi sono sempre visibili; il "come si calcola" resta apribile sotto
+  // 2.8.2: la dose standard è il dato principale (grande, in verde); la correzione IG resta
+  // visibile ma piccola e in grigio, come ipotesi sperimentale da discutere con il medico
+  const doseAlta=doseStd!=null&&doseStd>SOGLIA_DOSE;
   let h=`<div class="dose-box">
     <div class="dose-head"><span class="dose-title">Dose indicativa</span><span class="exp-badge">SPERIMENTALE</span></div>
-    <div class="dose-two">
-      <div class="dose-cell">
-        <div class="dose-cell-lbl">Dose standard</div>
-        <div class="dose-cell-val">${ui(doseStd)}<span> UI</span></div>
-        <div class="dose-cell-sub">${numG(mealCHO)} g ÷ ${String(icr).replace('.',',')} g/UI</div>
-      </div>
-      <div class="dose-cell dose-cell-exp">
-        <div class="dose-cell-lbl">Con correzione IG</div>
-        <div class="dose-cell-val">${conIG?ui(doseGI):ui(doseStd)}<span> UI</span></div>
-        <div class="dose-cell-sub">${conIG?`${giMultLabel} per IG ${giLabel(igMedio)}`:(hasCG?'nessuna correzione (IG basso)':'IG non noto: nessuna correzione')}</div>
-      </div>
-    </div>`;
+    <div class="dose-main">
+      <div class="dose-main-lbl">Dose standard</div>
+      <div class="dose-main-val">${ui(doseStd)}<span> UI</span></div>
+      <div class="dose-cell-sub">${numG(mealCHO)} g ÷ ${String(icr).replace('.',',')} g/UI</div>
+    </div>
+    <div class="dose-ig">Con correzione IG (ipotesi da valutare): <strong>${conIG?ui(doseGI):ui(doseStd)} UI</strong> · ${conIG?`${giMultLabel} per IG ${giLabel(igMedio)}`:(hasCG?'nessuna correzione (IG basso)':'IG non noto: nessuna correzione')}</div>
+    ${doseAlta?`<div class="plaus-warn dose-plaus" role="alert">⚠️ Dose superiore a ${SOGLIA_DOSE} UI: ricontrolla grammi e alimenti del pasto e il rapporto insulina/CHO in Profilo.</div>`:''}
+    <div class="dose-micro">Nel microinfusore si inseriscono i <strong>grammi di carboidrati (${numG(mealCHO)} g)</strong>, non questa dose: è il microinfusore a calcolare il bolo.</div>`;
   let det=`<div class="dose-desc">Insulina: ${ins.label}. Dose standard = carboidrati netti del pasto diviso il tuo rapporto insulina/CHO.</div>`;
   if(hasCG){
     det+=`<div class="dose-desc">IG medio del pasto ${igMedio} (${giLabel(igMedio)}) · carico glicemico ${numG(cg)}${countWithGI<s.meal.length?` · IG noto per ${countWithGI} alimenti su ${s.meal.length}`:''}.${conIG?` Correzione: ${ui(doseStd)} UI × ${giMult.toFixed(2).replace('.',',')}.`:''}</div>`;
@@ -620,8 +674,6 @@ function renderDosePasto(mealCHO){
 function renderProfilo(){
   const s=state;
   const pf=s.profiloForm;
-  const icrVal=parseFloat(pf.icr)||0;
-  const profiloOk=icrVal>=1&&icrVal<=30;
   let html=`<div class="pad">`;
   html+=`<div class="profilo-card">
     <div class="profilo-title">Profilo insulinico</div>
@@ -629,18 +681,19 @@ function renderProfilo(){
     <label class="profilo-lbl" for="icr-input">Rapporto insulina/CHO</label>
     <div class="profilo-icr-wrap">
       <span class="profilo-icr-prefix">1 UI ogni</span>
-      <input class="form-num" type="number" inputmode="decimal" min="1" max="30" step="0.5" placeholder="8"
-        id="icr-input" style="width:84px"
-        oninput="state.profiloForm.icr=event.target.value;state.profilo.saved=false;"/>
+      <input class="form-num" ${attrNum()} placeholder="es. 8"
+        id="icr-input" style="width:84px" aria-describedby="icr-err"
+        oninput="state.profiloForm.icr=event.target.value;state.profilo.saved=false;mostraErroreProfilo('');const b=document.getElementById('icr-salva');if(b)b.textContent='Salva profilo';"/>
       <span class="profilo-icr-prefix">g di CHO</span>
     </div>
+    <div class="form-error" id="icr-err" role="alert" style="${s.profiloErr?'':'display:none'}">${escH(s.profiloErr||'')}</div>
+    ${s.profilo.saved?'':`<div class="profilo-subtitle" style="margin-top:6px">Scrivi il rapporto indicato dal tuo diabetologo (da 1 a 30 g per UI), poi tocca «Salva profilo».</div>`}
     <div class="profilo-lbl" style="margin-top:14px">Tipo di insulina</div>
     <div class="insulin-type-grid">
       ${INSULIN_TYPES.map(t=>`<button class="insulin-chip${pf.insulinType===t.id?' active':''}"
         onclick="state.profiloForm.insulinType='${t.id}';state.profilo.saved=false;render()">${t.label}</button>`).join('')}
     </div>
-    ${!profiloOk&&pf.icr?`<div class="form-error" style="margin-top:8px">Rapporto non valido (da 1 a 30 g/UI).</div>`:''}
-    <button class="btn-save" onclick="saveProfilo()" ${profiloOk?'':'disabled'}>${s.profilo.saved?'Profilo salvato':'Salva profilo'}</button>
+    <button class="btn-save" id="icr-salva" onclick="saveProfilo()">${s.profilo.saved?'Profilo salvato':'Salva profilo'}</button>
     ${s.profilo.saved?`<div class="profilo-saved">Attivo: 1 UI ogni ${String(s.profilo.icr).replace('.',',')} g di CHO · ${getInsulinInfo(s.profilo.insulinType).label}</div>`:''}
   </div>`;
 
@@ -679,7 +732,8 @@ function renderProfilo(){
     <p><strong>Alimenti:</strong> CREA – Centro di ricerca Alimenti e Nutrizione, Tabelle di composizione degli alimenti, aggiornamento 2019 (a cura di L. Marletta ed E. Camilli), alimentinutrizione.it. Alcuni alimenti delle versioni precedenti non presenti nel CREA hanno valori indicativi, segnalati nella scheda.</p>
     <p><strong>Indice glicemico:</strong> Glycemic Index Database, Università di Sydney (glycemicindex.com). «Misurato» = mediana delle misure disponibili; «stimato» (~) = ricavato da un alimento simile, da validare con il medico.</p>
     <p><strong>Prodotti confezionati:</strong> Open Food Facts (openfoodfacts.org), dati aperti con licenza ODbL, inseriti da volontari: verifica sempre sull’etichetta.</p>
-    <p>CarbOCalc 2.8.1 · dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
+    <p>CarbOCalc 2.8.2 · prototipo personale in sperimentazione, <strong>non è un dispositivo medico</strong>; dosi indicative <strong>sperimentali</strong>, da valutare con il medico.</p>
+    <button class="btn-link" style="margin-top:4px" onclick="state.avvioAperto=true;render()">Rivedi le avvertenze</button>
   </div>`;
   html+=`</div>`;
   return html;
@@ -704,19 +758,19 @@ function renderFoglioAlimento(){
     <div class="form-row">
       <div class="form-field">
         <label class="form-lbl" for="cf-cho">Carboidrati</label>
-        <input class="form-num" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="0"
+        <input class="form-num" ${attrNum()} placeholder="0"
           id="cf-cho" data-keep oninput="onFormInput('cho',event)"/>
         <div class="form-hint">g</div>
       </div>
       <div class="form-field">
         <label class="form-lbl" for="cf-sug">di cui zuccheri</label>
-        <input class="form-num" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="0"
+        <input class="form-num" ${attrNum()} placeholder="0"
           id="cf-sug" data-keep oninput="onFormInput('sug',event)"/>
         <div class="form-hint">g</div>
       </div>
       <div class="form-field">
         <label class="form-lbl" for="cf-fib">Fibre</label>
-        <input class="form-num" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="0"
+        <input class="form-num" ${attrNum()} placeholder="0"
           id="cf-fib" data-keep oninput="onFormInput('fib',event)"/>
         <div class="form-hint">g</div>
       </div>
@@ -724,13 +778,13 @@ function renderFoglioAlimento(){
     <div class="form-row">
       <div class="form-field">
         <label class="form-lbl" for="cf-pol">di cui polioli</label>
-        <input class="form-num" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="0"
+        <input class="form-num" ${attrNum()} placeholder="0"
           id="cf-pol" data-keep oninput="onFormInput('pol',event)"/>
         <div class="form-hint">g (se indicati)</div>
       </div>
       <div class="form-field">
         <label class="form-lbl" for="cf-gi">IG (se noto)</label>
-        <input class="form-num" type="number" inputmode="numeric" min="0" max="120" step="1" placeholder="—"
+        <input class="form-num" ${attrNum(false)} placeholder="—"
           id="cf-gi" data-keep oninput="onFormInput('gi',event)"/>
         <div class="form-hint">da 0 a 120</div>
       </div>
