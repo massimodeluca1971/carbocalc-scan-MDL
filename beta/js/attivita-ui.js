@@ -193,11 +193,15 @@ function onAttDurata(e){
   aggiornaAttDerivati();
 }
 
+// 2.8.2b: nessun render() qui. Su iPhone la ruota di data/ora manda «change» mentre si scorre:
+// ridisegnare sostituiva il campo, chiudeva la ruota e fissava un valore a metà.
 function onAttInizio(e){
   const f=state.attForm;if(!f) return;
   f.ts=e.target.value;f.tsManuale=true;
-  if(!f.rpManuale){const d=parseLocalInput(f.ts);if(d) f.rp=propostaRispettoPasto(d);}
-  render();
+  if(!f.rpManuale){
+    const d=parseLocalInput(f.ts);if(d) f.rp=propostaRispettoPasto(d);
+    document.querySelectorAll('.att-rp [data-rp]').forEach(b=>b.classList.toggle('active',b.dataset.rp===f.rp));
+  }
 }
 
 function setAttRp(id){
