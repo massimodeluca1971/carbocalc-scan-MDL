@@ -2,7 +2,14 @@
 // ── PRODOTTI CONFEZIONATI: Open Food Facts (solo online) ──
 // Sulle etichette UE i "carboidrati" escludono già la fibra: salvo cho = carboidrati + fibra,
 // così i CHO netti calcolati dall'app (cho − fibra) coincidono con i carboidrati dell'etichetta.
-const OFF_CAMPI='code,product_name,product_name_it,brands,quantity,nutriments';
+const OFF_CAMPI='code,product_name,product_name_it,brands,quantity,nutriments,serving_quantity,serving_quantity_unit';
+// 2.8.3: porzione in etichetta (grammi) se Open Food Facts la conosce
+function porzioneOFF(p){
+  const q=typeof p.serving_quantity==='string'?parseFloat(p.serving_quantity.replace(',','.')):p.serving_quantity;
+  const u=String(p.serving_quantity_unit||'g').toLowerCase();
+  if(u!=='g'||typeof q!=='number'||!isFinite(q)||q<1||q>1000) return null;
+  return Math.round(q*10)/10;
+}
 function daOFF(p){
   const n=p&&p.nutriments||{};
   const num=v=>{const x=typeof v==='string'?parseFloat(v.replace(',','.')):v;return typeof x==='number'&&isFinite(x)?x:null;};
@@ -15,7 +22,7 @@ function daOFF(p){
   const marca=String(p.brands||'').split(',')[0].trim();
   const r1=v=>v==null?null:Math.round(v*10)/10;
   return {n:marca&&!nome.toLowerCase().includes(marca.toLowerCase())?`${nome} · ${marca}`:nome,
-    c:'',cho:r1(carb+(fib||0)-(pol||0)/2),sug:r1(sug),fib:r1(fib),src:'off',marca,codice:p.code||'',...(pol?{pol:r1(pol)}:{})};
+    c:'',cho:r1(carb+(fib||0)-(pol||0)/2),sug:r1(sug),fib:r1(fib),src:'off',marca,codice:p.code||'',...(pol?{pol:r1(pol)}:{}),...(porzioneOFF(p)?{pe:porzioneOFF(p)}:{})};
 }
 async function fetchConLimite(url,ms){
   const ctrl=typeof AbortController!=='undefined'?new AbortController():null;
@@ -135,12 +142,17 @@ function apriAlimento(sel,grams){
   const si=document.getElementById('si');if(si) si.blur();
   render();
 }
+function porzG(v){const x=typeof v==='string'?Number(v.replace(',','.')):v;return typeof x==='number'&&isFinite(x)&&x>=1&&x<=1000?Math.round(x*10)/10:null;}
 function daLista(f){
   const sel={name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c,src:f.src||(f.custom?'custom':'crea')};
   if(f.o) sel.vecchio=true;
   if(f.nc) sel.nomeCrea=f.nc;
   if(f.e) sel.edibile=f.e;
-  if(f.pd&&f.pg){sel.porzDescr=f.pd;sel.porzG=f.pg;}
+  // 2.8.3: porzione (anche scelta dall'utente per i suoi alimenti): grammi solo se numero valido
+  const pg=porzG(f.pg);
+  if(f.pd&&pg){sel.porzDescr=String(f.pd).slice(0,40);sel.porzG=pg;}
+  const pe=porzG(f.pe);
+  if(pe) sel.porzEt=pe;
   if(f.p){sel.porzCrea=f.p;sel.porzU=f.pu||'g';}
   if(f.codice) sel.codice=f.codice;
   if(f.pol) sel.pol100=f.pol;
@@ -154,7 +166,8 @@ function selectFav(i){
   // Valori aggiornati dall'archivio o dagli alimenti personali, se il nome c'è ancora;
   // altrimenti (es. prodotti online) quelli salvati nel preferito.
   const attuale=alimentoDaNome(f.n);
-  apriAlimento(attuale||{name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c||'',src:f.src||'crea'});
+  apriAlimento(attuale||{name:f.n,cho100:f.cho,sug100:f.sug,fib100:f.fib,cat:f.c||'',src:f.src||'crea',
+    ...(f.codice?{codice:String(f.codice)}:{}),...(porzG(f.pe)?{porzEt:porzG(f.pe)}:{})});
 }
 function apriRecente(i){
   const r=listeUI.rec[i];if(!r) return;
@@ -232,7 +245,8 @@ function toggleFav(){
     });
     return;
   }
-  else{state.favs.push({n:f.name,c:f.cat||'',cho:f.cho100,sug:f.sug100,fib:f.fib100,src:f.src});showToast('Salvato nei preferiti');}
+  else{state.favs.push({n:f.name,c:f.cat||'',cho:f.cho100,sug:f.sug100,fib:f.fib100,src:f.src,
+    ...(f.src==='off'&&f.codice?{codice:f.codice}:{}),...(f.src==='off'&&f.porzEt?{pe:f.porzEt}:{})});showToast('Salvato nei preferiti');}
   saveToStorage();
 }
 function removeFav(e,i){e.stopPropagation();state.favs.splice(i,1);saveToStorage();render();}
@@ -240,7 +254,7 @@ function removeFav(e,i){e.stopPropagation();state.favs.splice(i,1);saveToStorage
 // ── Foglio "Nuovo alimento dall'etichetta" ──
 // Si apre sopra la schermata in cui sei (Cerca o Profilo). Da Cerca, dopo il salvataggio
 // l'alimento si apre subito nella scheda per scegliere i grammi.
-function moduloVuoto(cat){return {name:'',cho:'',sug:'',fib:'',pol:'',gi:'',cat:cat||state.addForm.cat||'Pasta',error:''};}
+function moduloVuoto(cat){return {name:'',cho:'',sug:'',fib:'',pol:'',gi:'',pd:'',pg:'',cat:cat||state.addForm.cat||'Pasta',error:''};}
 function apriFoglioAlimento(origine,nome){
   state.editCustom=null;
   state.addForm=moduloVuoto();
@@ -250,7 +264,7 @@ function apriFoglioAlimento(origine,nome){
   const si=document.getElementById('si');if(si) si.blur();
   render();
   // campi non controllati: si scrivono dopo il disegno
-  ['cf-name','cf-cho','cf-sug','cf-fib','cf-pol','cf-gi'].forEach(id=>{const el=document.getElementById(id);if(el) el.value='';});
+  ['cf-name','cf-cho','cf-sug','cf-fib','cf-pol','cf-gi','cf-pd','cf-pg'].forEach(id=>{const el=document.getElementById(id);if(el) el.value='';});
   const nm=document.getElementById('cf-name');if(nm&&state.addForm.name) nm.value=state.addForm.name;
 }
 function chiudiFoglioAlimento(){
@@ -293,12 +307,18 @@ function saveCustomFood(){
   const cG=numValido(f.gi,0,120,"l'indice glicemico",{vuotoOk:true});
   if(!cG.ok) return mostraErroreForm(cG.msg+' (o lascia vuoto).');
   const gi=cG.val===null?null:Math.round(cG.val);
+  // 2.8.3: porzione facoltativa (es. «1 cucchiaino» = 10 g)
+  const cPg=numValido(f.pg,1,1000,'i grammi della porzione',{vuotoOk:true,unita:'g'});
+  if(!cPg.ok) return mostraErroreForm(cPg.msg+' (o lascia vuoto).');
+  const pdTxt=String(f.pd||'').trim().slice(0,40);
+  if(pdTxt&&cPg.val===null) return mostraErroreForm('Scrivi quanti grammi pesa la porzione «'+pdTxt+'» (o cancella la descrizione).');
+  const porz=cPg.val===null?{}:{pd:pdTxt||'1 porzione',pg:Math.round(cPg.val*10)/10};
   const ed=state.editCustom;
   if(state.custom.some((c,i)=>i!==ed&&c.n.toLowerCase()===name.toLowerCase())) return mostraErroreForm("Hai già un alimento con questo nome.");
   // Etichetta UE: i carboidrati escludono già la fibra e includono i polioli.
   // Salvo cho = carboidrati + fibra − metà polioli, così i CHO netti (cho − fibra, formula invariata)
   // = carboidrati dell'etichetta − metà polioli. cl = carboidrati come scritti in etichetta. et=1: formato 2.4.
-  const voce={n:name,c:state.addForm.cat||'Pasta',cho:Math.round((cho+fib-pol/2)*10)/10,sug,fib,...(pol?{pol}:{}),cl:cho,...(gi!==null&&{gi}),et:1};
+  const voce={n:name,c:state.addForm.cat||'Pasta',cho:Math.round((cho+fib-pol/2)*10)/10,sug,fib,...(pol?{pol}:{}),cl:cho,...(gi!==null&&{gi}),...porz,et:1};
   // 2.7.1: codice a barre (da «Correggi con l'etichetta»); in modifica si conserva quello già salvato
   const codiceCb=(state.foglioAlimento&&state.foglioAlimento.codice)||(ed!=null&&state.custom[ed]&&state.custom[ed].codice)||'';
   if(codiceCb){
@@ -426,12 +446,13 @@ function correggiDaOFF(){
   const carb=Math.round((f.cho100-fib+pol/2)*10)/10;
   const s=v=>numInTesto(v,1);
   const nome=f.name, cat=(state.addForm&&state.addForm.cat)||'Dolci';
+  const pdV=f.porzEt?'1 porzione':'', pgV=f.porzEt?s(f.porzEt):'';
   state.editCustom=null;
-  state.addForm={name:nome,cho:s(carb),sug:s(f.sug100),fib:s(f.fib100),pol:pol?s(pol):'',gi:'',cat,error:''};
+  state.addForm={name:nome,cho:s(carb),sug:s(f.sug100),fib:s(f.fib100),pol:pol?s(pol):'',gi:'',pd:pdV,pg:pgV,cat,error:''};
   state.foglioAlimento={origine:'cerca',codice:f.codice||''};
   state.selected=null;state.codiceBarre=false;
   render();
-  const val={'cf-name':nome,'cf-cho':s(carb),'cf-sug':s(f.sug100),'cf-fib':s(f.fib100),'cf-pol':pol?s(pol):'','cf-gi':''};
+  const val={'cf-name':nome,'cf-cho':s(carb),'cf-sug':s(f.sug100),'cf-fib':s(f.fib100),'cf-pol':pol?s(pol):'','cf-gi':'','cf-pd':pdV,'cf-pg':pgV};
   Object.keys(val).forEach(id=>{const el=document.getElementById(id);if(el) el.value=val[id];});
 }
 
@@ -444,9 +465,10 @@ function modificaCustom(i){
   const s=v=>numInTesto(v,1);
   state.editCustom=i;
   state.foglioAlimento={origine:'profilo'};
-  state.addForm={name:c.n,cho:s(carb),sug:s(c.sug),fib:s(c.fib),pol:pol?s(pol):'',gi:c.gi!=null?s(c.gi):'',cat:c.c||'Pasta',error:''};
+  const pgV=porzG(c.pg)?String(porzG(c.pg)).replace('.',','):'', pdV=pgV?String(c.pd||''):'';
+  state.addForm={name:c.n,cho:s(carb),sug:s(c.sug),fib:s(c.fib),pol:pol?s(pol):'',gi:c.gi!=null?s(c.gi):'',pd:pdV,pg:pgV,cat:c.c||'Pasta',error:''};
   render();
-  const val={'cf-name':c.n,'cf-cho':s(carb),'cf-sug':s(c.sug),'cf-fib':s(c.fib),'cf-pol':pol?s(pol):'','cf-gi':c.gi!=null?s(c.gi):''};
+  const val={'cf-name':c.n,'cf-cho':s(carb),'cf-sug':s(c.sug),'cf-fib':s(c.fib),'cf-pol':pol?s(pol):'','cf-gi':c.gi!=null?s(c.gi):'','cf-pd':pdV,'cf-pg':pgV};
   Object.keys(val).forEach(id=>{const el=document.getElementById(id);if(el) el.value=val[id];});
 }
 function annullaModificaCustom(){chiudiFoglioAlimento();}
