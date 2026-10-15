@@ -156,7 +156,8 @@ function recentiDalDiario(max=5){
 // se non si trova (es. prodotti online) si ricavano dai valori salvati nella voce del diario.
 function alimentoDaNome(name,voce){
   const c=state.custom.find(f=>f.n===name);
-  if(c) return {name:c.n,cho100:c.cho,sug100:c.sug,fib100:c.fib,cat:c.c,src:'custom',...(c.pol?{pol100:c.pol}:{}),...(c.codice?{codice:c.codice}:{})};
+  if(c) return {name:c.n,cho100:c.cho,sug100:c.sug,fib100:c.fib,cat:c.c,src:'custom',...(c.pol?{pol100:c.pol}:{}),...(c.codice?{codice:c.codice}:{}),
+    ...(c.pd&&porzG(c.pg)?{porzDescr:String(c.pd).slice(0,40),porzG:porzG(c.pg)}:{})};
   const k=CREA.find(f=>f.n===name);
   if(k) return daLista({...k,src:'crea'});
   if(voce&&voce.grams>0){
@@ -526,6 +527,7 @@ function renderScheda(){
   // Quantità rapide: porzione a parole e porzione standard CREA, poi le solite
   const rapide=[];
   if(f.porzDescr&&f.porzG) rapide.push({g:f.porzG,t:`${escH(f.porzDescr)} ≈ ${numG(f.porzG,0)} g`});
+  if(f.porzEt&&!rapide.some(r=>r.g===f.porzEt)) rapide.push({g:f.porzEt,t:`Porzione in etichetta ≈ ${numG(f.porzEt,0)} g`});
   if(f.porzCrea&&!rapide.some(r=>r.g===f.porzCrea)) rapide.push({g:f.porzCrea,t:`Porzione standard ${numG(f.porzCrea,0)} ${f.porzU==='ml'?'ml':'g'}`});
   return `<div class="sheet-overlay" onclick="chiudiScheda()">
     <div class="sheet" role="dialog" aria-modal="true" aria-label="${escH(f.name)}" onclick="event.stopPropagation()">
@@ -725,7 +727,7 @@ function renderProfilo(){
       html+=`<div class="custom-item">${iconaCat(f.n,f.c)}
         <div class="ci-info">
           <div class="row-name">${escH(f.n)}</div>
-          <div class="row-sub">${escH(catLabel(f.c))} · CHO netti ${numG(netto100(f))} g${f.pol?` (polioli ${numG(f.pol)} g, metà contata)`:''} · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)</div>
+          <div class="row-sub">${escH(catLabel(f.c))} · CHO netti ${numG(netto100(f))} g${f.pol?` (polioli ${numG(f.pol)} g, metà contata)`:''} · fibre ${numG(f.fib)} g · ${fgi!=null?`IG ${fgi}`:'IG non inserito'} (per 100 g)${f.pd&&porzG(f.pg)?` · ${escH(String(f.pd).slice(0,40))} = ${numG(porzG(f.pg),0)} g`:''}</div>
         </div>
         <button class="mi-del" onclick="modificaCustom(${i})" aria-label="Modifica ${escH(f.n)}">${icons.edit}</button>
         <button class="mi-del" onclick="chiediEliminaCustom(${i})" aria-label="Elimina ${escH(f.n)}">${icons.trash}</button>
@@ -806,6 +808,20 @@ function renderFoglioAlimento(){
         <input class="form-num" ${attrNum(false)} placeholder="—"
           id="cf-gi" data-keep oninput="onFormInput('gi',event)"/>
         <div class="form-hint">da 0 a 120</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-field">
+        <label class="form-lbl" for="cf-pd">Porzione (facoltativa)</label>
+        <input class="form-input" type="text" maxlength="40" placeholder="1 cucchiaino" autocomplete="off"
+          id="cf-pd" data-keep oninput="onFormInput('pd',event)"/>
+        <div class="form-hint">come la chiami</div>
+      </div>
+      <div class="form-field">
+        <label class="form-lbl" for="cf-pg">Peso porzione</label>
+        <input class="form-num" ${attrNum()} placeholder="—"
+          id="cf-pg" data-keep oninput="onFormInput('pg',event)"/>
+        <div class="form-hint">g · compare tra le quantità rapide</div>
       </div>
     </div>
     <div class="form-lbl" style="margin-bottom:6px">Categoria</div>
